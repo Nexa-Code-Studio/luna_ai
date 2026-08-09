@@ -10,72 +10,119 @@ import '../widgets/custom_text_field.dart';
 
 import '../widgets/glass_card.dart';
 
+
+
 class RegisterScreen extends StatefulWidget {
 
   const RegisterScreen({super.key});
 
+
+
   @override
+
   State<RegisterScreen> createState() => _RegisterScreenState();
+
 }
 
+
+
 class _RegisterScreenState extends State<RegisterScreen> {
+
   bool _agreeTerms = false;
 
+
+
   @override
+
   Widget build(BuildContext context) {
+
     return Scaffold(
+
       body: Container(
+
         width: double.infinity,
+
         height: double.infinity,
+
         decoration: const BoxDecoration(
+
           gradient: LinearGradient(
+
             colors: [
+
               Color(0xFFF3F5FF),
+
               Color(0xFFE9ECFF),
+
               Color(0xFFF8F9FE),
+
             ],
+
             begin: Alignment.topCenter,
+
             end: Alignment.bottomCenter,
+
           ),
+
         ),
+
         child: SafeArea(
+
           child: Center(
+
             child: SingleChildScrollView(
+
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+
               child: GlassCard(
+
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+
                 child: Column(
+
                   mainAxisSize: MainAxisSize.min,
+
                   children: [
+
                     // Brand Logo
+
                     Image.asset(
+
                       'assets/images/luna_logo.png',
+
                       width: 50,
+
                       height: 50,
+
                       errorBuilder: (context, error, stackTrace) {
+
                         return const Icon(
+
                           Icons.nightlight_round,
+
                           size: 44,
+
                           color: AppColors.primary,
+
                         );
+
                       },
+
                     ),
 
                     const SizedBox(height: 8),
 
                     Text(
 
-                      'LUNA',
+                      'Buat Akun Baru',
 
                       style: GoogleFonts.inter(
 
                         fontSize: 22,
 
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
 
-                        color: AppColors.primary,
-
-                        letterSpacing: 1.2,
+                        color: AppColors.textPrimary,
 
                       ),
 
@@ -85,13 +132,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     Text(
 
-                      'Join a community dedicated to your wellbeing.',
+                      'Bergabung dengan LUNA dan mulai merawat kesehatan mentalmu',
 
                       textAlign: TextAlign.center,
 
                       style: GoogleFonts.inter(
 
-                        fontSize: 14,
+                        fontSize: 13,
 
                         color: AppColors.textSecondary,
 
@@ -101,21 +148,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Inputs
+
+
+                    // Full Name Field
 
                     const CustomPillTextField(
 
-                      hintText: 'Full Name',
+                      hintText: 'Nama Lengkap',
 
                       prefixIcon: Icons.person_outline,
 
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
+
+
+
+                    // Email Field
 
                     const CustomPillTextField(
 
-                      hintText: 'Email',
+                      hintText: 'Alamat Email',
 
                       prefixIcon: Icons.email_outlined,
 
@@ -123,11 +176,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
+
+
+
+                    // Password Field
 
                     const CustomPillTextField(
 
-                      hintText: 'Password',
+                      hintText: 'Kata Sandi',
 
                       prefixIcon: Icons.lock_outline,
 
@@ -137,7 +194,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Terms Checkbox
+
+
+                    // Terms & Conditions Checkbox
 
                     Row(
 
@@ -155,7 +214,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             activeColor: AppColors.primary,
 
-                            shape: const CircleBorder(),
+                            shape: RoundedRectangleBorder(
+
+                              borderRadius: BorderRadius.circular(6),
+
+                            ),
 
                             onChanged: (val) {
 
@@ -175,55 +238,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         Expanded(
 
-                          child: RichText(
+                          child: Text(
 
-                            text: TextSpan(
+                            'Saya menyetujui Syarat & Ketentuan Layanan',
 
-                              text: 'I agree to the ',
+                            style: GoogleFonts.inter(
 
-                              style: GoogleFonts.inter(
+                              fontSize: 12,
 
-                                fontSize: 12,
-
-                                color: AppColors.textSecondary,
-
-                              ),
-
-                              children: [
-
-                                TextSpan(
-
-                                  text: 'Terms',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontWeight: FontWeight.w600,
-
-                                    color: AppColors.primary,
-
-                                  ),
-
-                                ),
-
-                                const TextSpan(text: ' and '),
-
-                                TextSpan(
-
-                                  text: 'Privacy Policy',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontWeight: FontWeight.w600,
-
-                                    color: AppColors.primary,
-
-                                  ),
-
-                                ),
-
-                                const TextSpan(text: '.'),
-
-                              ],
+                              color: AppColors.textSecondary,
 
                             ),
 
@@ -237,9 +260,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 20),
 
+
+
+                    // Register Button
+
                     CustomPillButton(
 
-                      text: 'Create Account',
+                      text: 'Daftar Akun',
 
                       onPressed: () {
 
@@ -249,29 +276,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
 
-                    // Divider
+
+
+                    // Or Divider
 
                     Row(
 
                       children: [
 
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        const Expanded(child: Divider(color: Color(0xFFD6DCF5))),
 
                         Padding(
 
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
 
                           child: Text(
 
-                            'OR',
+                            'atau daftar dengan',
 
                             style: GoogleFonts.inter(
 
                               fontSize: 12,
-
-                              fontWeight: FontWeight.w600,
 
                               color: AppColors.textLight,
 
@@ -281,25 +308,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         ),
 
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        const Expanded(child: Divider(color: Color(0xFFD6DCF5))),
 
                       ],
 
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
 
-                    // Social Buttons
+
+
+                    // Social Register Buttons
 
                     Row(
 
                       children: [
 
-                        SocialPillButton(type: 'google', onPressed: () {}),
-
+                        Expanded(
+                          child: SocialPillButton(
+                            type: 'google',
+                            onPressed: () {},
+                          ),
+                        ),
                         const SizedBox(width: 12),
-
-                        SocialPillButton(type: 'apple', onPressed: () {}),
+                        Expanded(
+                          child: SocialPillButton(
+                            type: 'apple',
+                            onPressed: () {},
+                          ),
+                        ),
 
                       ],
 
@@ -307,53 +344,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Switch to Login
 
-                    GestureDetector(
 
-                      onTap: () {
+                    // Login Link Footer
 
-                        Navigator.pushReplacementNamed(context, '/login');
+                    Row(
 
-                      },
+                      mainAxisAlignment: MainAxisAlignment.center,
 
-                      child: RichText(
+                      children: [
 
-                        text: TextSpan(
+                        Text(
 
-                          text: 'Already have an account? ',
+                          'Sudah punya akun? ',
 
                           style: GoogleFonts.inter(
 
-                            fontSize: 14,
+                            fontSize: 13,
 
-                            color: AppColors.textLight,
+                            color: AppColors.textSecondary,
 
                           ),
 
-                          children: [
+                        ),
 
-                            TextSpan(
+                        GestureDetector(
 
-                              text: 'Log in',
+                          onTap: () {
 
-                              style: GoogleFonts.inter(
+                            Navigator.pushReplacementNamed(context, '/login');
 
-                                fontSize: 14,
+                          },
 
-                                fontWeight: FontWeight.w600,
+                          child: Text(
 
-                                color: AppColors.primary,
+                            'Masuk',
 
-                              ),
+                            style: GoogleFonts.inter(
+
+                              fontSize: 13,
+
+                              fontWeight: FontWeight.w700,
+
+                              color: AppColors.primary,
 
                             ),
 
-                          ],
+                          ),
 
                         ),
 
-                      ),
+                      ],
 
                     ),
 

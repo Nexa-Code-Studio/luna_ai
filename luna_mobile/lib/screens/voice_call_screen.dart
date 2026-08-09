@@ -154,7 +154,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                           Text(
 
-                            'LUNA IS LISTENING',
+                            'LUNA SEDANG MENDENGARKAN',
 
                             style: GoogleFonts.inter(
 
@@ -178,7 +178,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                     const Spacer(),
 
-                    const SizedBox(width: 44), // Spacer alignment balance
+                    const SizedBox(width: 44),
 
                   ],
 

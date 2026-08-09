@@ -30,7 +30,7 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
       'isUser': true,
 
-      'text': 'I feel overwhelmed with my college tasks.',
+      'text': 'Saya merasa sangat kewalahan dengan tugas-tugas kuliah.',
 
       'time': '10:42 AM',
 
@@ -42,7 +42,7 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
       'text':
 
-          'I understand that you are feeling pressured. Would you like to tell me more about what happened today?',
+          'Saya memahami bahwa kamu sedang merasa tertekan saat ini. Maukah kamu bercerita lebih banyak tentang apa yang membuatmu terbebani hari ini?',
 
       'time': '10:42 AM',
 
@@ -266,7 +266,7 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
                             Text(
 
-                              'Listening...',
+                              'Sedang mendengarkan...',
 
                               style: GoogleFonts.inter(
 
@@ -345,8 +345,6 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
                               isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
 
                           children: [
-
-                            // Message Bubble
 
                             isUser
 
@@ -480,7 +478,7 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
                     Text(
 
-                      'Stress: Moderate',
+                      'Tingkat Stres: Sedang',
 
                       style: GoogleFonts.inter(
 
@@ -568,7 +566,7 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
                           decoration: InputDecoration(
 
-                            hintText: 'Type or speak to LUNA...',
+                            hintText: 'Ketik atau bicara dengan LUNA...',
 
                             hintStyle: GoogleFonts.inter(
 

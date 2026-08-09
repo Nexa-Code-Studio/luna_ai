@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 
+import '../widgets/floating_nav_bar.dart';
+
 import '../widgets/glass_card.dart';
 
 
@@ -24,7 +26,45 @@ class MonitoringScreen extends StatefulWidget {
 
 class _MonitoringScreenState extends State<MonitoringScreen> {
 
-  final int _currentIndex = 3; // Trends tab selected
+  int _currentIndex = 2; // Tren tab selected
+
+
+
+  void _onTabTapped(int index) {
+
+    setState(() {
+
+      _currentIndex = index;
+
+    });
+
+    switch (index) {
+
+      case 0:
+
+        Navigator.pushNamed(context, '/home');
+
+        break;
+
+      case 1:
+
+        Navigator.pushNamed(context, '/diary');
+
+        break;
+
+      case 2:
+
+        break;
+
+      case 3:
+
+        Navigator.pushNamed(context, '/profile');
+
+        break;
+
+    }
+
+  }
 
 
 
@@ -64,313 +104,363 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
         child: SafeArea(
 
-          child: Column(
+          child: Stack(
 
             children: [
 
-              // Header Bar
+              Column(
 
-              Padding(
+                children: [
 
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                  // Header Bar
 
-                child: Row(
+                  Padding(
 
-                  children: [
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
 
-                    Image.asset(
+                    child: Row(
 
-                      'assets/images/luna_logo.png',
+                      children: [
 
-                      width: 32,
+                        Image.asset(
 
-                      height: 32,
+                          'assets/images/luna_logo.png',
 
-                      fit: BoxFit.contain,
+                          width: 32,
 
-                      errorBuilder: (context, error, stackTrace) {
+                          height: 32,
 
-                        return const Icon(
+                          fit: BoxFit.contain,
 
-                          Icons.nightlight_round,
+                          errorBuilder: (context, error, stackTrace) {
 
-                          size: 28,
+                            return const Icon(
+
+                              Icons.nightlight_round,
+
+                              size: 28,
+
+                              color: AppColors.primary,
+
+                            );
+
+                          },
+
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        Text(
+
+                          'LUNA',
+
+                          style: GoogleFonts.inter(
+
+                            fontSize: 16,
+
+                            fontWeight: FontWeight.w700,
+
+                            color: AppColors.primary,
+
+                          ),
+
+                        ),
+
+                        const Spacer(),
+
+                        IconButton(
+
+                          icon: const Icon(Icons.notifications_none_outlined),
 
                           color: AppColors.primary,
 
-                        );
-
-                      },
-
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    Text(
-
-                      'LUNA',
-
-                      style: GoogleFonts.inter(
-
-                        fontSize: 16,
-
-                        fontWeight: FontWeight.w700,
-
-                        color: AppColors.primary,
-
-                      ),
-
-                    ),
-
-                    const Spacer(),
-
-                    IconButton(
-
-                      icon: const Icon(Icons.notifications_none_outlined),
-
-                      color: AppColors.primary,
-
-                      onPressed: () {},
-
-                    ),
-
-                  ],
-
-                ),
-
-              ),
-
-
-
-              // Scrollable Content
-
-              Expanded(
-
-                child: SingleChildScrollView(
-
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-
-                  child: Column(
-
-                    crossAxisAlignment: CrossAxisAlignment.start,
-
-                    children: [
-
-                      // Title & Subtitle
-
-                      Text(
-
-                        'Mental Wellness Insight',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 22,
-
-                          fontWeight: FontWeight.w800,
-
-                          color: AppColors.textPrimary,
+                          onPressed: () {},
 
                         ),
 
-                      ),
+                      ],
 
-                      const SizedBox(height: 4),
+                    ),
 
-                      Text(
-
-                        'A gentle look at your recent emotional rhythms.',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 14,
-
-                          color: AppColors.textSecondary,
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 20),
+                  ),
 
 
 
-                      // Card 1: WEEKLY SUMMARY
+                  // Scrollable Content
 
-                      GlassCard(
+                  Expanded(
 
-                        width: double.infinity,
+                    child: SingleChildScrollView(
 
-                        padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
 
-                        child: Row(
+                      child: Column(
 
-                          children: [
+                        crossAxisAlignment: CrossAxisAlignment.start,
 
-                            Container(
+                        children: [
 
-                              width: 44,
+                          // Title & Subtitle
 
-                              height: 44,
+                          Text(
 
-                              decoration: BoxDecoration(
+                            'Wawasan Ritem Emosional',
 
-                                color: const Color(0xFFE0F4FB),
+                            style: GoogleFonts.inter(
 
-                                borderRadius: BorderRadius.circular(14),
+                              fontSize: 22,
 
-                              ),
+                              fontWeight: FontWeight.w800,
 
-                              child: const Icon(
-
-                                Icons.lightbulb_outline,
-
-                                color: Color(0xFF20667B),
-
-                                size: 22,
-
-                              ),
+                              color: AppColors.textPrimary,
 
                             ),
 
-                            const SizedBox(width: 14),
+                          ),
 
-                            Expanded(
+                          const SizedBox(height: 4),
 
-                              child: Column(
+                          Text(
 
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            'Gambaran lembut tentang dinamika perasaanmu minggu ini.',
 
-                                children: [
+                            style: GoogleFonts.inter(
 
-                                  Text(
+                              fontSize: 14,
 
-                                    'WEEKLY SUMMARY',
-
-                                    style: GoogleFonts.inter(
-
-                                      fontSize: 10,
-
-                                      fontWeight: FontWeight.w700,
-
-                                      color: AppColors.textLight,
-
-                                      letterSpacing: 0.8,
-
-                                    ),
-
-                                  ),
-
-                                  const SizedBox(height: 4),
-
-                                  Text(
-
-                                    'Trends this week: You are finding balance after a busy start.',
-
-                                    style: GoogleFonts.inter(
-
-                                      fontSize: 14,
-
-                                      fontWeight: FontWeight.w600,
-
-                                      color: AppColors.textPrimary,
-
-                                      height: 1.4,
-
-                                    ),
-
-                                  ),
-
-                                ],
-
-                              ),
+                              color: AppColors.textSecondary,
 
                             ),
 
-                          ],
+                          ),
 
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 16),
+                          const SizedBox(height: 20),
 
 
 
-                      // Card 2: MOOD RHYTHM GRAPH
+                          // Card 1: RINGKASAN MINGGUAN
 
-                      GlassCard(
+                          GlassCard(
 
-                        width: double.infinity,
+                            width: double.infinity,
 
-                        padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(18),
 
-                        child: Column(
-
-                          crossAxisAlignment: CrossAxisAlignment.start,
-
-                          children: [
-
-                            Row(
-
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Row(
 
                               children: [
 
-                                Text(
+                                Container(
 
-                                  'MOOD RHYTHM',
+                                  width: 44,
 
-                                  style: GoogleFonts.inter(
+                                  height: 44,
 
-                                    fontSize: 11,
+                                  decoration: BoxDecoration(
 
-                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFFE0F4FB),
 
-                                    color: AppColors.textLight,
+                                    borderRadius: BorderRadius.circular(14),
 
-                                    letterSpacing: 0.8,
+                                  ),
+
+                                  child: const Icon(
+
+                                    Icons.lightbulb_outline,
+
+                                    color: Color(0xFF20667B),
+
+                                    size: 22,
 
                                   ),
 
                                 ),
 
+                                const SizedBox(width: 14),
+
+                                Expanded(
+
+                                  child: Column(
+
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+
+                                    children: [
+
+                                      Text(
+
+                                        'RINGKASAN MINGGUAN',
+
+                                        style: GoogleFonts.inter(
+
+                                          fontSize: 10,
+
+                                          fontWeight: FontWeight.w700,
+
+                                          color: AppColors.textLight,
+
+                                          letterSpacing: 0.8,
+
+                                        ),
+
+                                      ),
+
+                                      const SizedBox(height: 4),
+
+                                      Text(
+
+                                        'Tren minggu ini: Kamu mulai menemukan keseimbangan setelah awal minggu yang sibuk.',
+
+                                        style: GoogleFonts.inter(
+
+                                          fontSize: 14,
+
+                                          fontWeight: FontWeight.w600,
+
+                                          color: AppColors.textPrimary,
+
+                                          height: 1.4,
+
+                                        ),
+
+                                      ),
+
+                                    ],
+
+                                  ),
+
+                                ),
+
+                              ],
+
+                            ),
+
+                          ),
+
+                          const SizedBox(height: 16),
+
+
+
+                          // Card 2: GRAFIK RITEM SUASANA HATI
+
+                          GlassCard(
+
+                            width: double.infinity,
+
+                            padding: const EdgeInsets.all(20),
+
+                            child: Column(
+
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+
                                 Row(
+
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                                   children: [
 
-                                    Container(
-
-                                      width: 8,
-
-                                      height: 8,
-
-                                      decoration: const BoxDecoration(
-
-                                        shape: BoxShape.circle,
-
-                                        color: AppColors.primary,
-
-                                      ),
-
-                                    ),
-
-                                    const SizedBox(width: 6),
-
                                     Text(
 
-                                      'Energy',
+                                      'RITEM SUASANA HATI',
 
                                       style: GoogleFonts.inter(
 
-                                        fontSize: 12,
+                                        fontSize: 11,
 
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w700,
 
-                                        color: AppColors.textPrimary,
+                                        color: AppColors.textLight,
+
+                                        letterSpacing: 0.8,
 
                                       ),
 
                                     ),
+
+                                    Row(
+
+                                      children: [
+
+                                        Container(
+
+                                          width: 8,
+
+                                          height: 8,
+
+                                          decoration: const BoxDecoration(
+
+                                            shape: BoxShape.circle,
+
+                                            color: AppColors.primary,
+
+                                          ),
+
+                                        ),
+
+                                        const SizedBox(width: 6),
+
+                                        Text(
+
+                                          'Energi',
+
+                                          style: GoogleFonts.inter(
+
+                                            fontSize: 12,
+
+                                            fontWeight: FontWeight.w600,
+
+                                            color: AppColors.textPrimary,
+
+                                          ),
+
+                                        ),
+
+                                      ],
+
+                                    ),
+
+                                  ],
+
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                SizedBox(
+
+                                  height: 130,
+
+                                  width: double.infinity,
+
+                                  child: CustomPaint(
+
+                                    painter: _MoodChartPainter(),
+
+                                  ),
+
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                Row(
+
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                                  children: const [
+
+                                    _DayLabel('Sen'),
+
+                                    _DayLabel('Sel'),
+
+                                    _DayLabel('Rab'),
+
+                                    _DayLabel('Kam'),
+
+                                    _DayLabel('Jum'),
+
+                                    _DayLabel('Sab'),
+
+                                    _DayLabel('Min'),
 
                                   ],
 
@@ -380,103 +470,147 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
                             ),
 
-                            const SizedBox(height: 20),
+                          ),
 
-                            // Custom Line Chart Painter
-
-                            SizedBox(
-
-                              height: 130,
-
-                              width: double.infinity,
-
-                              child: CustomPaint(
-
-                                painter: _MoodChartPainter(),
-
-                              ),
-
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            Row(
-
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                              children: const [
-
-                                _DayLabel('Mon'),
-
-                                _DayLabel('Tue'),
-
-                                _DayLabel('Wed'),
-
-                                _DayLabel('Thu'),
-
-                                _DayLabel('Fri'),
-
-                                _DayLabel('Sat'),
-
-                                _DayLabel('Sun'),
-
-                              ],
-
-                            ),
-
-                          ],
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
 
 
-                      // Card 3: STRESS LEVEL
+                          // Card 3: TINGKAT STRES
 
-                      GlassCard(
+                          GlassCard(
 
-                        width: double.infinity,
+                            width: double.infinity,
 
-                        padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(20),
 
-                        child: Column(
+                            child: Column(
 
-                          crossAxisAlignment: CrossAxisAlignment.start,
-
-                          children: [
-
-                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
 
                               children: [
 
-                                const Icon(
+                                Row(
 
-                                  Icons.water_drop_outlined,
+                                  children: [
 
-                                  size: 18,
+                                    const Icon(
 
-                                  color: Color(0xFF605A79),
+                                      Icons.water_drop_outlined,
+
+                                      size: 18,
+
+                                      color: Color(0xFF605A79),
+
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    Text(
+
+                                      'TINGKAT STRES',
+
+                                      style: GoogleFonts.inter(
+
+                                        fontSize: 11,
+
+                                        fontWeight: FontWeight.w700,
+
+                                        color: AppColors.textLight,
+
+                                        letterSpacing: 0.8,
+
+                                      ),
+
+                                    ),
+
+                                  ],
 
                                 ),
 
-                                const SizedBox(width: 8),
+                                const SizedBox(height: 12),
+
+                                Row(
+
+                                  crossAxisAlignment: CrossAxisAlignment.baseline,
+
+                                  textBaseline: TextBaseline.alphabetic,
+
+                                  children: [
+
+                                    Text(
+
+                                      '70%',
+
+                                      style: GoogleFonts.inter(
+
+                                        fontSize: 28,
+
+                                        fontWeight: FontWeight.w800,
+
+                                        color: AppColors.textPrimary,
+
+                                      ),
+
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    Text(
+
+                                      'Meningkat',
+
+                                      style: GoogleFonts.inter(
+
+                                        fontSize: 14,
+
+                                        fontWeight: FontWeight.w600,
+
+                                        color: AppColors.textSecondary,
+
+                                      ),
+
+                                    ),
+
+                                  ],
+
+                                ),
+
+                                const SizedBox(height: 6),
 
                                 Text(
 
-                                  'STRESS LEVEL',
+                                  'Ingat untuk menarik napas dalam-dalam hari ini.',
 
                                   style: GoogleFonts.inter(
 
-                                    fontSize: 11,
-
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
 
                                     color: AppColors.textLight,
 
-                                    letterSpacing: 0.8,
+                                  ),
+
+                                ),
+
+                                const SizedBox(height: 14),
+
+                                ClipRRect(
+
+                                  borderRadius: BorderRadius.circular(999),
+
+                                  child: LinearProgressIndicator(
+
+                                    value: 0.7,
+
+                                    minHeight: 8,
+
+                                    backgroundColor: const Color(0xFFE2E4F0),
+
+                                    valueColor: const AlwaysStoppedAnimation<Color>(
+
+                                      Color(0xFF605A79),
+
+                                    ),
 
                                   ),
 
@@ -486,43 +620,91 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
                             ),
 
-                            const SizedBox(height: 12),
+                          ),
 
-                            Row(
+                          const SizedBox(height: 16),
 
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
 
-                              textBaseline: TextBaseline.alphabetic,
+
+                          // Card 4: PUSAT EMOSIONAL
+
+                          GlassCard(
+
+                            width: double.infinity,
+
+                            padding: const EdgeInsets.all(20),
+
+                            child: Column(
+
+                              crossAxisAlignment: CrossAxisAlignment.start,
 
                               children: [
 
+                                Row(
+
+                                  children: [
+
+                                    const Icon(
+
+                                      Icons.balance,
+
+                                      size: 18,
+
+                                      color: Color(0xFF20667B),
+
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    Text(
+
+                                      'PUSAT EMOSIONAL',
+
+                                      style: GoogleFonts.inter(
+
+                                        fontSize: 11,
+
+                                        fontWeight: FontWeight.w700,
+
+                                        color: AppColors.textLight,
+
+                                        letterSpacing: 0.8,
+
+                                      ),
+
+                                    ),
+
+                                  ],
+
+                                ),
+
+                                const SizedBox(height: 12),
+
                                 Text(
 
-                                  '70%',
+                                  'Baik',
 
                                   style: GoogleFonts.inter(
 
-                                    fontSize: 28,
+                                    fontSize: 24,
 
                                     fontWeight: FontWeight.w800,
 
-                                    color: AppColors.textPrimary,
+                                    color: const Color(0xFF20667B),
 
                                   ),
 
                                 ),
 
-                                const SizedBox(width: 8),
+                                const SizedBox(height: 4),
 
                                 Text(
 
-                                  'Elevated',
+                                  'Ketangguhan dirimu bersinar dengan baik.',
 
                                   style: GoogleFonts.inter(
 
-                                    fontSize: 14,
-
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
 
                                     color: AppColors.textSecondary,
 
@@ -530,239 +712,71 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
                                 ),
 
+                                const SizedBox(height: 16),
+
+                                Row(
+
+                                  children: [
+
+                                    _buildPill(isSelected: false, color: const Color(0xFFD6E2E8)),
+
+                                    const SizedBox(width: 8),
+
+                                    _buildPill(isSelected: false, color: const Color(0xFFA1C6D4)),
+
+                                    const SizedBox(width: 8),
+
+                                    _buildPill(isSelected: false, color: const Color(0xFF67A5BC)),
+
+                                    const SizedBox(width: 8),
+
+                                    _buildPill(isSelected: true, color: const Color(0xFF20667B)),
+
+                                    const SizedBox(width: 8),
+
+                                    _buildPill(isSelected: false, color: const Color(0xFFD6E2E8)),
+
+                                  ],
+
+                                ),
+
                               ],
 
                             ),
 
-                            const SizedBox(height: 6),
+                          ),
 
-                            Text(
+                          const SizedBox(height: 24),
 
-                              'Remember to take deep breaths today.',
-
-                              style: GoogleFonts.inter(
-
-                                fontSize: 13,
-
-                                color: AppColors.textLight,
-
-                              ),
-
-                            ),
-
-                            const SizedBox(height: 14),
-
-                            // Progress Bar
-
-                            ClipRRect(
-
-                              borderRadius: BorderRadius.circular(999),
-
-                              child: LinearProgressIndicator(
-
-                                value: 0.7,
-
-                                minHeight: 8,
-
-                                backgroundColor: const Color(0xFFE2E4F0),
-
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-
-                                  Color(0xFF605A79),
-
-                                ),
-
-                              ),
-
-                            ),
-
-                          ],
-
-                        ),
+                        ],
 
                       ),
 
-                      const SizedBox(height: 16),
-
-
-
-                      // Card 4: EMOTIONAL CENTER
-
-                      GlassCard(
-
-                        width: double.infinity,
-
-                        padding: const EdgeInsets.all(20),
-
-                        child: Column(
-
-                          crossAxisAlignment: CrossAxisAlignment.start,
-
-                          children: [
-
-                            Row(
-
-                              children: [
-
-                                const Icon(
-
-                                  Icons.balance,
-
-                                  size: 18,
-
-                                  color: Color(0xFF20667B),
-
-                                ),
-
-                                const SizedBox(width: 8),
-
-                                Text(
-
-                                  'EMOTIONAL CENTER',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 11,
-
-                                    fontWeight: FontWeight.w700,
-
-                                    color: AppColors.textLight,
-
-                                    letterSpacing: 0.8,
-
-                                  ),
-
-                                ),
-
-                              ],
-
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            Text(
-
-                              'Good',
-
-                              style: GoogleFonts.inter(
-
-                                fontSize: 24,
-
-                                fontWeight: FontWeight.w800,
-
-                                color: const Color(0xFF20667B),
-
-                              ),
-
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-
-                              'Your resilience is shining through.',
-
-                              style: GoogleFonts.inter(
-
-                                fontSize: 13,
-
-                                color: AppColors.textSecondary,
-
-                              ),
-
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // 5 Status Pills
-
-                            Row(
-
-                              children: [
-
-                                _buildPill(isSelected: false, color: const Color(0xFFD6E2E8)),
-
-                                const SizedBox(width: 8),
-
-                                _buildPill(isSelected: false, color: const Color(0xFFA1C6D4)),
-
-                                const SizedBox(width: 8),
-
-                                _buildPill(isSelected: false, color: const Color(0xFF67A5BC)),
-
-                                const SizedBox(width: 8),
-
-                                _buildPill(isSelected: true, color: const Color(0xFF20667B)),
-
-                                const SizedBox(width: 8),
-
-                                _buildPill(isSelected: false, color: const Color(0xFFD6E2E8)),
-
-                              ],
-
-                            ),
-
-                          ],
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 24),
-
-                    ],
+                    ),
 
                   ),
 
-                ),
+                ],
 
               ),
 
 
 
-              // Bottom Navigation Bar with 5 Tabs and Persistent Labels
+              // Floating Bottom Navigation Bar Widget
 
-              Container(
+              Positioned(
 
-                padding: const EdgeInsets.fromLTRB(8, 12, 8, 14),
+                left: 0,
 
-                decoration: BoxDecoration(
+                right: 0,
 
-                  color: Colors.white.withValues(alpha: 0.95),
+                bottom: 0,
 
-                  boxShadow: [
+                child: FloatingNavBar(
 
-                    BoxShadow(
+                  currentIndex: _currentIndex,
 
-                      color: Colors.black.withValues(alpha: 0.05),
-
-                      blurRadius: 20,
-
-                      offset: const Offset(0, -4),
-
-                    ),
-
-                  ],
-
-                ),
-
-                child: Row(
-
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-                  children: [
-
-                    _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home', route: '/home'),
-
-                    _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble, 'Chat', route: '/chat'),
-
-                    _buildNavItem(2, Icons.menu_book_outlined, Icons.menu_book, 'Diary', route: '/diary'),
-
-                    _buildNavItem(3, Icons.show_chart_outlined, Icons.show_chart, 'Trends'),
-
-                    _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile', route: '/profile'),
-
-                  ],
+                  onTap: _onTabTapped,
 
                 ),
 
@@ -803,92 +817,6 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
             ? const Icon(Icons.check, color: Colors.white, size: 18)
 
             : null,
-
-      ),
-
-    );
-
-  }
-
-
-
-  Widget _buildNavItem(
-
-    int index,
-
-    IconData iconUnselected,
-
-    IconData iconSelected,
-
-    String label, {
-
-    String? route,
-
-  }) {
-
-    final isSelected = _currentIndex == index;
-
-    return GestureDetector(
-
-      onTap: () {
-
-        if (route != null) {
-
-          Navigator.pushNamed(context, route);
-
-        }
-
-      },
-
-      child: Container(
-
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-
-        decoration: BoxDecoration(
-
-          color: isSelected ? AppColors.primaryContainer : Colors.transparent,
-
-          borderRadius: BorderRadius.circular(16),
-
-        ),
-
-        child: Column(
-
-          mainAxisSize: MainAxisSize.min,
-
-          children: [
-
-            Icon(
-
-              isSelected ? iconSelected : iconUnselected,
-
-              size: 22,
-
-              color: isSelected ? AppColors.primary : AppColors.textLight,
-
-            ),
-
-            const SizedBox(height: 4),
-
-            Text(
-
-              label,
-
-              style: GoogleFonts.inter(
-
-                fontSize: 11,
-
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-
-                color: isSelected ? AppColors.primary : AppColors.textLight,
-
-              ),
-
-            ),
-
-          ],
-
-        ),
 
       ),
 
@@ -992,8 +920,6 @@ class _MoodChartPainter extends CustomPainter {
 
 
 
-    // Fill under curve
-
     final fillPath = Path.from(path)
 
       ..lineTo(size.width, size.height)
@@ -1028,8 +954,6 @@ class _MoodChartPainter extends CustomPainter {
 
 
 
-    // Stroke line
-
     final strokePaint = Paint()
 
       ..color = AppColors.primary
@@ -1045,8 +969,6 @@ class _MoodChartPainter extends CustomPainter {
     canvas.drawPath(path, strokePaint);
 
 
-
-    // Draw data point circles
 
     final dotPaint = Paint()..color = Colors.white;
 
