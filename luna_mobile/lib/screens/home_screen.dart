@@ -6,11 +6,69 @@ import '../theme/app_colors.dart';
 
 import '../widgets/glass_card.dart';
 
+import '../widgets/mood_checkin_bottom_sheet.dart';
 
 
-class HomeScreen extends StatelessWidget {
+
+class HomeScreen extends StatefulWidget {
 
   const HomeScreen({super.key});
+
+
+
+  @override
+
+  State<HomeScreen> createState() => _HomeScreenState();
+
+}
+
+
+
+class _HomeScreenState extends State<HomeScreen> {
+
+  String _currentMoodLabel = 'Tenang & Damai';
+
+  String _currentMoodEmoji = '😌';
+
+
+
+  void _openMoodCheckinSheet() {
+
+    showModalBottomSheet(
+
+      context: context,
+
+      isScrollControlled: true,
+
+      backgroundColor: Colors.transparent,
+
+      builder: (context) {
+
+        return MoodCheckinBottomSheet(
+
+          initialMoodLabel: _currentMoodLabel,
+
+          initialMoodEmoji: _currentMoodEmoji,
+
+          onSave: (newLabel, newEmoji) {
+
+            setState(() {
+
+              _currentMoodLabel = newLabel;
+
+              _currentMoodEmoji = newEmoji;
+
+            });
+
+          },
+
+        );
+
+      },
+
+    );
+
+  }
 
 
 
@@ -180,11 +238,13 @@ class HomeScreen extends StatelessWidget {
 
 
 
-                      // Current Mood Card
+                      // Current Mood Card (Interactive: Opens Mood Check-in Sheet)
 
                       GlassCard(
 
                         width: double.infinity,
+
+                        onTap: _openMoodCheckinSheet,
 
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
 
@@ -206,13 +266,13 @@ class HomeScreen extends StatelessWidget {
 
                               ),
 
-                              child: const Center(
+                              child: Center(
 
                                 child: Text(
 
-                                  '😌',
+                                  _currentMoodEmoji,
 
-                                  style: TextStyle(fontSize: 26),
+                                  style: const TextStyle(fontSize: 26),
 
                                 ),
 
@@ -250,7 +310,7 @@ class HomeScreen extends StatelessWidget {
 
                                   Text(
 
-                                    'Tenang & Damai',
+                                    _currentMoodLabel,
 
                                     style: GoogleFonts.inter(
 
@@ -270,11 +330,27 @@ class HomeScreen extends StatelessWidget {
 
                             ),
 
-                            const Icon(
+                            Container(
 
-                              Icons.chevron_right,
+                              padding: const EdgeInsets.all(6),
 
-                              color: AppColors.textLight,
+                              decoration: BoxDecoration(
+
+                                shape: BoxShape.circle,
+
+                                color: AppColors.primaryContainer,
+
+                              ),
+
+                              child: const Icon(
+
+                                Icons.edit_outlined,
+
+                                size: 18,
+
+                                color: AppColors.primary,
+
+                              ),
 
                             ),
 
