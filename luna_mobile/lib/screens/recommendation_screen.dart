@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 
+import '../widgets/floating_nav_bar.dart';
+
 import '../widgets/glass_card.dart';
 
 
@@ -24,7 +26,47 @@ class RecommendationScreen extends StatefulWidget {
 
 class _RecommendationScreenState extends State<RecommendationScreen> {
 
-  final int _currentIndex = 0; // Home/Recommendations active
+  int _currentIndex = 0; // Beranda/Rekomendasi aktif
+
+
+
+  void _onTabTapped(int index) {
+
+    setState(() {
+
+      _currentIndex = index;
+
+    });
+
+    switch (index) {
+
+      case 0:
+
+        Navigator.pushNamed(context, '/home');
+
+        break;
+
+      case 1:
+
+        Navigator.pushNamed(context, '/diary');
+
+        break;
+
+      case 2:
+
+        Navigator.pushNamed(context, '/monitoring');
+
+        break;
+
+      case 3:
+
+        Navigator.pushNamed(context, '/profile');
+
+        break;
+
+    }
+
+  }
 
 
 
@@ -64,269 +106,249 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
         child: SafeArea(
 
-          child: Column(
+          child: Stack(
 
             children: [
 
-              // Header Bar
+              Column(
 
-              Padding(
+                children: [
 
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                  // Header Bar
 
-                child: Row(
+                  Padding(
 
-                  children: [
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
 
-                    Image.asset(
+                    child: Row(
 
-                      'assets/images/luna_logo.png',
+                      children: [
 
-                      width: 32,
+                        Image.asset(
 
-                      height: 32,
+                          'assets/images/luna_logo.png',
 
-                      fit: BoxFit.contain,
+                          width: 32,
 
-                      errorBuilder: (context, error, stackTrace) {
+                          height: 32,
 
-                        return const Icon(
+                          fit: BoxFit.contain,
 
-                          Icons.nightlight_round,
+                          errorBuilder: (context, error, stackTrace) {
 
-                          size: 28,
+                            return const Icon(
+
+                              Icons.nightlight_round,
+
+                              size: 28,
+
+                              color: AppColors.primary,
+
+                            );
+
+                          },
+
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        Text(
+
+                          'LUNA',
+
+                          style: GoogleFonts.inter(
+
+                            fontSize: 16,
+
+                            fontWeight: FontWeight.w700,
+
+                            color: AppColors.primary,
+
+                          ),
+
+                        ),
+
+                        const Spacer(),
+
+                        IconButton(
+
+                          icon: const Icon(Icons.notifications_none_outlined),
 
                           color: AppColors.primary,
 
-                        );
-
-                      },
-
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    Text(
-
-                      'LUNA',
-
-                      style: GoogleFonts.inter(
-
-                        fontSize: 16,
-
-                        fontWeight: FontWeight.w700,
-
-                        color: AppColors.primary,
-
-                      ),
-
-                    ),
-
-                    const Spacer(),
-
-                    IconButton(
-
-                      icon: const Icon(Icons.notifications_none_outlined),
-
-                      color: AppColors.primary,
-
-                      onPressed: () {},
-
-                    ),
-
-                  ],
-
-                ),
-
-              ),
-
-
-
-              // Scrollable Content
-
-              Expanded(
-
-                child: SingleChildScrollView(
-
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-
-                  child: Column(
-
-                    crossAxisAlignment: CrossAxisAlignment.start,
-
-                    children: [
-
-                      // Title & Subtitle
-
-                      Text(
-
-                        'For Your Wellbeing',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 24,
-
-                          fontWeight: FontWeight.w800,
-
-                          color: AppColors.textPrimary,
+                          onPressed: () {},
 
                         ),
 
-                      ),
+                      ],
 
-                      const SizedBox(height: 6),
-
-                      Text(
-
-                        'Here are a few suggestions to help you ground yourself today.',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 14,
-
-                          color: AppColors.textSecondary,
-
-                          height: 1.4,
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 24),
-
-
-
-                      // Recommendation Card 1: Breathing Exercise
-
-                      _buildRecCard(
-
-                        icon: Icons.air,
-
-                        iconBg: const Color(0xFF8B93FF),
-
-                        title: 'Breathing Exercise',
-
-                        subtitle: 'Take a moment to center yourself. (3 mins)',
-
-                        onTap: () {},
-
-                      ),
-
-                      const SizedBox(height: 14),
-
-
-
-                      // Recommendation Card 2: Daily Reflection Question
-
-                      _buildRecCard(
-
-                        icon: Icons.edit_note,
-
-                        iconBg: const Color(0xFFC3B8FF),
-
-                        title: 'Daily Reflection Question',
-
-                        subtitle: 'What is one thing that brought you comfort today?',
-
-                        onTap: () {},
-
-                      ),
-
-                      const SizedBox(height: 14),
-
-
-
-                      // Recommendation Card 3: Self-Care
-
-                      _buildRecCard(
-
-                        icon: Icons.directions_walk,
-
-                        iconBg: const Color(0xFF489BB8),
-
-                        title: 'Self-Care',
-
-                        subtitle: 'Take a 10 min walk.',
-
-                        onTap: () {},
-
-                      ),
-
-                      const SizedBox(height: 14),
-
-
-
-                      // Recommendation Card 4: Therapy Exercise
-
-                      _buildRecCard(
-
-                        icon: Icons.psychology,
-
-                        iconBg: const Color(0xFF9EA3C0),
-
-                        title: 'Therapy Exercise',
-
-                        subtitle: 'Cognitive Reframing.',
-
-                        onTap: () {},
-
-                      ),
-
-                      const SizedBox(height: 24),
-
-                    ],
+                    ),
 
                   ),
 
-                ),
+
+
+                  // Scrollable Content
+
+                  Expanded(
+
+                    child: SingleChildScrollView(
+
+                      padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
+
+                      child: Column(
+
+                        crossAxisAlignment: CrossAxisAlignment.start,
+
+                        children: [
+
+                          // Title & Subtitle
+
+                          Text(
+
+                            'Panduan Ketenanganmu',
+
+                            style: GoogleFonts.inter(
+
+                              fontSize: 24,
+
+                              fontWeight: FontWeight.w800,
+
+                              color: AppColors.textPrimary,
+
+                            ),
+
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          Text(
+
+                            'Berikut beberapa saran sederhana untuk membantumu merasa lebih tenang hari ini.',
+
+                            style: GoogleFonts.inter(
+
+                              fontSize: 14,
+
+                              color: AppColors.textSecondary,
+
+                              height: 1.4,
+
+                            ),
+
+                          ),
+
+                          const SizedBox(height: 24),
+
+
+
+                          // Recommendation Card 1: Latihan Pernapasan
+
+                          _buildRecCard(
+
+                            icon: Icons.air,
+
+                            iconBg: const Color(0xFF8B93FF),
+
+                            title: 'Latihan Pernapasan',
+
+                            subtitle: 'Luangkan waktu sejenak untuk menenangkan diri. (3 menit)',
+
+                            onTap: () {},
+
+                          ),
+
+                          const SizedBox(height: 14),
+
+
+
+                          // Recommendation Card 2: Pertanyaan Refleksi Harian
+
+                          _buildRecCard(
+
+                            icon: Icons.edit_note,
+
+                            iconBg: const Color(0xFFC3B8FF),
+
+                            title: 'Pertanyaan Refleksi Harian',
+
+                            subtitle: 'Apa satu hal yang memberimu rasa nyaman hari ini?',
+
+                            onTap: () {},
+
+                          ),
+
+                          const SizedBox(height: 14),
+
+
+
+                          // Recommendation Card 3: Perawatan Diri
+
+                          _buildRecCard(
+
+                            icon: Icons.directions_walk,
+
+                            iconBg: const Color(0xFF489BB8),
+
+                            title: 'Perawatan Diri',
+
+                            subtitle: 'Jalan santai selama 10 menit.',
+
+                            onTap: () {},
+
+                          ),
+
+                          const SizedBox(height: 14),
+
+
+
+                          // Recommendation Card 4: Latihan Reframing Kognitif
+
+                          _buildRecCard(
+
+                            icon: Icons.psychology,
+
+                            iconBg: const Color(0xFF9EA3C0),
+
+                            title: 'Latihan Reframing Kognitif',
+
+                            subtitle: 'Melihat masalah dari sudut pandang yang lebih positif.',
+
+                            onTap: () {},
+
+                          ),
+
+                          const SizedBox(height: 24),
+
+                        ],
+
+                      ),
+
+                    ),
+
+                  ),
+
+                ],
 
               ),
 
 
 
-              // Bottom Navigation Bar with 5 Tabs and Persistent Labels
+              // Floating Bottom Navigation Bar Widget
 
-              Container(
+              Positioned(
 
-                padding: const EdgeInsets.fromLTRB(8, 12, 8, 14),
+                left: 0,
 
-                decoration: BoxDecoration(
+                right: 0,
 
-                  color: Colors.white.withValues(alpha: 0.95),
+                bottom: 0,
 
-                  boxShadow: [
+                child: FloatingNavBar(
 
-                    BoxShadow(
+                  currentIndex: _currentIndex,
 
-                      color: Colors.black.withValues(alpha: 0.05),
-
-                      blurRadius: 20,
-
-                      offset: const Offset(0, -4),
-
-                    ),
-
-                  ],
-
-                ),
-
-                child: Row(
-
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-                  children: [
-
-                    _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home', route: '/home'),
-
-                    _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble, 'Chat', route: '/chat'),
-
-                    _buildNavItem(2, Icons.menu_book_outlined, Icons.menu_book, 'Diary', route: '/diary'),
-
-                    _buildNavItem(3, Icons.show_chart_outlined, Icons.show_chart, 'Trends', route: '/monitoring'),
-
-                    _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile', route: '/profile'),
-
-                  ],
+                  onTap: _onTabTapped,
 
                 ),
 
@@ -453,92 +475,6 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
           ),
 
         ],
-
-      ),
-
-    );
-
-  }
-
-
-
-  Widget _buildNavItem(
-
-    int index,
-
-    IconData iconUnselected,
-
-    IconData iconSelected,
-
-    String label, {
-
-    String? route,
-
-  }) {
-
-    final isSelected = _currentIndex == index;
-
-    return GestureDetector(
-
-      onTap: () {
-
-        if (route != null) {
-
-          Navigator.pushNamed(context, route);
-
-        }
-
-      },
-
-      child: Container(
-
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-
-        decoration: BoxDecoration(
-
-          color: isSelected ? AppColors.primaryContainer : Colors.transparent,
-
-          borderRadius: BorderRadius.circular(16),
-
-        ),
-
-        child: Column(
-
-          mainAxisSize: MainAxisSize.min,
-
-          children: [
-
-            Icon(
-
-              isSelected ? iconSelected : iconUnselected,
-
-              size: 22,
-
-              color: isSelected ? AppColors.primary : AppColors.textLight,
-
-            ),
-
-            const SizedBox(height: 4),
-
-            Text(
-
-              label,
-
-              style: GoogleFonts.inter(
-
-                fontSize: 11,
-
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-
-                color: isSelected ? AppColors.primary : AppColors.textLight,
-
-              ),
-
-            ),
-
-          ],
-
-        ),
 
       ),
 

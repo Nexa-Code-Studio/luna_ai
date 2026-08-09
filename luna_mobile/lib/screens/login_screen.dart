@@ -10,65 +10,105 @@ import '../widgets/custom_text_field.dart';
 
 import '../widgets/glass_card.dart';
 
+
+
 class LoginScreen extends StatelessWidget {
 
   const LoginScreen({super.key});
 
+
+
   @override
+
   Widget build(BuildContext context) {
+
     return Scaffold(
+
       body: Container(
+
         width: double.infinity,
+
         height: double.infinity,
+
         decoration: const BoxDecoration(
+
           gradient: LinearGradient(
+
             colors: [
+
               Color(0xFFF3F5FF),
+
               Color(0xFFE9ECFF),
+
               Color(0xFFF8F9FE),
+
             ],
+
             begin: Alignment.topCenter,
+
             end: Alignment.bottomCenter,
+
           ),
+
         ),
+
         child: SafeArea(
+
           child: Center(
+
             child: SingleChildScrollView(
+
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+
               child: GlassCard(
+
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+
                 child: Column(
+
                   mainAxisSize: MainAxisSize.min,
+
                   children: [
+
                     // Brand Logo
+
                     Image.asset(
+
                       'assets/images/luna_logo.png',
+
                       width: 50,
+
                       height: 50,
+
                       errorBuilder: (context, error, stackTrace) {
+
                         return const Icon(
+
                           Icons.nightlight_round,
+
                           size: 44,
+
                           color: AppColors.primary,
+
                         );
+
                       },
+
                     ),
 
                     const SizedBox(height: 8),
 
                     Text(
 
-                      'LUNA',
+                      'Selamat Datang Kembali',
 
                       style: GoogleFonts.inter(
 
                         fontSize: 22,
 
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
 
-                        color: AppColors.primary,
-
-                        letterSpacing: 1.2,
+                        color: AppColors.textPrimary,
 
                       ),
 
@@ -78,13 +118,13 @@ class LoginScreen extends StatelessWidget {
 
                     Text(
 
-                      "Welcome back, we've missed you.",
+                      'Masuk untuk melanjutkan perjalanan ketenanganmu',
 
                       textAlign: TextAlign.center,
 
                       style: GoogleFonts.inter(
 
-                        fontSize: 14,
+                        fontSize: 13,
 
                         color: AppColors.textSecondary,
 
@@ -94,11 +134,13 @@ class LoginScreen extends StatelessWidget {
 
                     const SizedBox(height: 28),
 
-                    // Inputs
+
+
+                    // Email Field
 
                     const CustomPillTextField(
 
-                      hintText: 'Email',
+                      hintText: 'Alamat Email',
 
                       prefixIcon: Icons.email_outlined,
 
@@ -108,9 +150,13 @@ class LoginScreen extends StatelessWidget {
 
                     const SizedBox(height: 14),
 
+
+
+                    // Password Field
+
                     const CustomPillTextField(
 
-                      hintText: 'Password',
+                      hintText: 'Kata Sandi',
 
                       prefixIcon: Icons.lock_outline,
 
@@ -120,31 +166,25 @@ class LoginScreen extends StatelessWidget {
 
                     const SizedBox(height: 10),
 
+
+
+                    // Forgot Password Link
+
                     Align(
 
                       alignment: Alignment.centerRight,
 
-                      child: TextButton(
+                      child: GestureDetector(
 
-                        onPressed: () {},
-
-                        style: TextButton.styleFrom(
-
-                          padding: EdgeInsets.zero,
-
-                          minimumSize: Size.zero,
-
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-
-                        ),
+                        onTap: () {},
 
                         child: Text(
 
-                          'Forgot Password?',
+                          'Lupa Kata Sandi?',
 
                           style: GoogleFonts.inter(
 
-                            fontSize: 13,
+                            fontSize: 12,
 
                             fontWeight: FontWeight.w600,
 
@@ -158,11 +198,15 @@ class LoginScreen extends StatelessWidget {
 
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
+
+
+
+                    // Login Button
 
                     CustomPillButton(
 
-                      text: 'Login',
+                      text: 'Masuk',
 
                       onPressed: () {
 
@@ -174,27 +218,27 @@ class LoginScreen extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // Divider
+
+
+                    // Or Divider
 
                     Row(
 
                       children: [
 
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        const Expanded(child: Divider(color: Color(0xFFD6DCF5))),
 
                         Padding(
 
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
 
                           child: Text(
 
-                            'OR',
+                            'atau masuk dengan',
 
                             style: GoogleFonts.inter(
 
                               fontSize: 12,
-
-                              fontWeight: FontWeight.w600,
 
                               color: AppColors.textLight,
 
@@ -204,7 +248,7 @@ class LoginScreen extends StatelessWidget {
 
                         ),
 
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        const Expanded(child: Divider(color: Color(0xFFD6DCF5))),
 
                       ],
 
@@ -212,17 +256,39 @@ class LoginScreen extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // Social Buttons
+
+
+                    // Social Login Buttons Row
 
                     Row(
 
                       children: [
 
-                        SocialPillButton(type: 'google', onPressed: () {}),
+                        Expanded(
+
+                          child: SocialPillButton(
+
+                            type: 'google',
+
+                            onPressed: () {},
+
+                          ),
+
+                        ),
 
                         const SizedBox(width: 12),
 
-                        SocialPillButton(type: 'apple', onPressed: () {}),
+                        Expanded(
+
+                          child: SocialPillButton(
+
+                            type: 'apple',
+
+                            onPressed: () {},
+
+                          ),
+
+                        ),
 
                       ],
 
@@ -230,53 +296,57 @@ class LoginScreen extends StatelessWidget {
 
                     const SizedBox(height: 24),
 
-                    // Switch to Register
 
-                    GestureDetector(
 
-                      onTap: () {
+                    // Register Link Footer
 
-                        Navigator.pushReplacementNamed(context, '/register');
+                    Row(
 
-                      },
+                      mainAxisAlignment: MainAxisAlignment.center,
 
-                      child: RichText(
+                      children: [
 
-                        text: TextSpan(
+                        Text(
 
-                          text: 'New here? ',
+                          'Belum punya akun? ',
 
                           style: GoogleFonts.inter(
 
-                            fontSize: 14,
+                            fontSize: 13,
 
-                            color: AppColors.textLight,
+                            color: AppColors.textSecondary,
 
                           ),
 
-                          children: [
+                        ),
 
-                            TextSpan(
+                        GestureDetector(
 
-                              text: 'Create an account',
+                          onTap: () {
 
-                              style: GoogleFonts.inter(
+                            Navigator.pushReplacementNamed(context, '/register');
 
-                                fontSize: 14,
+                          },
 
-                                fontWeight: FontWeight.w600,
+                          child: Text(
 
-                                color: AppColors.primary,
+                            'Daftar',
 
-                              ),
+                            style: GoogleFonts.inter(
+
+                              fontSize: 13,
+
+                              fontWeight: FontWeight.w700,
+
+                              color: AppColors.primary,
 
                             ),
 
-                          ],
+                          ),
 
                         ),
 
-                      ),
+                      ],
 
                     ),
 

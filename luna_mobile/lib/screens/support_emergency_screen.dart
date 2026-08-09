@@ -110,7 +110,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
                 Text(
 
-                  'Take a deep breath.',
+                  'Tarik napas dalam-dalam.',
 
                   textAlign: TextAlign.center,
 
@@ -134,7 +134,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
                   child: Text(
 
-                    "LUNA noticed that you may need additional support right now. You don't have to navigate this alone.",
+                    "LUNA menyadari bahwa kamu mungkin membutuhkan dukungan ekstra saat ini. Kamu tidak harus menghadapi ini sendirian.",
 
                     textAlign: TextAlign.center,
 
@@ -156,7 +156,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
 
 
-                // Action Pill Card 1: Call a Trusted Person
+                // Action Pill Card 1: Hubungi Orang Terpercaya
 
                 _buildSupportPillCard(
 
@@ -166,7 +166,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
                   iconColor: const Color(0xFFE57373),
 
-                  title: 'Call a Trusted Person',
+                  title: 'Hubungi Orang Terpercaya',
 
                   onTap: () {},
 
@@ -176,7 +176,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
 
 
-                // Action Pill Card 2: Chat with a Professional
+                // Action Pill Card 2: Chat dengan Profesional
 
                 _buildSupportPillCard(
 
@@ -186,7 +186,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
                   iconColor: const Color(0xFF6C5CE7),
 
-                  title: 'Chat with a Professional',
+                  title: 'Chat dengan Konselor Profesional',
 
                   onTap: () {},
 
@@ -196,7 +196,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
 
 
-                // Action Pill Card 3: Crisis Hotlines
+                // Action Pill Card 3: Hotline Krisis
 
                 _buildSupportPillCard(
 
@@ -206,7 +206,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
                   iconColor: const Color(0xFF00CEC9),
 
-                  title: 'Crisis Hotlines',
+                  title: 'Hotline Krisis & Bantuan Darurat',
 
                   onTap: () {},
 
@@ -216,7 +216,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
 
 
-                // "I'm feeling better now" Bottom Button
+                // "Saya merasa lebih baik sekarang" Bottom Button
 
                 GestureDetector(
 
@@ -252,7 +252,7 @@ class SupportEmergencyScreen extends StatelessWidget {
 
                       child: Text(
 
-                        "I'm feeling better now",
+                        "Saya merasa lebih baik sekarang",
 
                         style: GoogleFonts.inter(
 

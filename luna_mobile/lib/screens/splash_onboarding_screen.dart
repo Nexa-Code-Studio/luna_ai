@@ -8,52 +8,98 @@ import '../widgets/custom_button.dart';
 
 import '../widgets/glass_card.dart';
 
+
+
 class SplashOnboardingScreen extends StatelessWidget {
 
   const SplashOnboardingScreen({super.key});
 
+
+
   @override
+
   Widget build(BuildContext context) {
+
     return Scaffold(
+
       body: Container(
+
         width: double.infinity,
+
         height: double.infinity,
+
         decoration: const BoxDecoration(
+
           gradient: LinearGradient(
+
             colors: [
+
               Color(0xFFF3F5FF),
+
               Color(0xFFE9ECFF),
+
               Color(0xFFF8F9FE),
+
             ],
+
             begin: Alignment.topCenter,
+
             end: Alignment.bottomCenter,
+
           ),
+
         ),
+
         child: SafeArea(
+
           child: LayoutBuilder(
+
             builder: (context, constraints) {
+
               return SingleChildScrollView(
+
                 child: ConstrainedBox(
+
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
+
                   child: IntrinsicHeight(
+
                     child: Padding(
+
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
+
                       child: Column(
+
                         children: [
+
                           const SizedBox(height: 16),
 
+
+
                           // Top Logo & Brand
+
                           Image.asset(
+
                             'assets/images/luna_logo.png',
+
                             width: 44,
+
                             height: 44,
+
                             errorBuilder: (context, error, stackTrace) {
+
                               return const Icon(
+
                                 Icons.nightlight_round,
+
                                 size: 40,
+
                                 color: AppColors.primary,
+
                               );
+
                             },
+
                           ),
 
                           const SizedBox(height: 4),
@@ -78,7 +124,7 @@ class SplashOnboardingScreen extends StatelessWidget {
 
                           Text(
 
-                            'MENTAL HEALTH',
+                            'PENDAMPING KESEHATAN MENTAL',
 
                             style: GoogleFonts.inter(
 
@@ -94,81 +140,85 @@ class SplashOnboardingScreen extends StatelessWidget {
 
                           ),
 
+
+
                           const Spacer(),
 
-                          const SizedBox(height: 12),
 
-                          // Center 3D Iridescent Sphere Graphic
 
-                          Container(
+                          // Center 3D Glowing Orb Visual
 
-                            width: 180,
+                          Center(
 
-                            height: 180,
+                            child: Container(
 
-                            decoration: BoxDecoration(
+                              width: 220,
 
-                              shape: BoxShape.circle,
+                              height: 220,
 
-                              gradient: const SweepGradient(
+                              decoration: BoxDecoration(
 
-                                colors: [
+                                shape: BoxShape.circle,
 
-                                  Color(0xFFFFB6C1),
+                                gradient: const SweepGradient(
 
-                                  Color(0xFFE2DAFF),
+                                  colors: [
 
-                                  Color(0xFFA7E6FF),
+                                    Color(0xFFFFB6C1),
 
-                                  Color(0xFF8B93FF),
+                                    Color(0xFFE2DAFF),
 
-                                  Color(0xFFFFB6C1),
+                                    Color(0xFFA7E6FF),
+
+                                    Color(0xFF8B93FF),
+
+                                    Color(0xFFFFB6C1),
+
+                                  ],
+
+                                ),
+
+                                boxShadow: [
+
+                                  BoxShadow(
+
+                                    color: AppColors.primary.withValues(alpha: 0.3),
+
+                                    blurRadius: 40,
+
+                                    spreadRadius: 5,
+
+                                  ),
 
                                 ],
 
                               ),
 
-                              boxShadow: [
+                              child: Container(
 
-                                BoxShadow(
+                                margin: const EdgeInsets.all(3),
 
-                                  color: AppColors.primary.withValues(alpha: 0.25),
+                                decoration: const BoxDecoration(
 
-                                  blurRadius: 30,
+                                  shape: BoxShape.circle,
 
-                                  spreadRadius: 4,
+                                  gradient: RadialGradient(
 
-                                  offset: const Offset(0, 8),
+                                    colors: [
 
-                                ),
+                                      Colors.white,
 
-                              ],
+                                      Color(0xFFEADBFF),
 
-                            ),
+                                      Color(0xFFA7E6FF),
 
-                            child: Container(
+                                    ],
 
-                              margin: const EdgeInsets.all(3),
+                                    center: Alignment(-0.3, -0.3),
 
-                              decoration: const BoxDecoration(
+                                    radius: 0.8,
 
-                                shape: BoxShape.circle,
-
-                                gradient: RadialGradient(
-
-                                  colors: [
-
-                                    Colors.white,
-
-                                    Color(0xFFE0DAFF),
-
-                                    Color(0xFF7A83FF),
-
-                                  ],
-
-                                  center: Alignment(-0.3, -0.3),
-
-                                  radius: 0.8,
+                                  ),
 
                                 ),
 
@@ -178,15 +228,17 @@ class SplashOnboardingScreen extends StatelessWidget {
 
                           ),
 
-                          const SizedBox(height: 12),
+
 
                           const Spacer(),
 
-                          // Bottom Glass Card
+
+
+                          // Bottom Glass Card Onboarding Content
 
                           GlassCard(
 
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(28.0),
 
                             child: Column(
 
@@ -194,7 +246,7 @@ class SplashOnboardingScreen extends StatelessWidget {
 
                                 Text(
 
-                                  'Welcome to Luna',
+                                  'Selamat Datang di LUNA',
 
                                   textAlign: TextAlign.center,
 
@@ -210,35 +262,37 @@ class SplashOnboardingScreen extends StatelessWidget {
 
                                 ),
 
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 12),
 
                                 Text(
 
-                                  "Your personal mental health companion. Take a deep breath, we're here for you.",
+                                  'Ruang aman tempat pikiranmu didengar, dipahami, dan dirawat tanpa penilaian.',
 
                                   textAlign: TextAlign.center,
 
                                   style: GoogleFonts.inter(
 
-                                    fontSize: 13,
+                                    fontSize: 14,
 
                                     fontWeight: FontWeight.w400,
 
                                     color: AppColors.textSecondary,
 
-                                    height: 1.4,
+                                    height: 1.5,
 
                                   ),
 
                                 ),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 24),
+
+
+
+                                // Primary Button: Start Your Journey
 
                                 CustomPillButton(
 
-                                  text: 'Start Your Journey',
-
-                                  suffixIcon: Icons.arrow_forward,
+                                  text: 'Mulai Perjalananmu',
 
                                   onPressed: () {
 
@@ -250,51 +304,57 @@ class SplashOnboardingScreen extends StatelessWidget {
 
                                 const SizedBox(height: 14),
 
-                                GestureDetector(
 
-                                  onTap: () {
 
-                                    Navigator.pushNamed(context, '/login');
+                                // Login Link
 
-                                  },
+                                Row(
 
-                                  child: RichText(
+                                  mainAxisAlignment: MainAxisAlignment.center,
 
-                                    text: TextSpan(
+                                  children: [
 
-                                      text: 'Already have an account? ',
+                                    Text(
+
+                                      'Sudah punya akun? ',
 
                                       style: GoogleFonts.inter(
 
                                         fontSize: 13,
 
-                                        color: AppColors.textLight,
+                                        color: AppColors.textSecondary,
 
                                       ),
 
-                                      children: [
+                                    ),
 
-                                        TextSpan(
+                                    GestureDetector(
 
-                                          text: 'Log in',
+                                      onTap: () {
 
-                                          style: GoogleFonts.inter(
+                                        Navigator.pushNamed(context, '/login');
 
-                                            fontSize: 13,
+                                      },
 
-                                            fontWeight: FontWeight.w600,
+                                      child: Text(
 
-                                            color: AppColors.primary,
+                                        'Masuk',
 
-                                          ),
+                                        style: GoogleFonts.inter(
+
+                                          fontSize: 13,
+
+                                          fontWeight: FontWeight.w700,
+
+                                          color: AppColors.primary,
 
                                         ),
 
-                                      ],
+                                      ),
 
                                     ),
 
-                                  ),
+                                  ],
 
                                 ),
 
@@ -304,7 +364,7 @@ class SplashOnboardingScreen extends StatelessWidget {
 
                           ),
 
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
 
                         ],
 
