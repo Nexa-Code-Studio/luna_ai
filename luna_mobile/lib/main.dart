@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 
-import 'theme/app_theme.dart';
-
-import 'screens/splash_onboarding_screen.dart';
-
-import 'screens/login_screen.dart';
-
-import 'screens/register_screen.dart';
-
-import 'screens/home_screen.dart';
-
 import 'screens/ai_conversation_screen.dart';
-
-import 'screens/voice_call_screen.dart';
 
 import 'screens/ai_diary_screen.dart';
 
+import 'screens/login_screen.dart';
+
+import 'screens/main_shell_screen.dart';
+
 import 'screens/monitoring_screen.dart';
+
+import 'screens/profile_screen.dart';
 
 import 'screens/recommendation_screen.dart';
 
+import 'screens/register_screen.dart';
+
+import 'screens/splash_onboarding_screen.dart';
+
 import 'screens/support_emergency_screen.dart';
 
-import 'screens/profile_screen.dart';
+import 'screens/voice_call_screen.dart';
+
+import 'theme/app_theme.dart';
 
 
 
@@ -62,7 +62,7 @@ class LunaApp extends StatelessWidget {
 
         '/register': (context) => const RegisterScreen(),
 
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => const MainShellScreen(),
 
         '/chat': (context) => const AiConversationScreen(),
 

@@ -92,7 +92,7 @@ class FloatingNavBar extends StatelessWidget {
 
               child: Container(
 
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
 
                 decoration: BoxDecoration(
 
@@ -112,71 +112,99 @@ class FloatingNavBar extends StatelessWidget {
 
                 child: Row(
 
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-
                   children: [
 
-                    // Tab 0: Beranda (Home)
+                    // Slot 0: Beranda (Home)
 
-                    _buildSideNavItem(
+                    Expanded(
 
-                      index: 0,
+                      flex: 1,
 
-                      iconUnselected: Icons.home_outlined,
+                      child: _buildSideNavItem(
 
-                      iconSelected: Icons.home,
+                        index: 0,
 
-                      label: 'Beranda',
+                        iconUnselected: Icons.home_outlined,
 
-                    ),
+                        iconSelected: Icons.home,
 
-                    // Tab 1: Jurnal (Diary)
+                        label: 'Beranda',
 
-                    _buildSideNavItem(
-
-                      index: 1,
-
-                      iconUnselected: Icons.menu_book_outlined,
-
-                      iconSelected: Icons.menu_book,
-
-                      label: 'Jurnal',
+                      ),
 
                     ),
 
+                    // Slot 1: Jurnal (Diary)
 
+                    Expanded(
 
-                    // Middle Gap for Floating FAB Button
+                      flex: 1,
 
-                    const SizedBox(width: 56),
+                      child: _buildSideNavItem(
 
+                        index: 1,
 
+                        iconUnselected: Icons.menu_book_outlined,
 
-                    // Tab 2: Tren (Monitoring)
+                        iconSelected: Icons.menu_book,
 
-                    _buildSideNavItem(
+                        label: 'Jurnal',
 
-                      index: 2,
-
-                      iconUnselected: Icons.show_chart_outlined,
-
-                      iconSelected: Icons.show_chart,
-
-                      label: 'Tren',
+                      ),
 
                     ),
 
-                    // Tab 3: Profil (Profile)
 
-                    _buildSideNavItem(
 
-                      index: 3,
+                    // Slot 2: Placeholder Space for Center FAB
 
-                      iconUnselected: Icons.person_outline,
+                    const Expanded(
 
-                      iconSelected: Icons.person,
+                      flex: 1,
 
-                      label: 'Profil',
+                      child: SizedBox(),
+
+                    ),
+
+
+
+                    // Slot 3: Tren (Monitoring)
+
+                    Expanded(
+
+                      flex: 1,
+
+                      child: _buildSideNavItem(
+
+                        index: 2,
+
+                        iconUnselected: Icons.show_chart_outlined,
+
+                        iconSelected: Icons.show_chart,
+
+                        label: 'Tren',
+
+                      ),
+
+                    ),
+
+                    // Slot 4: Profil (Profile)
+
+                    Expanded(
+
+                      flex: 1,
+
+                      child: _buildSideNavItem(
+
+                        index: 3,
+
+                        iconUnselected: Icons.person_outline,
+
+                        iconSelected: Icons.person,
+
+                        label: 'Profil',
+
+                      ),
 
                     ),
 
@@ -194,7 +222,7 @@ class FloatingNavBar extends StatelessWidget {
 
 
 
-        // Central Floating Circular Chat Action Button
+        // Central Floating Circular Chat Action Button (100% Mathematically Centered)
 
         Positioned(
 
@@ -210,9 +238,9 @@ class FloatingNavBar extends StatelessWidget {
 
             child: Container(
 
-              width: 60,
+              width: 58,
 
-              height: 60,
+              height: 58,
 
               decoration: BoxDecoration(
 
@@ -268,7 +296,7 @@ class FloatingNavBar extends StatelessWidget {
 
                 color: Colors.white,
 
-                size: 26,
+                size: 25,
 
               ),
 
@@ -308,7 +336,7 @@ class FloatingNavBar extends StatelessWidget {
 
       child: Container(
 
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(vertical: 6),
 
         decoration: BoxDecoration(
 
@@ -339,6 +367,10 @@ class FloatingNavBar extends StatelessWidget {
             Text(
 
               label,
+
+              maxLines: 1,
+
+              overflow: TextOverflow.ellipsis,
 
               style: GoogleFonts.inter(
 
