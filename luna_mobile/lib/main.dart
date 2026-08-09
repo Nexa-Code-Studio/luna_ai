@@ -22,6 +22,8 @@ import 'screens/recommendation_screen.dart';
 
 import 'screens/support_emergency_screen.dart';
 
+import 'screens/profile_screen.dart';
+
 
 
 void main() {
@@ -73,6 +75,8 @@ class LunaApp extends StatelessWidget {
         '/recommendation': (context) => const RecommendationScreen(),
 
         '/support': (context) => const SupportEmergencyScreen(),
+
+        '/profile': (context) => const ProfileScreen(),
 
       },
 
