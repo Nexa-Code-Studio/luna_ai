@@ -592,12 +592,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Bottom Navigation Bar
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(8, 12, 8, 14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: Colors.white.withValues(alpha: 0.95),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, -4),
                     ),
@@ -606,10 +606,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildNavItem(0, Icons.home, 'Home'),
-                    _buildNavItem(1, Icons.chat_bubble_outline, 'Chat', route: '/chat'),
-                    _buildNavItem(2, Icons.menu_book_outlined, 'Diary', route: '/diary'),
-                    _buildNavItem(3, Icons.show_chart, 'Trends', route: '/monitoring'),
+                    _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home'),
+                    _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble, 'Chat', route: '/chat'),
+                    _buildNavItem(2, Icons.menu_book_outlined, Icons.menu_book, 'Diary', route: '/diary'),
+                    _buildNavItem(3, Icons.show_chart_outlined, Icons.show_chart, 'Trends', route: '/monitoring'),
+                    _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile', route: '/profile'),
                   ],
                 ),
               ),
@@ -725,7 +726,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
 
-  Widget _buildNavItem(int index, IconData icon, String label, {String? route}) {
+  Widget _buildNavItem(
+    int index,
+    IconData iconUnselected,
+    IconData iconSelected,
+    String label, {
+    String? route,
+  }) {
 
     final isSelected = _currentIndex == index;
 
@@ -749,51 +756,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
       child: Container(
 
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
 
         decoration: BoxDecoration(
 
           color: isSelected ? AppColors.primaryContainer : Colors.transparent,
 
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(16),
 
         ),
 
-        child: Row(
+        child: Column(
+
+          mainAxisSize: MainAxisSize.min,
 
           children: [
 
             Icon(
 
-              icon,
+              isSelected ? iconSelected : iconUnselected,
 
-              size: 20,
+              size: 22,
 
               color: isSelected ? AppColors.primary : AppColors.textLight,
 
             ),
 
-            if (isSelected) ...[
+            const SizedBox(height: 4),
 
-              const SizedBox(width: 6),
+            Text(
 
-              Text(
+              label,
 
-                label,
+              style: GoogleFonts.inter(
 
-                style: GoogleFonts.inter(
+                fontSize: 11,
 
-                  fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
 
-                  fontWeight: FontWeight.w700,
-
-                  color: AppColors.primary,
-
-                ),
+                color: isSelected ? AppColors.primary : AppColors.textLight,
 
               ),
 
-            ],
+            ),
 
           ],
 
@@ -804,6 +809,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
   }
-
 }
 
