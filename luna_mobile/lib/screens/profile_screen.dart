@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 
+import '../widgets/emergency_contact_bottom_sheet.dart';
+
 import '../widgets/glass_card.dart';
 
 
@@ -27,6 +29,160 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _memoryEnabled = true;
 
   bool _notificationsEnabled = true;
+
+
+
+  String _emergencyName = 'Ibu';
+
+  String _emergencyRelation = 'Orang Tua';
+
+  String _emergencyPhone = '+62 812-3456-7890';
+
+
+
+  void _openEmergencyContactSheet() {
+
+    showModalBottomSheet(
+
+      context: context,
+
+      isScrollControlled: true,
+
+      backgroundColor: Colors.transparent,
+
+      builder: (context) {
+
+        return EmergencyContactBottomSheet(
+
+          initialName: _emergencyName,
+
+          initialRelation: _emergencyRelation,
+
+          initialPhone: _emergencyPhone,
+
+          onSave: (newName, newRelation, newPhone) {
+
+            setState(() {
+
+              _emergencyName = newName;
+
+              _emergencyRelation = newRelation;
+
+              _emergencyPhone = newPhone;
+
+            });
+
+          },
+
+        );
+
+      },
+
+    );
+
+  }
+
+
+
+  void _showDeleteMemoryConfirmationDialog() {
+
+    showDialog(
+
+      context: context,
+
+      builder: (context) {
+
+        return AlertDialog(
+
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+
+          title: Text(
+
+            'Hapus Memori AI?',
+
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+
+          ),
+
+          content: Text(
+
+            'Tindakan ini akan menghapus semua riwayat ritem emosional, konteks preferensi, dan memori percakapan yang dipelajari LUNA. Tindakan ini tidak dapat dibatalkan.',
+
+            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+
+          ),
+
+          actions: [
+
+            TextButton(
+
+              onPressed: () => Navigator.pop(context),
+
+              child: Text(
+
+                'Batal',
+
+                style: GoogleFonts.inter(color: AppColors.textSecondary),
+
+              ),
+
+            ),
+
+            ElevatedButton(
+
+              style: ElevatedButton.styleFrom(
+
+                backgroundColor: Colors.redAccent,
+
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+
+              ),
+
+              onPressed: () {
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+
+                  SnackBar(
+
+                    content: Text(
+
+                      'Catatan memori AI berhasil dihapus.',
+
+                      style: GoogleFonts.inter(),
+
+                    ),
+
+                    backgroundColor: Colors.redAccent,
+
+                    behavior: SnackBarBehavior.floating,
+
+                  ),
+
+                );
+
+              },
+
+              child: Text(
+
+                'Ya, Hapus Memori',
+
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+
+              ),
+
+            ),
+
+          ],
+
+        );
+
+      },
+
+    );
+
+  }
 
 
 
@@ -386,7 +542,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                               ),
 
-                              onTap: () {},
+                              onTap: _showDeleteMemoryConfirmationDialog,
 
                             ),
 
@@ -454,7 +610,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                               subtitle: Text(
 
-                                'Ibu (+62 812-3456-7890)',
+                                '$_emergencyName ($_emergencyPhone)',
 
                                 style: GoogleFonts.inter(
 
@@ -468,7 +624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                               trailing: const Icon(Icons.edit_outlined, size: 18),
 
-                              onTap: () {},
+                              onTap: _openEmergencyContactSheet,
 
                             ),
 
@@ -632,11 +788,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 
 
-                      // Log Out Button
+                      // Red Outlined Logout Pill Button
 
-                      Center(
+                      SizedBox(
 
-                        child: TextButton.icon(
+                        width: double.infinity,
+
+                        height: 52,
+
+                        child: OutlinedButton.icon(
 
                           onPressed: () {
 
@@ -644,7 +804,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           },
 
-                          icon: const Icon(Icons.logout, color: Colors.redAccent, size: 20),
+                          style: OutlinedButton.styleFrom(
+
+                            foregroundColor: Colors.redAccent,
+
+                            side: const BorderSide(color: Colors.redAccent, width: 1.5),
+
+                            shape: RoundedRectangleBorder(
+
+                              borderRadius: BorderRadius.circular(999),
+
+                            ),
+
+                          ),
+
+                          icon: const Icon(Icons.logout, size: 20),
 
                           label: Text(
 
@@ -652,11 +826,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                             style: GoogleFonts.inter(
 
-                              fontSize: 14,
+                              fontSize: 15,
 
                               fontWeight: FontWeight.w700,
-
-                              color: Colors.redAccent,
 
                             ),
 
