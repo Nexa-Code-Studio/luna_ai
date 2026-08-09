@@ -4,67 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 
-import '../widgets/floating_nav_bar.dart';
-
 import '../widgets/glass_card.dart';
 
 
 
-class AiDiaryScreen extends StatefulWidget {
+class AiDiaryScreen extends StatelessWidget {
 
   const AiDiaryScreen({super.key});
-
-
-
-  @override
-
-  State<AiDiaryScreen> createState() => _AiDiaryScreenState();
-
-}
-
-
-
-class _AiDiaryScreenState extends State<AiDiaryScreen> {
-
-  int _currentIndex = 1; // Jurnal tab selected
-
-
-
-  void _onTabTapped(int index) {
-
-    setState(() {
-
-      _currentIndex = index;
-
-    });
-
-    switch (index) {
-
-      case 0:
-
-        Navigator.pushNamed(context, '/home');
-
-        break;
-
-      case 1:
-
-        break;
-
-      case 2:
-
-        Navigator.pushNamed(context, '/monitoring');
-
-        break;
-
-      case 3:
-
-        Navigator.pushNamed(context, '/profile');
-
-        break;
-
-    }
-
-  }
 
 
 
@@ -104,503 +50,473 @@ class _AiDiaryScreenState extends State<AiDiaryScreen> {
 
         child: SafeArea(
 
-          child: Stack(
+          child: Column(
 
             children: [
 
-              Column(
+              // Header Bar
 
-                children: [
+              Padding(
 
-                  // Header Bar
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
 
-                  Padding(
+                child: Row(
 
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                  children: [
 
-                    child: Row(
+                    Image.asset(
 
-                      children: [
+                      'assets/images/luna_logo.png',
 
-                        Image.asset(
+                      width: 32,
 
-                          'assets/images/luna_logo.png',
+                      height: 32,
 
-                          width: 32,
+                      fit: BoxFit.contain,
 
-                          height: 32,
+                      errorBuilder: (context, error, stackTrace) {
 
-                          fit: BoxFit.contain,
+                        return const Icon(
 
-                          errorBuilder: (context, error, stackTrace) {
+                          Icons.nightlight_round,
 
-                            return const Icon(
-
-                              Icons.nightlight_round,
-
-                              size: 28,
-
-                              color: AppColors.primary,
-
-                            );
-
-                          },
-
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        Text(
-
-                          'LUNA',
-
-                          style: GoogleFonts.inter(
-
-                            fontSize: 16,
-
-                            fontWeight: FontWeight.w700,
-
-                            color: AppColors.primary,
-
-                          ),
-
-                        ),
-
-                        const Spacer(),
-
-                        IconButton(
-
-                          icon: const Icon(Icons.notifications_none_outlined),
+                          size: 28,
 
                           color: AppColors.primary,
 
-                          onPressed: () {},
+                        );
 
-                        ),
-
-                      ],
+                      },
 
                     ),
 
-                  ),
+                    const SizedBox(width: 8),
 
+                    Text(
 
+                      'LUNA',
 
-                  // Scrollable Content
+                      style: GoogleFonts.inter(
 
-                  Expanded(
+                        fontSize: 16,
 
-                    child: SingleChildScrollView(
+                        fontWeight: FontWeight.w700,
 
-                      padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
-
-                      child: Column(
-
-                        children: [
-
-                          // Title & Date Header
-
-                          Text(
-
-                            'Jurnal Hari Ini',
-
-                            style: GoogleFonts.inter(
-
-                              fontSize: 24,
-
-                              fontWeight: FontWeight.w800,
-
-                              color: AppColors.textPrimary,
-
-                            ),
-
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          Text(
-
-                            '24 Oktober 2023',
-
-                            style: GoogleFonts.inter(
-
-                              fontSize: 14,
-
-                              color: AppColors.textSecondary,
-
-                            ),
-
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Mood Tag Pill
-
-                          Container(
-
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-
-                            decoration: BoxDecoration(
-
-                              color: const Color(0xFFEADBFF),
-
-                              borderRadius: BorderRadius.circular(999),
-
-                            ),
-
-                            child: Row(
-
-                              mainAxisSize: MainAxisSize.min,
-
-                              children: [
-
-                                const Icon(
-
-                                  Icons.spa_outlined,
-
-                                  size: 16,
-
-                                  color: AppColors.primary,
-
-                                ),
-
-                                const SizedBox(width: 6),
-
-                                Text(
-
-                                  'Tenang & Reflektif',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 13,
-
-                                    fontWeight: FontWeight.w600,
-
-                                    color: AppColors.primary,
-
-                                  ),
-
-                                ),
-
-                              ],
-
-                            ),
-
-                          ),
-
-                          const SizedBox(height: 20),
-
-
-
-                          // Card 1: AI INSIGHT
-
-                          GlassCard(
-
-                            width: double.infinity,
-
-                            padding: const EdgeInsets.all(20),
-
-                            child: Column(
-
-                              crossAxisAlignment: CrossAxisAlignment.start,
-
-                              children: [
-
-                                Row(
-
-                                  children: [
-
-                                    Container(
-
-                                      width: 36,
-
-                                      height: 36,
-
-                                      decoration: BoxDecoration(
-
-                                        color: AppColors.primary,
-
-                                        borderRadius: BorderRadius.circular(12),
-
-                                      ),
-
-                                      child: const Icon(
-
-                                        Icons.auto_awesome,
-
-                                        color: Colors.white,
-
-                                        size: 20,
-
-                                      ),
-
-                                    ),
-
-                                    const SizedBox(width: 10),
-
-                                    Text(
-
-                                      'WAWASAN AI',
-
-                                      style: GoogleFonts.inter(
-
-                                        fontSize: 12,
-
-                                        fontWeight: FontWeight.w700,
-
-                                        color: AppColors.primary,
-
-                                        letterSpacing: 0.8,
-
-                                      ),
-
-                                    ),
-
-                                  ],
-
-                                ),
-
-                                const SizedBox(height: 14),
-
-                                Text(
-
-                                  'Hari ini kamu merasa cemas tentang tanggung jawab akademik, tetapi menunjukkan motivasi yang kuat untuk menyelesaikan masalah.',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 14,
-
-                                    color: AppColors.textPrimary,
-
-                                    height: 1.5,
-
-                                  ),
-
-                                ),
-
-                              ],
-
-                            ),
-
-                          ),
-
-                          const SizedBox(height: 16),
-
-
-
-                          // Card 2: IMPORTANT EVENTS
-
-                          GlassCard(
-
-                            width: double.infinity,
-
-                            padding: const EdgeInsets.all(20),
-
-                            child: Column(
-
-                              crossAxisAlignment: CrossAxisAlignment.start,
-
-                              children: [
-
-                                Row(
-
-                                  children: [
-
-                                    Container(
-
-                                      width: 36,
-
-                                      height: 36,
-
-                                      decoration: BoxDecoration(
-
-                                        color: const Color(0xFF489BB8),
-
-                                        borderRadius: BorderRadius.circular(12),
-
-                                      ),
-
-                                      child: const Icon(
-
-                                        Icons.calendar_today_outlined,
-
-                                        color: Colors.white,
-
-                                        size: 18,
-
-                                      ),
-
-                                    ),
-
-                                    const SizedBox(width: 10),
-
-                                    Text(
-
-                                      'PERISTIWA PENTING',
-
-                                      style: GoogleFonts.inter(
-
-                                        fontSize: 12,
-
-                                        fontWeight: FontWeight.w700,
-
-                                        color: const Color(0xFF20667B),
-
-                                        letterSpacing: 0.8,
-
-                                      ),
-
-                                    ),
-
-                                  ],
-
-                                ),
-
-                                const SizedBox(height: 14),
-
-                                _buildBulletItem('Sesi belajar pagi untuk persiapan ujian tengah semester'),
-
-                                const SizedBox(height: 8),
-
-                                _buildBulletItem('Minum kopi & mengobrol hangat dengan Sarah'),
-
-                                const SizedBox(height: 8),
-
-                                _buildBulletItem('Menyelesaikan review materi Bab 4'),
-
-                              ],
-
-                            ),
-
-                          ),
-
-                          const SizedBox(height: 16),
-
-
-
-                          // Card 3: EMOTIONAL REFLECTION
-
-                          GlassCard(
-
-                            width: double.infinity,
-
-                            padding: const EdgeInsets.all(20),
-
-                            child: Column(
-
-                              crossAxisAlignment: CrossAxisAlignment.start,
-
-                              children: [
-
-                                Row(
-
-                                  children: [
-
-                                    Container(
-
-                                      width: 36,
-
-                                      height: 36,
-
-                                      decoration: BoxDecoration(
-
-                                        color: const Color(0xFF605A79),
-
-                                        borderRadius: BorderRadius.circular(12),
-
-                                      ),
-
-                                      child: const Icon(
-
-                                        Icons.psychology_outlined,
-
-                                        color: Colors.white,
-
-                                        size: 20,
-
-                                      ),
-
-                                    ),
-
-                                    const SizedBox(width: 10),
-
-                                    Text(
-
-                                      'REFLEKSI EMOSIONAL',
-
-                                      style: GoogleFonts.inter(
-
-                                        fontSize: 12,
-
-                                        fontWeight: FontWeight.w700,
-
-                                        color: const Color(0xFF605A79),
-
-                                        letterSpacing: 0.8,
-
-                                      ),
-
-                                    ),
-
-                                  ],
-
-                                ),
-
-                                const SizedBox(height: 14),
-
-                                Text(
-
-                                  'Meskipun memulai hari dengan rasa gugup menghadapi ujian, membagi tugas menjadi bagian-bagian kecil sangat membantu. Saya menemukan ketenangan saat jalan santai di sore hari, menyadari bahwa proses lebih berharga daripada kesempurnaan.',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 14,
-
-                                    color: AppColors.textPrimary,
-
-                                    height: 1.5,
-
-                                  ),
-
-                                ),
-
-                              ],
-
-                            ),
-
-                          ),
-
-                          const SizedBox(height: 24),
-
-                        ],
+                        color: AppColors.primary,
 
                       ),
 
                     ),
 
-                  ),
+                    const Spacer(),
 
-                ],
+                    IconButton(
+
+                      icon: const Icon(Icons.notifications_none_outlined),
+
+                      color: AppColors.primary,
+
+                      onPressed: () {},
+
+                    ),
+
+                  ],
+
+                ),
 
               ),
 
 
 
-              // Floating Bottom Navigation Bar Widget
+              // Scrollable Content
 
-              Positioned(
+              Expanded(
 
-                left: 0,
+                child: SingleChildScrollView(
 
-                right: 0,
+                  padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
 
-                bottom: 0,
+                  child: Column(
 
-                child: FloatingNavBar(
+                    children: [
 
-                  currentIndex: _currentIndex,
+                      // Title & Date Header
 
-                  onTap: _onTabTapped,
+                      Text(
+
+                        'Jurnal Hari Ini',
+
+                        style: GoogleFonts.inter(
+
+                          fontSize: 24,
+
+                          fontWeight: FontWeight.w800,
+
+                          color: AppColors.textPrimary,
+
+                        ),
+
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+
+                        '24 Oktober 2023',
+
+                        style: GoogleFonts.inter(
+
+                          fontSize: 14,
+
+                          color: AppColors.textSecondary,
+
+                        ),
+
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Mood Tag Pill
+
+                      Container(
+
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+
+                        decoration: BoxDecoration(
+
+                          color: const Color(0xFFEADBFF),
+
+                          borderRadius: BorderRadius.circular(999),
+
+                        ),
+
+                        child: Row(
+
+                          mainAxisSize: MainAxisSize.min,
+
+                          children: [
+
+                            const Icon(
+
+                              Icons.spa_outlined,
+
+                              size: 16,
+
+                              color: AppColors.primary,
+
+                            ),
+
+                            const SizedBox(width: 6),
+
+                            Text(
+
+                              'Tenang & Reflektif',
+
+                              style: GoogleFonts.inter(
+
+                                fontSize: 13,
+
+                                fontWeight: FontWeight.w600,
+
+                                color: AppColors.primary,
+
+                              ),
+
+                            ),
+
+                          ],
+
+                        ),
+
+                      ),
+
+                      const SizedBox(height: 20),
+
+
+
+                      // Card 1: AI INSIGHT
+
+                      GlassCard(
+
+                        width: double.infinity,
+
+                        padding: const EdgeInsets.all(20),
+
+                        child: Column(
+
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: [
+
+                            Row(
+
+                              children: [
+
+                                Container(
+
+                                  width: 36,
+
+                                  height: 36,
+
+                                  decoration: BoxDecoration(
+
+                                    color: AppColors.primary,
+
+                                    borderRadius: BorderRadius.circular(12),
+
+                                  ),
+
+                                  child: const Icon(
+
+                                    Icons.auto_awesome,
+
+                                    color: Colors.white,
+
+                                    size: 20,
+
+                                  ),
+
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Text(
+
+                                  'WAWASAN AI',
+
+                                  style: GoogleFonts.inter(
+
+                                    fontSize: 12,
+
+                                    fontWeight: FontWeight.w700,
+
+                                    color: AppColors.primary,
+
+                                    letterSpacing: 0.8,
+
+                                  ),
+
+                                ),
+
+                              ],
+
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            Text(
+
+                              'Hari ini kamu merasa cemas tentang tanggung jawab akademik, tetapi menunjukkan motivasi yang kuat untuk menyelesaikan masalah.',
+
+                              style: GoogleFonts.inter(
+
+                                fontSize: 14,
+
+                                color: AppColors.textPrimary,
+
+                                height: 1.5,
+
+                              ),
+
+                            ),
+
+                          ],
+
+                        ),
+
+                      ),
+
+                      const SizedBox(height: 16),
+
+
+
+                      // Card 2: IMPORTANT EVENTS
+
+                      GlassCard(
+
+                        width: double.infinity,
+
+                        padding: const EdgeInsets.all(20),
+
+                        child: Column(
+
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: [
+
+                            Row(
+
+                              children: [
+
+                                Container(
+
+                                  width: 36,
+
+                                  height: 36,
+
+                                  decoration: BoxDecoration(
+
+                                    color: const Color(0xFF489BB8),
+
+                                    borderRadius: BorderRadius.circular(12),
+
+                                  ),
+
+                                  child: const Icon(
+
+                                    Icons.calendar_today_outlined,
+
+                                    color: Colors.white,
+
+                                    size: 18,
+
+                                  ),
+
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Text(
+
+                                  'PERISTIWA PENTING',
+
+                                  style: GoogleFonts.inter(
+
+                                    fontSize: 12,
+
+                                    fontWeight: FontWeight.w700,
+
+                                    color: const Color(0xFF20667B),
+
+                                    letterSpacing: 0.8,
+
+                                  ),
+
+                                ),
+
+                              ],
+
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            _buildBulletItem('Sesi belajar pagi untuk persiapan ujian tengah semester'),
+
+                            const SizedBox(height: 8),
+
+                            _buildBulletItem('Minum kopi & mengobrol hangat dengan Sarah'),
+
+                            const SizedBox(height: 8),
+
+                            _buildBulletItem('Menyelesaikan review materi Bab 4'),
+
+                          ],
+
+                        ),
+
+                      ),
+
+                      const SizedBox(height: 16),
+
+
+
+                      // Card 3: EMOTIONAL REFLECTION
+
+                      GlassCard(
+
+                        width: double.infinity,
+
+                        padding: const EdgeInsets.all(20),
+
+                        child: Column(
+
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: [
+
+                            Row(
+
+                              children: [
+
+                                Container(
+
+                                  width: 36,
+
+                                  height: 36,
+
+                                  decoration: BoxDecoration(
+
+                                    color: const Color(0xFF605A79),
+
+                                    borderRadius: BorderRadius.circular(12),
+
+                                  ),
+
+                                  child: const Icon(
+
+                                    Icons.psychology_outlined,
+
+                                    color: Colors.white,
+
+                                    size: 20,
+
+                                  ),
+
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Text(
+
+                                  'REFLEKSI EMOSIONAL',
+
+                                  style: GoogleFonts.inter(
+
+                                    fontSize: 12,
+
+                                    fontWeight: FontWeight.w700,
+
+                                    color: const Color(0xFF605A79),
+
+                                    letterSpacing: 0.8,
+
+                                  ),
+
+                                ),
+
+                              ],
+
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            Text(
+
+                              'Meskipun memulai hari dengan rasa gugup menghadapi ujian, membagi tugas menjadi bagian-bagian kecil sangat membantu. Saya menemukan ketenangan saat jalan santai di sore hari, menyadari bahwa proses lebih berharga daripada kesempurnaan.',
+
+                              style: GoogleFonts.inter(
+
+                                fontSize: 14,
+
+                                color: AppColors.textPrimary,
+
+                                height: 1.5,
+
+                              ),
+
+                            ),
+
+                          ],
+
+                        ),
+
+                      ),
+
+                      const SizedBox(height: 24),
+
+                    ],
+
+                  ),
 
                 ),
 
