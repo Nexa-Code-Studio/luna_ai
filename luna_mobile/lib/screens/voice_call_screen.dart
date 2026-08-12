@@ -1,6 +1,14 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
+
+import '../theme/app_colors.dart';
+
+import '../widgets/custom_button.dart';
+
+import '../widgets/glass_card.dart';
 
 
 
@@ -23,6 +31,372 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _isMuted = false;
 
   bool _isSpeakerOn = false;
+
+
+
+  void _showSessionSummaryBottomSheet() {
+
+    showModalBottomSheet(
+
+      context: context,
+
+      isScrollControlled: true,
+
+      backgroundColor: Colors.transparent,
+
+      builder: (context) {
+
+        return ClipRRect(
+
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+
+          child: BackdropFilter(
+
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+
+            child: Container(
+
+              padding: const EdgeInsets.all(24.0),
+
+              decoration: BoxDecoration(
+
+                color: Colors.white.withValues(alpha: 0.95),
+
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+
+                border: Border.all(
+
+                  color: Colors.white.withValues(alpha: 0.8),
+
+                  width: 1.5,
+
+                ),
+
+              ),
+
+              child: Column(
+
+                mainAxisSize: MainAxisSize.min,
+
+                crossAxisAlignment: CrossAxisAlignment.start,
+
+                children: [
+
+                  // Handle Bar
+
+                  Center(
+
+                    child: Container(
+
+                      width: 48,
+
+                      height: 5,
+
+                      decoration: BoxDecoration(
+
+                        color: Colors.grey.shade300,
+
+                        borderRadius: BorderRadius.circular(999),
+
+                      ),
+
+                    ),
+
+                  ),
+
+                  const SizedBox(height: 20),
+
+
+
+                  // Header Title
+
+                  Row(
+
+                    children: [
+
+                      Container(
+
+                        width: 42,
+
+                        height: 42,
+
+                        decoration: BoxDecoration(
+
+                          color: const Color(0xFFEADBFF),
+
+                          borderRadius: BorderRadius.circular(14),
+
+                        ),
+
+                        child: const Icon(
+
+                          Icons.auto_awesome,
+
+                          color: AppColors.primary,
+
+                          size: 22,
+
+                        ),
+
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      Expanded(
+
+                        child: Column(
+
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: [
+
+                            Text(
+
+                              'Sesi Suara Selesai 🍃',
+
+                              style: GoogleFonts.inter(
+
+                                fontSize: 18,
+
+                                fontWeight: FontWeight.w800,
+
+                                color: AppColors.textPrimary,
+
+                              ),
+
+                            ),
+
+                            Text(
+
+                              'Ringkasan singkat dari LUNA untuk sesi ini.',
+
+                              style: GoogleFonts.inter(
+
+                                fontSize: 12,
+
+                                color: AppColors.textSecondary,
+
+                              ),
+
+                            ),
+
+                          ],
+
+                        ),
+
+                      ),
+
+                    ],
+
+                  ),
+
+                  const SizedBox(height: 20),
+
+
+
+                  // Session Stats Summary Glass Card
+
+                  GlassCard(
+
+                    width: double.infinity,
+
+                    padding: const EdgeInsets.all(18),
+
+                    child: Column(
+
+                      children: [
+
+                        Row(
+
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                          children: [
+
+                            Column(
+
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+
+                                Text(
+
+                                  'DURASI SESI',
+
+                                  style: GoogleFonts.inter(
+
+                                    fontSize: 10,
+
+                                    fontWeight: FontWeight.w700,
+
+                                    color: AppColors.textLight,
+
+                                    letterSpacing: 0.8,
+
+                                  ),
+
+                                ),
+
+                                const SizedBox(height: 4),
+
+                                Text(
+
+                                  '03 : 12',
+
+                                  style: GoogleFonts.inter(
+
+                                    fontSize: 18,
+
+                                    fontWeight: FontWeight.w800,
+
+                                    color: AppColors.textPrimary,
+
+                                  ),
+
+                                ),
+
+                              ],
+
+                            ),
+
+                            Container(
+
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+
+                              decoration: BoxDecoration(
+
+                                color: const Color(0xFFEADBFF),
+
+                                borderRadius: BorderRadius.circular(999),
+
+                              ),
+
+                              child: Row(
+
+                                children: [
+
+                                  const Text('😌', style: TextStyle(fontSize: 16)),
+
+                                  const SizedBox(width: 6),
+
+                                  Text(
+
+                                    'Tenang & Reflektif',
+
+                                    style: GoogleFonts.inter(
+
+                                      fontSize: 12,
+
+                                      fontWeight: FontWeight.w600,
+
+                                      color: AppColors.primary,
+
+                                    ),
+
+                                  ),
+
+                                ],
+
+                              ),
+
+                            ),
+
+                          ],
+
+                        ),
+
+                        const Padding(
+
+                          padding: EdgeInsets.symmetric(vertical: 12.0),
+
+                          child: Divider(height: 1, color: Color(0xFFEBECEF)),
+
+                        ),
+
+                        Row(
+
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: [
+
+                            const Icon(
+
+                              Icons.format_quote_rounded,
+
+                              color: AppColors.primary,
+
+                              size: 20,
+
+                            ),
+
+                            const SizedBox(width: 8),
+
+                            Expanded(
+
+                              child: Text(
+
+                                'LUNA mencatat kamu merasa lebih tenang setelah menceritakan kecemasan ujianmu. Langkah yang sangat baik!',
+
+                                style: GoogleFonts.inter(
+
+                                  fontSize: 13,
+
+                                  color: AppColors.textPrimary,
+
+                                  height: 1.4,
+
+                                ),
+
+                              ),
+
+                            ),
+
+                          ],
+
+                        ),
+
+                      ],
+
+                    ),
+
+                  ),
+
+                  const SizedBox(height: 24),
+
+
+
+                  // Return to Home Button
+
+                  CustomPillButton(
+
+                    text: 'Selesai & Kembali ke Beranda',
+
+                    onPressed: () {
+
+                      Navigator.pop(context); // Close bottom sheet
+
+                      Navigator.pop(context); // Return to previous screen
+
+                    },
+
+                  ),
+
+                  const SizedBox(height: 16),
+
+                ],
+
+              ),
+
+            ),
+
+          ),
+
+        );
+
+      },
+
+    );
+
+  }
 
 
 
@@ -274,7 +648,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                 Text(
 
-                  'LUNA',
+                  'LUNA Voice',
 
                   style: GoogleFonts.inter(
 
@@ -314,7 +688,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
 
 
-                // Bottom Action Buttons Controls
+                // Bottom Action Control Buttons
 
                 Row(
 
@@ -370,15 +744,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
 
 
-                    // End Call Button (Red Circle)
+                    // End Session Button (Red Circle) -> Shows AI Summary Modal
 
                     GestureDetector(
 
-                      onTap: () {
-
-                        Navigator.pop(context);
-
-                      },
+                      onTap: _showSessionSummaryBottomSheet,
 
                       child: Container(
 
