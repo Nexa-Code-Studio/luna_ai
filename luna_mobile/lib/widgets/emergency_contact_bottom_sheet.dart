@@ -98,6 +98,10 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
   Widget build(BuildContext context) {
 
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+
+
     return ClipRRect(
 
       borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -108,7 +112,7 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
         child: Container(
 
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0 + bottomInset),
 
           decoration: BoxDecoration(
 
@@ -176,7 +180,7 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                       decoration: BoxDecoration(
 
-                        color: const Color(0xFFFFEADB),
+                        color: const Color(0xFFFFDCDD),
 
                         borderRadius: BorderRadius.circular(14),
 
@@ -184,9 +188,9 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                       child: const Icon(
 
-                        Icons.phone_outlined,
+                        Icons.contact_phone_outlined,
 
-                        color: Color(0xFFE65100),
+                        color: Color(0xFFD32F2F),
 
                         size: 22,
 
@@ -206,7 +210,7 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                           Text(
 
-                            'Pengaturan Kontak Darurat',
+                            'Kontak Darurat Utama',
 
                             style: GoogleFonts.inter(
 
@@ -222,7 +226,7 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                           Text(
 
-                            'Kelola orang terpercaya saat berada dalam situasi krisis.',
+                            'Orang terdekat yang akan dihubungi saat situasi krisis.',
 
                             style: GoogleFonts.inter(
 
@@ -248,15 +252,15 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
 
 
-                // 1. Primary Emergency Contact Section
+                // Field 1: Nama Lengkap Kontak Utama
 
                 Text(
 
-                  'KONTAK UTAMA (PRIORITAS 1)',
+                  'NAMA KONTAK UTAMA',
 
                   style: GoogleFonts.inter(
 
-                    fontSize: 11,
+                    fontSize: 10,
 
                     fontWeight: FontWeight.w700,
 
@@ -268,19 +272,41 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
 
-                _buildInputField(
-
-                  label: 'Nama Lengkap Kontak',
+                TextField(
 
                   controller: _nameController,
 
-                  icon: Icons.person_outline,
+                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+
+                  decoration: InputDecoration(
+
+                    hintText: 'Nama lengkap kontak...',
+
+                    filled: true,
+
+                    fillColor: const Color(0xFFF4F6FB),
+
+                    border: OutlineInputBorder(
+
+                      borderRadius: BorderRadius.circular(14),
+
+                      borderSide: BorderSide.none,
+
+                    ),
+
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+
+                  ),
 
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
+
+
+
+                // Field 2 & 3: Hubungan & Nomor Telepon
 
                 Row(
 
@@ -288,33 +314,135 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                     Expanded(
 
-                      child: _buildInputField(
+                      flex: 4,
 
-                        label: 'Hubungan',
+                      child: Column(
 
-                        controller: _relationController,
+                        crossAxisAlignment: CrossAxisAlignment.start,
 
-                        icon: Icons.family_restroom_outlined,
+                        children: [
+
+                          Text(
+
+                            'HUBUNGAN',
+
+                            style: GoogleFonts.inter(
+
+                              fontSize: 10,
+
+                              fontWeight: FontWeight.w700,
+
+                              color: AppColors.textLight,
+
+                              letterSpacing: 0.8,
+
+                            ),
+
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          TextField(
+
+                            controller: _relationController,
+
+                            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+
+                            decoration: InputDecoration(
+
+                              hintText: 'Ibu / Sahabat...',
+
+                              filled: true,
+
+                              fillColor: const Color(0xFFF4F6FB),
+
+                              border: OutlineInputBorder(
+
+                                borderRadius: BorderRadius.circular(14),
+
+                                borderSide: BorderSide.none,
+
+                              ),
+
+                              contentPadding:
+
+                                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+
+                            ),
+
+                          ),
+
+                        ],
 
                       ),
 
                     ),
 
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
 
                     Expanded(
 
-                      flex: 2,
+                      flex: 6,
 
-                      child: _buildInputField(
+                      child: Column(
 
-                        label: 'Nomor Telepon / WA',
+                        crossAxisAlignment: CrossAxisAlignment.start,
 
-                        controller: _phoneController,
+                        children: [
 
-                        icon: Icons.phone_android_outlined,
+                          Text(
 
-                        keyboardType: TextInputType.phone,
+                            'NOMOR HANDPHONE',
+
+                            style: GoogleFonts.inter(
+
+                              fontSize: 10,
+
+                              fontWeight: FontWeight.w700,
+
+                              color: AppColors.textLight,
+
+                              letterSpacing: 0.8,
+
+                            ),
+
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          TextField(
+
+                            controller: _phoneController,
+
+                            keyboardType: TextInputType.phone,
+
+                            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+
+                            decoration: InputDecoration(
+
+                              hintText: '+62 812-xxxx...',
+
+                              filled: true,
+
+                              fillColor: const Color(0xFFF4F6FB),
+
+                              border: OutlineInputBorder(
+
+                                borderRadius: BorderRadius.circular(14),
+
+                                borderSide: BorderSide.none,
+
+                              ),
+
+                              contentPadding:
+
+                                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+
+                            ),
+
+                          ),
+
+                        ],
 
                       ),
 
@@ -324,11 +452,11 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
 
 
-                // 2. Secondary Emergency Contact Section
+                // Field 4: Nomor Kontak Sekunder
 
                 Text(
 
@@ -336,7 +464,7 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                   style: GoogleFonts.inter(
 
-                    fontSize: 11,
+                    fontSize: 10,
 
                     fontWeight: FontWeight.w700,
 
@@ -348,71 +476,33 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
 
-                _buildInputField(
-
-                  label: 'Nomor Telepon Kontak Ke-2',
+                TextField(
 
                   controller: _secondaryPhoneController,
 
-                  icon: Icons.phone_forwarded_outlined,
-
                   keyboardType: TextInputType.phone,
 
-                ),
+                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
 
-                const SizedBox(height: 20),
+                  decoration: InputDecoration(
 
+                    hintText: 'Nomor telepon cadangan...',
 
+                    filled: true,
 
-                // 3. Test Call Button
+                    fillColor: const Color(0xFFF4F6FB),
 
-                OutlinedButton.icon(
+                    border: OutlineInputBorder(
 
-                  onPressed: () {
+                      borderRadius: BorderRadius.circular(14),
 
-                    ScaffoldMessenger.of(context).showSnackBar(
+                      borderSide: BorderSide.none,
 
-                      SnackBar(
+                    ),
 
-                        content: Text(
-
-                          'Simulasi panggilan darurat ke ${_phoneController.text}...',
-
-                          style: GoogleFonts.inter(),
-
-                        ),
-
-                        backgroundColor: AppColors.primary,
-
-                        behavior: SnackBarBehavior.floating,
-
-                      ),
-
-                    );
-
-                  },
-
-                  style: OutlinedButton.styleFrom(
-
-                    foregroundColor: const Color(0xFFE65100),
-
-                    side: const BorderSide(color: Color(0xFFE65100), width: 1.2),
-
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-
-                    minimumSize: const Size(double.infinity, 46),
-
-                  ),
-
-                  icon: const Icon(Icons.ring_volume, size: 18),
-
-                  label: Text(
-
-                    'Uji Panggilan Darurat',
-
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
 
                   ),
 
@@ -422,11 +512,11 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
 
 
-                // 4. Save Button
+                // Action Buttons: Simpan & Uji Panggilan Darurat
 
                 CustomPillButton(
 
-                  text: 'Simpan Kontak Darurat',
+                  text: 'Simpan Perubahan Kontak',
 
                   onPressed: () {
 
@@ -446,67 +536,43 @@ class _EmergencyContactBottomSheetState extends State<EmergencyContactBottomShee
 
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
+
+                CustomPillButton(
+
+                  text: 'Uji Panggilan Darurat',
+
+                  isOutline: true,
+
+                  onPressed: () {
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+
+                      SnackBar(
+
+                        content: Text(
+
+                          'Menghubungi ${_nameController.text.trim()} (${_phoneController.text.trim()})...',
+
+                        ),
+
+                        backgroundColor: const Color(0xFFD32F2F),
+
+                      ),
+
+                    );
+
+                  },
+
+                ),
+
+                const SizedBox(height: 12),
 
               ],
 
             ),
 
           ),
-
-        ),
-
-      ),
-
-    );
-
-  }
-
-
-
-  Widget _buildInputField({
-
-    required String label,
-
-    required TextEditingController controller,
-
-    required IconData icon,
-
-    TextInputType keyboardType = TextInputType.text,
-
-  }) {
-
-    return Container(
-
-      decoration: BoxDecoration(
-
-        color: const Color(0xFFF4F6FF),
-
-        borderRadius: BorderRadius.circular(16),
-
-        border: Border.all(color: Colors.grey.shade300),
-
-      ),
-
-      child: TextField(
-
-        controller: controller,
-
-        keyboardType: keyboardType,
-
-        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
-
-        decoration: InputDecoration(
-
-          prefixIcon: Icon(icon, size: 18, color: AppColors.primary),
-
-          labelText: label,
-
-          labelStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textLight),
-
-          border: InputBorder.none,
-
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
 
         ),
 

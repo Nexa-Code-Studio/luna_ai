@@ -548,6 +548,10 @@ class HomeScreen extends StatelessWidget {
 
                                       'Refleksi Pagi & Ketenangan',
 
+                                      maxLines: 1,
+
+                                      overflow: TextOverflow.ellipsis,
+
                                       style: GoogleFonts.inter(
 
                                         fontSize: 16,
@@ -680,45 +684,57 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(width: 14),
 
-          Column(
+          Expanded(
 
-            crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
 
-            children: [
+              crossAxisAlignment: CrossAxisAlignment.start,
 
-              Text(
+              children: [
 
-                title,
+                Text(
 
-                style: GoogleFonts.inter(
+                  title,
 
-                  fontSize: 15,
+                  maxLines: 1,
 
-                  fontWeight: FontWeight.w700,
+                  overflow: TextOverflow.ellipsis,
 
-                  color: AppColors.textPrimary,
+                  style: GoogleFonts.inter(
 
-                ),
+                    fontSize: 15,
 
-              ),
+                    fontWeight: FontWeight.w700,
 
-              const SizedBox(height: 2),
+                    color: AppColors.textPrimary,
 
-              Text(
-
-                subtitle,
-
-                style: GoogleFonts.inter(
-
-                  fontSize: 12,
-
-                  color: AppColors.textLight,
+                  ),
 
                 ),
 
-              ),
+                const SizedBox(height: 2),
 
-            ],
+                Text(
+
+                  subtitle,
+
+                  maxLines: 1,
+
+                  overflow: TextOverflow.ellipsis,
+
+                  style: GoogleFonts.inter(
+
+                    fontSize: 12,
+
+                    color: AppColors.textLight,
+
+                  ),
+
+                ),
+
+              ],
+
+            ),
 
           ),
 
