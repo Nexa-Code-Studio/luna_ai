@@ -8,7 +8,7 @@ import '../widgets/glass_card.dart';
 
 
 
-class MonitoringScreen extends StatelessWidget {
+class MonitoringScreen extends StatefulWidget {
 
   const MonitoringScreen({super.key});
 
@@ -16,7 +16,323 @@ class MonitoringScreen extends StatelessWidget {
 
   @override
 
+  State<MonitoringScreen> createState() => _MonitoringScreenState();
+
+}
+
+
+
+class _MonitoringScreenState extends State<MonitoringScreen> {
+
+  String _selectedPeriod = 'week'; // 'today', 'week', 'month'
+
+
+
+  final Map<String, Map<String, dynamic>> _periodData = {
+
+    'today': {
+
+      'periodLabel': 'Hari Ini',
+
+      'summary':
+
+          'Evaluasi 3 sesi suara hari ini menunjukkan kecemasan di pagi hari yang mereda di sore hari setelah jeda istirahat.',
+
+      'emotionalCenter': {
+
+        'status': 'Cukup (Kecenderungan Membaik)',
+
+        'level': 3, // 1 to 5 (1=Buruk, 5=Sangat Baik)
+
+        'gradientColors': [Color(0xFFFFF8E1), Color(0xFFFFE082)],
+
+        'textColor': Color(0xFFF57F17),
+
+        'description': 'Keseimbangan emosi mulai pulih di penghujung hari.',
+
+      },
+
+      'risks': [
+
+        {
+
+          'name': 'Stres Akademik',
+
+          'type': 'stress',
+
+          'percent': 0.70,
+
+          'levelLabel': 'Tinggi (70%)',
+
+          'color': Color(0xFFD32F2F),
+
+          'badgeBg': Color(0xFFFFDCDD),
+
+        },
+
+        {
+
+          'name': 'Anxiety (Kecemasan)',
+
+          'type': 'anxiety',
+
+          'percent': 0.65,
+
+          'levelLabel': 'Sedang-Tinggi (65%)',
+
+          'color': Color(0xFFE57373),
+
+          'badgeBg': Color(0xFFFFEBEE),
+
+        },
+
+      ],
+
+      'xLabels': ['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+
+      // 6 bars x 7 emotion segment ratios [happy, netral, fear, sadness, surprise, anger, disgusted]
+
+      'chartData': [
+
+        [0.1, 0.2, 0.5, 0.1, 0.05, 0.03, 0.02],
+
+        [0.05, 0.15, 0.60, 0.15, 0.03, 0.01, 0.01],
+
+        [0.2, 0.4, 0.3, 0.05, 0.03, 0.01, 0.01],
+
+        [0.4, 0.4, 0.1, 0.05, 0.03, 0.01, 0.01],
+
+        [0.3, 0.5, 0.1, 0.05, 0.03, 0.01, 0.01],
+
+        [0.2, 0.4, 0.2, 0.15, 0.03, 0.01, 0.01],
+
+      ],
+
+    },
+
+    'week': {
+
+      'periodLabel': 'Minggu Ini',
+
+      'summary':
+
+          'Tren minggu ini: Keseimbangan emosi meningkat 15%. Puncak ketenangan dicapai pada hari Rabu dan Kamis.',
+
+      'emotionalCenter': {
+
+        'status': 'Baik & Stabil',
+
+        'level': 4,
+
+        'gradientColors': [Color(0xFFE8F5E9), Color(0xFFA5D6A7)],
+
+        'textColor': Color(0xFF2E7D32),
+
+        'description': 'Resiliensi emosional dalam kondisi sangat prima.',
+
+      },
+
+      'risks': [
+
+        {
+
+          'name': 'Stres',
+
+          'type': 'stress',
+
+          'percent': 0.55,
+
+          'levelLabel': 'Sedang (55%)',
+
+          'color': Color(0xFFFB8C00),
+
+          'badgeBg': Color(0xFFFFF3E0),
+
+        },
+
+        {
+
+          'name': 'Anxiety',
+
+          'type': 'anxiety',
+
+          'percent': 0.40,
+
+          'levelLabel': 'Rendah-Sedang (40%)',
+
+          'color': Color(0xFF489BB8),
+
+          'badgeBg': Color(0xFFE0F4FB),
+
+        },
+
+        {
+
+          'name': 'Depresi',
+
+          'type': 'depresi',
+
+          'percent': 0.20,
+
+          'levelLabel': 'Rendah (20%)',
+
+          'color': Color(0xFF8B93FF),
+
+          'badgeBg': Color(0xFFEADBFF),
+
+        },
+
+      ],
+
+      'xLabels': ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+
+      'chartData': [
+
+        [0.1, 0.2, 0.4, 0.2, 0.05, 0.03, 0.02],
+
+        [0.2, 0.3, 0.3, 0.1, 0.05, 0.03, 0.02],
+
+        [0.5, 0.3, 0.1, 0.05, 0.03, 0.01, 0.01],
+
+        [0.6, 0.25, 0.08, 0.04, 0.01, 0.01, 0.01],
+
+        [0.4, 0.3, 0.15, 0.1, 0.03, 0.01, 0.01],
+
+        [0.5, 0.35, 0.05, 0.05, 0.03, 0.01, 0.01],
+
+        [0.3, 0.4, 0.15, 0.1, 0.03, 0.01, 0.01],
+
+      ],
+
+    },
+
+    'month': {
+
+      'periodLabel': 'Bulan Ini',
+
+      'summary':
+
+          'Analisis Bulan Oktober: Kestabilan emosional berada pada kategori Optimal dengan dominasi emosi Netral & Bahagia (62%).',
+
+      'emotionalCenter': {
+
+        'status': 'Sangat Baik (Optimal)',
+
+        'level': 5,
+
+        'gradientColors': [Color(0xFFC8E6C9), Color(0xFF81C784)],
+
+        'textColor': Color(0xFF1B5E20),
+
+        'description': 'Kesehatan mental dan emosi berada pada taraf terbaik bulan ini.',
+
+      },
+
+      'risks': [
+
+        {
+
+          'name': 'Stres',
+
+          'type': 'stress',
+
+          'percent': 0.35,
+
+          'levelLabel': 'Rendah (35%)',
+
+          'color': Color(0xFF4CAF50),
+
+          'badgeBg': Color(0xFFE8F5E9),
+
+        },
+
+        {
+
+          'name': 'Depresi',
+
+          'type': 'depresi',
+
+          'percent': 0.15,
+
+          'levelLabel': 'Sangat Rendah (15%)',
+
+          'color': Color(0xFF8B93FF),
+
+          'badgeBg': Color(0xFFEADBFF),
+
+        },
+
+      ],
+
+      'xLabels': ['M1 (Minggu 1)', 'M2 (Minggu 2)', 'M3 (Minggu 3)', 'M4 (Minggu 4)'],
+
+      'chartData': [
+
+        [0.25, 0.35, 0.25, 0.10, 0.03, 0.01, 0.01],
+
+        [0.40, 0.35, 0.15, 0.05, 0.03, 0.01, 0.01],
+
+        [0.55, 0.30, 0.10, 0.03, 0.01, 0.005, 0.005],
+
+        [0.60, 0.25, 0.08, 0.05, 0.01, 0.005, 0.005],
+
+      ],
+
+    },
+
+  };
+
+
+
+  // 7 Emotion parameters color mapping
+
+  final List<Map<String, dynamic>> _emotionLegend = const [
+
+    {'key': 'happy', 'name': 'Bahagia', 'emoji': '😃', 'color': Color(0xFFFFB800)},
+
+    {'key': 'netral', 'name': 'Netral', 'emoji': '😐', 'color': Color(0xFF489BB8)},
+
+    {'key': 'fear', 'name': 'Takut', 'emoji': '😨', 'color': Color(0xFF6C63FF)},
+
+    {'key': 'sadness', 'name': 'Sedih', 'emoji': '😔', 'color': Color(0xFF4A90E2)},
+
+    {'key': 'surprise', 'name': 'Terkejut', 'emoji': '😲', 'color': Color(0xFF9C27B0)},
+
+    {'key': 'anger', 'name': 'Marah', 'emoji': '😡', 'color': Color(0xFFE53935)},
+
+    {'key': 'disgusted', 'name': 'Jijik', 'emoji': '🤢', 'color': Color(0xFF4CAF50)},
+
+  ];
+
+
+
+  @override
+
   Widget build(BuildContext context) {
+
+    final currentData = _periodData[_selectedPeriod]!;
+
+    final emotionalCenter = currentData['emotionalCenter'] as Map<String, dynamic>;
+
+    final risks = List<Map<String, dynamic>>.from(currentData['risks']);
+
+    final xLabels = List<String>.from(currentData['xLabels']);
+
+    final chartData = List<List<double>>.from(
+
+      (currentData['chartData'] as List).map((e) => List<double>.from(e)),
+
+    );
+
+
+
+    final Color textColor = emotionalCenter['textColor'] as Color;
+
+    final List<Color> gradientColors = List<Color>.from(emotionalCenter['gradientColors']);
+
+    final int level = emotionalCenter['level'] as int;
+
+
 
     return Scaffold(
 
@@ -128,7 +444,7 @@ class MonitoringScreen extends StatelessWidget {
 
 
 
-              // Scrollable Content
+              // Scrollable Main Content
 
               Expanded(
 
@@ -146,11 +462,11 @@ class MonitoringScreen extends StatelessWidget {
 
                       Text(
 
-                        'Wawasan Ritem Emosional',
+                        'Ritem & Tren Emosional',
 
                         style: GoogleFonts.inter(
 
-                          fontSize: 22,
+                          fontSize: 24,
 
                           fontWeight: FontWeight.w800,
 
@@ -164,15 +480,41 @@ class MonitoringScreen extends StatelessWidget {
 
                       Text(
 
-                        'Gambaran lembut tentang dinamika perasaanmu minggu ini.',
+                        'Grafik dinamika 7 emosi dan tingkat risiko kesehatan mentalmu.',
 
                         style: GoogleFonts.inter(
 
-                          fontSize: 14,
+                          fontSize: 13,
 
                           color: AppColors.textSecondary,
 
+                          height: 1.4,
+
                         ),
+
+                      ),
+
+                      const SizedBox(height: 16),
+
+
+
+                      // PERIOD FILTER CHIPS (Hari Ini, Minggu Ini, Bulan Ini)
+
+                      Row(
+
+                        children: [
+
+                          _buildPeriodChip('today', 'Hari Ini'),
+
+                          const SizedBox(width: 8),
+
+                          _buildPeriodChip('week', 'Minggu Ini'),
+
+                          const SizedBox(width: 8),
+
+                          _buildPeriodChip('month', 'Bulan Ini'),
+
+                        ],
 
                       ),
 
@@ -180,7 +522,7 @@ class MonitoringScreen extends StatelessWidget {
 
 
 
-                      // Card 1: RINGKASAN MINGGUAN
+                      // 1. RINGKASAN AI (Filtered by Period)
 
                       GlassCard(
 
@@ -228,21 +570,61 @@ class MonitoringScreen extends StatelessWidget {
 
                                 children: [
 
-                                  Text(
+                                  Row(
 
-                                    'RINGKASAN MINGGUAN',
+                                    children: [
 
-                                    style: GoogleFonts.inter(
+                                      Text(
 
-                                      fontSize: 10,
+                                        'RINGKASAN AI',
 
-                                      fontWeight: FontWeight.w700,
+                                        style: GoogleFonts.inter(
 
-                                      color: AppColors.textLight,
+                                          fontSize: 10,
 
-                                      letterSpacing: 0.8,
+                                          fontWeight: FontWeight.w700,
 
-                                    ),
+                                          color: AppColors.textLight,
+
+                                          letterSpacing: 0.8,
+
+                                        ),
+
+                                      ),
+
+                                      const SizedBox(width: 6),
+
+                                      Container(
+
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+
+                                        decoration: BoxDecoration(
+
+                                          color: AppColors.primaryContainer,
+
+                                          borderRadius: BorderRadius.circular(999),
+
+                                        ),
+
+                                        child: Text(
+
+                                          currentData['periodLabel'],
+
+                                          style: GoogleFonts.inter(
+
+                                            fontSize: 9,
+
+                                            fontWeight: FontWeight.w700,
+
+                                            color: AppColors.primary,
+
+                                          ),
+
+                                        ),
+
+                                      ),
+
+                                    ],
 
                                   ),
 
@@ -250,11 +632,11 @@ class MonitoringScreen extends StatelessWidget {
 
                                   Text(
 
-                                    'Tren minggu ini: Kamu mulai menemukan keseimbangan setelah awal minggu yang sibuk.',
+                                    currentData['summary'],
 
                                     style: GoogleFonts.inter(
 
-                                      fontSize: 14,
+                                      fontSize: 13,
 
                                       fontWeight: FontWeight.w600,
 
@@ -282,7 +664,7 @@ class MonitoringScreen extends StatelessWidget {
 
 
 
-                      // Card 2: GRAFIK RITEM SUASANA HATI
+                      // 2. STACKED BAR CHART RITEM SUASANA HATI (7 Emosi)
 
                       GlassCard(
 
@@ -302,57 +684,39 @@ class MonitoringScreen extends StatelessWidget {
 
                               children: [
 
-                                Text(
+                                Column(
 
-                                  'RITEM SUASANA HATI',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 11,
-
-                                    fontWeight: FontWeight.w700,
-
-                                    color: AppColors.textLight,
-
-                                    letterSpacing: 0.8,
-
-                                  ),
-
-                                ),
-
-                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
 
                                   children: [
 
-                                    Container(
+                                    Text(
 
-                                      width: 8,
+                                      'STACKED BAR RITEM 7 EMOSI',
 
-                                      height: 8,
+                                      style: GoogleFonts.inter(
 
-                                      decoration: const BoxDecoration(
+                                        fontSize: 11,
 
-                                        shape: BoxShape.circle,
+                                        fontWeight: FontWeight.w700,
 
-                                        color: AppColors.primary,
+                                        color: AppColors.textLight,
+
+                                        letterSpacing: 0.8,
 
                                       ),
 
                                     ),
 
-                                    const SizedBox(width: 6),
-
                                     Text(
 
-                                      'Energi',
+                                      'Proporsi emosi per interval ${currentData['periodLabel']}',
 
                                       style: GoogleFonts.inter(
 
-                                        fontSize: 12,
+                                        fontSize: 11,
 
-                                        fontWeight: FontWeight.w600,
-
-                                        color: AppColors.textPrimary,
+                                        color: AppColors.textSecondary,
 
                                       ),
 
@@ -362,21 +726,61 @@ class MonitoringScreen extends StatelessWidget {
 
                                 ),
 
+                                Container(
+
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+
+                                  decoration: BoxDecoration(
+
+                                    color: const Color(0xFFEADBFF),
+
+                                    borderRadius: BorderRadius.circular(999),
+
+                                  ),
+
+                                  child: Text(
+
+                                    '7 PARAMETER',
+
+                                    style: GoogleFonts.inter(
+
+                                      fontSize: 10,
+
+                                      fontWeight: FontWeight.w700,
+
+                                      color: AppColors.primary,
+
+                                    ),
+
+                                  ),
+
+                                ),
+
                               ],
 
                             ),
 
                             const SizedBox(height: 20),
 
+
+
+                            // Custom Painted Vertical Stacked Bar Chart
+
                             SizedBox(
 
-                              height: 130,
+                              height: 160,
 
                               width: double.infinity,
 
                               child: CustomPaint(
 
-                                painter: _MoodChartPainter(),
+                                painter: _StackedEmotionChartPainter(
+
+                                  chartData: chartData,
+
+                                  emotionColors: _emotionLegend.map((e) => e['color'] as Color).toList(),
+
+                                ),
 
                               ),
 
@@ -384,27 +788,133 @@ class MonitoringScreen extends StatelessWidget {
 
                             const SizedBox(height: 12),
 
+
+
+                            // X-Axis Labels Row
+
                             Row(
 
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
 
-                              children: const [
+                              children: xLabels.map((lbl) {
 
-                                _DayLabel('Sen'),
+                                return Flexible(
 
-                                _DayLabel('Sel'),
+                                  child: Text(
 
-                                _DayLabel('Rab'),
+                                    lbl,
 
-                                _DayLabel('Kam'),
+                                    maxLines: 1,
 
-                                _DayLabel('Jum'),
+                                    overflow: TextOverflow.ellipsis,
 
-                                _DayLabel('Sab'),
+                                    style: GoogleFonts.inter(
 
-                                _DayLabel('Min'),
+                                      fontSize: 10,
 
-                              ],
+                                      fontWeight: FontWeight.w600,
+
+                                      color: AppColors.textLight,
+
+                                    ),
+
+                                  ),
+
+                                );
+
+                              }).toList(),
+
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            const Divider(height: 1, color: Color(0xFFEBECEF)),
+
+                            const SizedBox(height: 14),
+
+
+
+                            // Legend Key for 7 Emotions
+
+                            Text(
+
+                              'KUNCI WARNA EMOSI',
+
+                              style: GoogleFonts.inter(
+
+                                fontSize: 10,
+
+                                fontWeight: FontWeight.w700,
+
+                                color: AppColors.textLight,
+
+                                letterSpacing: 0.8,
+
+                              ),
+
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Wrap(
+
+                              spacing: 8,
+
+                              runSpacing: 6,
+
+                              children: _emotionLegend.map((item) {
+
+                                return Container(
+
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+
+                                  decoration: BoxDecoration(
+
+                                    color: (item['color'] as Color).withValues(alpha: 0.12),
+
+                                    borderRadius: BorderRadius.circular(999),
+
+                                    border: Border.all(
+
+                                      color: (item['color'] as Color).withValues(alpha: 0.4),
+
+                                    ),
+
+                                  ),
+
+                                  child: Row(
+
+                                    mainAxisSize: MainAxisSize.min,
+
+                                    children: [
+
+                                      Text(item['emoji'], style: const TextStyle(fontSize: 11)),
+
+                                      const SizedBox(width: 4),
+
+                                      Text(
+
+                                        item['name'],
+
+                                        style: GoogleFonts.inter(
+
+                                          fontSize: 10,
+
+                                          fontWeight: FontWeight.w700,
+
+                                          color: AppColors.textPrimary,
+
+                                        ),
+
+                                      ),
+
+                                    ],
+
+                                  ),
+
+                                );
+
+                              }).toList(),
 
                             ),
 
@@ -418,7 +928,7 @@ class MonitoringScreen extends StatelessWidget {
 
 
 
-                      // Card 3: TINGKAT STRES
+                      // 3. TINGKAT RISIKO PENYAKIT MENTAL (Stress, Anxiety, Depresi)
 
                       GlassCard(
 
@@ -438,121 +948,161 @@ class MonitoringScreen extends StatelessWidget {
 
                                 const Icon(
 
-                                  Icons.water_drop_outlined,
+                                  Icons.health_and_safety_outlined,
 
-                                  size: 18,
+                                  size: 20,
 
-                                  color: Color(0xFF605A79),
+                                  color: Color(0xFFD32F2F),
 
                                 ),
 
                                 const SizedBox(width: 8),
 
-                                Text(
+                                Expanded(
 
-                                  'TINGKAT STRES',
+                                  child: Text(
 
-                                  style: GoogleFonts.inter(
+                                    'TINGKAT RISIKO KESEHATAN MENTAL',
 
-                                    fontSize: 11,
+                                    style: GoogleFonts.inter(
 
-                                    fontWeight: FontWeight.w700,
+                                      fontSize: 11,
 
-                                    color: AppColors.textLight,
+                                      fontWeight: FontWeight.w700,
 
-                                    letterSpacing: 0.8,
+                                      color: AppColors.textLight,
+
+                                      letterSpacing: 0.8,
+
+                                    ),
 
                                   ),
 
                                 ),
 
                               ],
-
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            Row(
-
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-
-                              textBaseline: TextBaseline.alphabetic,
-
-                              children: [
-
-                                Text(
-
-                                  '70%',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 28,
-
-                                    fontWeight: FontWeight.w800,
-
-                                    color: AppColors.textPrimary,
-
-                                  ),
-
-                                ),
-
-                                const SizedBox(width: 8),
-
-                                Text(
-
-                                  'Meningkat',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 14,
-
-                                    fontWeight: FontWeight.w600,
-
-                                    color: AppColors.textSecondary,
-
-                                  ),
-
-                                ),
-
-                              ],
-
-                            ),
-
-                            const SizedBox(height: 6),
-
-                            Text(
-
-                              'Ingat untuk menarik napas dalam-dalam hari ini.',
-
-                              style: GoogleFonts.inter(
-
-                                fontSize: 13,
-
-                                color: AppColors.textLight,
-
-                              ),
 
                             ),
 
                             const SizedBox(height: 14),
 
-                            ClipRRect(
+                            ...risks.map((r) {
 
-                              borderRadius: BorderRadius.circular(999),
+                              final double pct = (r['percent'] as num).toDouble();
 
-                              child: LinearProgressIndicator(
+                              final Color barColor = r['color'] as Color;
 
-                                value: 0.7,
+                              final Color badgeBg = r['badgeBg'] as Color;
 
-                                minHeight: 8,
 
-                                backgroundColor: const Color(0xFFE2E4F0),
 
-                                valueColor: const AlwaysStoppedAnimation<Color>(
+                              return Padding(
 
-                                  Color(0xFF605A79),
+                                padding: const EdgeInsets.only(bottom: 14.0),
+
+                                child: Column(
+
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                                  children: [
+
+                                    Row(
+
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                                      children: [
+
+                                        Text(
+
+                                          r['name'],
+
+                                          style: GoogleFonts.inter(
+
+                                            fontSize: 14,
+
+                                            fontWeight: FontWeight.w700,
+
+                                            color: AppColors.textPrimary,
+
+                                          ),
+
+                                        ),
+
+                                        Container(
+
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+
+                                          decoration: BoxDecoration(
+
+                                            color: badgeBg,
+
+                                            borderRadius: BorderRadius.circular(999),
+
+                                          ),
+
+                                          child: Text(
+
+                                            r['levelLabel'],
+
+                                            style: GoogleFonts.inter(
+
+                                              fontSize: 11,
+
+                                              fontWeight: FontWeight.w700,
+
+                                              color: barColor,
+
+                                            ),
+
+                                          ),
+
+                                        ),
+
+                                      ],
+
+                                    ),
+
+                                    const SizedBox(height: 6),
+
+                                    ClipRRect(
+
+                                      borderRadius: BorderRadius.circular(999),
+
+                                      child: LinearProgressIndicator(
+
+                                        value: pct,
+
+                                        minHeight: 8,
+
+                                        backgroundColor: const Color(0xFFE2E4F0),
+
+                                        valueColor: AlwaysStoppedAnimation<Color>(barColor),
+
+                                      ),
+
+                                    ),
+
+                                  ],
 
                                 ),
+
+                              );
+
+                            }),
+
+                            const SizedBox(height: 4),
+
+                            Text(
+
+                              'LUNA merekomendasikan jeda istirahat teratur dan latihan pernapasan untuk menurunkan tingkat risiko.',
+
+                              style: GoogleFonts.inter(
+
+                                fontSize: 12,
+
+                                color: AppColors.textSecondary,
+
+                                height: 1.4,
 
                               ),
 
@@ -568,13 +1118,43 @@ class MonitoringScreen extends StatelessWidget {
 
 
 
-                      // Card 4: PUSAT EMOSIONAL
+                      // 4. PUSAT EMOSIONAL (Gradient Meter Hijau ke Merah)
 
-                      GlassCard(
+                      Container(
 
                         width: double.infinity,
 
                         padding: const EdgeInsets.all(20),
+
+                        decoration: BoxDecoration(
+
+                          gradient: LinearGradient(
+
+                            colors: gradientColors,
+
+                            begin: Alignment.topLeft,
+
+                            end: Alignment.bottomRight,
+
+                          ),
+
+                          borderRadius: BorderRadius.circular(24),
+
+                          boxShadow: [
+
+                            BoxShadow(
+
+                              color: gradientColors.last.withValues(alpha: 0.3),
+
+                              blurRadius: 16,
+
+                              offset: const Offset(0, 4),
+
+                            ),
+
+                          ],
+
+                        ),
 
                         child: Column(
 
@@ -586,13 +1166,13 @@ class MonitoringScreen extends StatelessWidget {
 
                               children: [
 
-                                const Icon(
+                                Icon(
 
-                                  Icons.balance,
+                                  Icons.tune_rounded,
 
-                                  size: 18,
+                                  size: 20,
 
-                                  color: Color(0xFF20667B),
+                                  color: textColor,
 
                                 ),
 
@@ -600,7 +1180,7 @@ class MonitoringScreen extends StatelessWidget {
 
                                 Text(
 
-                                  'PUSAT EMOSIONAL',
+                                  'PUSAT EMOSIONAL HARIAN',
 
                                   style: GoogleFonts.inter(
 
@@ -608,7 +1188,7 @@ class MonitoringScreen extends StatelessWidget {
 
                                     fontWeight: FontWeight.w700,
 
-                                    color: AppColors.textLight,
+                                    color: textColor.withValues(alpha: 0.8),
 
                                     letterSpacing: 0.8,
 
@@ -620,19 +1200,19 @@ class MonitoringScreen extends StatelessWidget {
 
                             ),
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
 
                             Text(
 
-                              'Baik',
+                              emotionalCenter['status'],
 
                               style: GoogleFonts.inter(
 
-                                fontSize: 24,
+                                fontSize: 20,
 
                                 fontWeight: FontWeight.w800,
 
-                                color: const Color(0xFF20667B),
+                                color: textColor,
 
                               ),
 
@@ -642,13 +1222,13 @@ class MonitoringScreen extends StatelessWidget {
 
                             Text(
 
-                              'Ketangguhan dirimu bersinar dengan baik.',
+                              emotionalCenter['description'],
 
                               style: GoogleFonts.inter(
 
-                                fontSize: 13,
+                                fontSize: 12,
 
-                                color: AppColors.textSecondary,
+                                color: textColor.withValues(alpha: 0.9),
 
                               ),
 
@@ -656,29 +1236,69 @@ class MonitoringScreen extends StatelessWidget {
 
                             const SizedBox(height: 16),
 
+
+
+                            // 5-Segment Level Pills (Green to Red Gradient Spectrum)
+
                             Row(
 
-                              children: [
+                              children: List.generate(5, (index) {
 
-                                _buildPill(isSelected: false, color: const Color(0xFFD6E2E8)),
+                                final segLevel = index + 1;
 
-                                const SizedBox(width: 8),
+                                final bool isSel = segLevel == level;
 
-                                _buildPill(isSelected: false, color: const Color(0xFFA1C6D4)),
+                                // Spectrum colors from Red (1/5 - Worst/Left) to Green (5/5 - Best/Right)
 
-                                const SizedBox(width: 8),
+                                final colors = const [
 
-                                _buildPill(isSelected: false, color: const Color(0xFF67A5BC)),
+                                  Color(0xFFD32F2F), // Red (Paling Kiri / Sangat Buruk)
 
-                                const SizedBox(width: 8),
+                                  Color(0xFFE57373), // Light Red (Buruk)
 
-                                _buildPill(isSelected: true, color: const Color(0xFF20667B)),
+                                  Color(0xFFFFB74D), // Amber/Orange (Cukup)
 
-                                const SizedBox(width: 8),
+                                  Color(0xFF81C784), // Light Green (Baik)
 
-                                _buildPill(isSelected: false, color: const Color(0xFFD6E2E8)),
+                                  Color(0xFF4CAF50), // Green (Paling Kanan / Sangat Baik)
 
-                              ],
+                                ];
+
+
+
+                                return Expanded(
+
+                                  child: Container(
+
+                                    margin: const EdgeInsets.symmetric(horizontal: 3),
+
+                                    height: 28,
+
+                                    decoration: BoxDecoration(
+
+                                      color: colors[index].withValues(alpha: isSel ? 1.0 : 0.4),
+
+                                      borderRadius: BorderRadius.circular(10),
+
+                                      border: isSel
+
+                                          ? Border.all(color: Colors.white, width: 2)
+
+                                          : null,
+
+                                    ),
+
+                                    child: isSel
+
+                                        ? const Icon(Icons.check, color: Colors.white, size: 16)
+
+                                        : null,
+
+                                  ),
+
+                                );
+
+                              }),
 
                             ),
 
@@ -712,28 +1332,76 @@ class MonitoringScreen extends StatelessWidget {
 
 
 
-  Widget _buildPill({required bool isSelected, required Color color}) {
+  Widget _buildPeriodChip(String id, String label) {
+
+    final isSelected = id == _selectedPeriod;
 
     return Expanded(
 
-      child: Container(
+      child: GestureDetector(
 
-        height: 32,
+        onTap: () {
 
-        decoration: BoxDecoration(
+          setState(() {
 
-          color: color,
+            _selectedPeriod = id;
 
-          borderRadius: BorderRadius.circular(12),
+          });
+
+        },
+
+        child: Container(
+
+          padding: const EdgeInsets.symmetric(vertical: 10),
+
+          decoration: BoxDecoration(
+
+            color: isSelected ? AppColors.primary : Colors.white.withValues(alpha: 0.9),
+
+            borderRadius: BorderRadius.circular(999),
+
+            boxShadow: isSelected
+
+                ? [
+
+                    BoxShadow(
+
+                      color: AppColors.primary.withValues(alpha: 0.3),
+
+                      blurRadius: 10,
+
+                      offset: const Offset(0, 4),
+
+                    ),
+
+                  ]
+
+                : null,
+
+          ),
+
+          child: Center(
+
+            child: Text(
+
+              label,
+
+              style: GoogleFonts.inter(
+
+                fontSize: 12,
+
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+
+              ),
+
+            ),
+
+          ),
 
         ),
 
-        child: isSelected
-
-            ? const Icon(Icons.check, color: Colors.white, size: 18)
-
-            : null,
-
       ),
 
     );
@@ -744,165 +1412,100 @@ class MonitoringScreen extends StatelessWidget {
 
 
 
-class _DayLabel extends StatelessWidget {
+/// Custom Painter for 7-Emotion Vertical Stacked Bar Chart
 
-  final String text;
+class _StackedEmotionChartPainter extends CustomPainter {
 
-  const _DayLabel(this.text);
+  final List<List<double>> chartData;
 
-
-
-  @override
-
-  Widget build(BuildContext context) {
-
-    return Text(
-
-      text,
-
-      style: GoogleFonts.inter(
-
-        fontSize: 11,
-
-        fontWeight: FontWeight.w500,
-
-        color: AppColors.textLight,
-
-      ),
-
-    );
-
-  }
-
-}
+  final List<Color> emotionColors;
 
 
 
-class _MoodChartPainter extends CustomPainter {
+  _StackedEmotionChartPainter({
+
+    required this.chartData,
+
+    required this.emotionColors,
+  });
+
+
 
   @override
 
   void paint(Canvas canvas, Size size) {
 
-    final points = [
+    if (chartData.isEmpty) return;
 
-      Offset(0, size.height * 0.5),
 
-      Offset(size.width * 0.16, size.height * 0.65),
 
-      Offset(size.width * 0.33, size.height * 0.2),
+    final int barCount = chartData.length;
 
-      Offset(size.width * 0.5, size.height * 0.25),
+    final double availableWidth = size.width;
 
-      Offset(size.width * 0.66, size.height * 0.45),
+    final double barWidth = (availableWidth / barCount) * 0.45;
 
-      Offset(size.width * 0.83, size.height * 0.25),
+    final double spacing = (availableWidth - (barWidth * barCount)) / (barCount + 1);
 
-      Offset(size.width, size.height * 0.1),
 
-    ];
 
+    for (int i = 0; i < barCount; i++) {
 
+      final segments = chartData[i];
 
-    final path = Path()..moveTo(points[0].dx, points[0].dy);
+      final double barLeft = spacing + i * (barWidth + spacing);
 
-    for (int i = 0; i < points.length - 1; i++) {
+      double currentBottom = size.height;
 
-      final p0 = points[i];
 
-      final p1 = points[i + 1];
 
-      final controlPoint1 = Offset(p0.dx + (p1.dx - p0.dx) / 2, p0.dy);
+      for (int j = 0; j < segments.length; j++) {
 
-      final controlPoint2 = Offset(p0.dx + (p1.dx - p0.dx) / 2, p1.dy);
+        final double ratio = segments[j];
 
-      path.cubicTo(
+        if (ratio <= 0) continue;
 
-        controlPoint1.dx,
 
-        controlPoint1.dy,
 
-        controlPoint2.dx,
+        final double segHeight = size.height * ratio;
 
-        controlPoint2.dy,
+        final double top = currentBottom - segHeight;
 
-        p1.dx,
 
-        p1.dy,
 
-      );
+        final rect = Rect.fromLTRB(barLeft, top, barLeft + barWidth, currentBottom);
 
-    }
+        final paint = Paint()
 
+          ..color = emotionColors[j % emotionColors.length]
 
+          ..style = PaintingStyle.fill;
 
-    final fillPath = Path.from(path)
 
-      ..lineTo(size.width, size.height)
 
-      ..lineTo(0, size.height)
+        // Draw rounded top segment if it's the top element
 
-      ..close();
+        final RRect rrect = RRect.fromRectAndCorners(
 
+          rect,
 
+          topLeft: Radius.circular(j == 0 ? 6 : 0),
 
-    final fillPaint = Paint()
+          topRight: Radius.circular(j == 0 ? 6 : 0),
 
-      ..shader = LinearGradient(
+          bottomLeft: Radius.circular(j == segments.length - 1 ? 6 : 0),
 
-        colors: [
+          bottomRight: Radius.circular(j == segments.length - 1 ? 6 : 0),
 
-          const Color(0xFF8B93FF).withValues(alpha: 0.4),
+        );
 
-          const Color(0xFF8B93FF).withValues(alpha: 0.05),
 
-        ],
 
-        begin: Alignment.topCenter,
+        canvas.drawRRect(rrect, paint);
 
-        end: Alignment.bottomCenter,
+        currentBottom = top;
 
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-
-
-    canvas.drawPath(fillPath, fillPaint);
-
-
-
-    final strokePaint = Paint()
-
-      ..color = AppColors.primary
-
-      ..strokeWidth = 3
-
-      ..style = PaintingStyle.stroke
-
-      ..strokeCap = StrokeCap.round;
-
-
-
-    canvas.drawPath(path, strokePaint);
-
-
-
-    final dotPaint = Paint()..color = Colors.white;
-
-    final dotBorderPaint = Paint()
-
-      ..color = AppColors.primary
-
-      ..strokeWidth = 2
-
-      ..style = PaintingStyle.stroke;
-
-
-
-    for (final p in points) {
-
-      canvas.drawCircle(p, 5, dotPaint);
-
-      canvas.drawCircle(p, 5, dotBorderPaint);
+      }
 
     }
 
@@ -912,7 +1515,7 @@ class _MoodChartPainter extends CustomPainter {
 
   @override
 
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 
 }
 
