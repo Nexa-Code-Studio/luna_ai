@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'screens/ai_conversation_screen.dart';
 
+import 'screens/ai_diary_detail_screen.dart';
+
 import 'screens/ai_diary_screen.dart';
 
 import 'screens/login_screen.dart';
@@ -69,6 +71,14 @@ class LunaApp extends StatelessWidget {
         '/voice_call': (context) => const VoiceCallScreen(),
 
         '/diary': (context) => const AiDiaryScreen(),
+
+        '/diary_detail': (context) {
+
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+          return AiDiaryDetailScreen(journalData: args);
+
+        },
 
         '/monitoring': (context) => const MonitoringScreen(),
 

@@ -270,6 +270,8 @@ class _MoodCheckinBottomSheetState extends State<MoodCheckinBottomSheet> {
 
   Widget build(BuildContext context) {
 
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return ClipRRect(
 
       borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -280,7 +282,7 @@ class _MoodCheckinBottomSheetState extends State<MoodCheckinBottomSheet> {
 
         child: Container(
 
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0 + bottomInset),
 
           decoration: BoxDecoration(
 

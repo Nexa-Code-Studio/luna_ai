@@ -62,6 +62,8 @@ class CustomPillButton extends StatelessWidget {
 
           shadowColor: AppColors.primary.withValues(alpha: 0.3),
 
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+
           shape: RoundedRectangleBorder(
 
             borderRadius: BorderRadius.circular(999),
@@ -82,17 +84,27 @@ class CustomPillButton extends StatelessWidget {
 
           children: [
 
-            Text(
+            Flexible(
 
-              text,
+              child: Text(
 
-              style: GoogleFonts.inter(
+                text,
 
-                fontSize: 16,
+                maxLines: 1,
 
-                fontWeight: FontWeight.w600,
+                overflow: TextOverflow.ellipsis,
 
-                color: isOutline ? AppColors.primary : Colors.white,
+                textAlign: TextAlign.center,
+
+                style: GoogleFonts.inter(
+
+                  fontSize: 14,
+
+                  fontWeight: FontWeight.w600,
+
+                  color: isOutline ? AppColors.primary : Colors.white,
+
+                ),
 
               ),
 
@@ -102,7 +114,15 @@ class CustomPillButton extends StatelessWidget {
 
               const SizedBox(width: 8),
 
-              Icon(suffixIcon, size: 20),
+              Icon(
+
+                suffixIcon,
+
+                size: 20,
+
+                color: isOutline ? AppColors.primary : Colors.white,
+
+              ),
 
             ],
 
@@ -146,67 +166,69 @@ class SocialPillButton extends StatelessWidget {
 
     final isGoogle = type == 'google';
 
-    return Expanded(
+    final label = isGoogle ? 'Google' : 'Apple';
 
-      child: SizedBox(
+    final iconData = isGoogle ? Icons.g_mobiledata : Icons.apple;
 
-        height: 52,
 
-        child: OutlinedButton(
 
-          onPressed: onPressed,
+    return SizedBox(
 
-          style: OutlinedButton.styleFrom(
+      height: 50,
 
-            backgroundColor: Colors.white,
+      child: OutlinedButton(
 
-            side: BorderSide(color: Colors.grey.shade300, width: 1),
+        onPressed: onPressed,
 
-            shape: RoundedRectangleBorder(
+        style: OutlinedButton.styleFrom(
 
-              borderRadius: BorderRadius.circular(999),
+          backgroundColor: Colors.white,
 
-            ),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+
+          shape: RoundedRectangleBorder(
+
+            borderRadius: BorderRadius.circular(999),
 
           ),
 
-          child: isGoogle
+        ),
 
-              ? Row(
+        child: Row(
 
-                  mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
 
-                  children: [
+          children: [
 
-                    Text(
+            Icon(iconData, color: AppColors.textPrimary, size: isGoogle ? 28 : 22),
 
-                      'G',
+            const SizedBox(width: 6),
 
-                      style: GoogleFonts.inter(
+            Flexible(
 
-                        fontSize: 22,
+              child: Text(
 
-                        fontWeight: FontWeight.w700,
+                label,
 
-                        color: const Color(0xFF4285F4),
+                maxLines: 1,
 
-                      ),
+                overflow: TextOverflow.ellipsis,
 
-                    ),
+                style: GoogleFonts.inter(
 
-                  ],
+                  fontSize: 14,
 
-                )
+                  fontWeight: FontWeight.w600,
 
-              : const Icon(
-
-                  Icons.apple,
-
-                  color: Colors.black,
-
-                  size: 26,
+                  color: AppColors.textPrimary,
 
                 ),
+
+              ),
+
+            ),
+
+          ],
 
         ),
 
