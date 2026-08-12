@@ -30,7 +30,39 @@ class AiDiaryDetailScreen extends StatefulWidget {
 
 class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
-  String _selectedSessionId = 'all';
+  late String _selectedSessionId;
+
+  bool _isInitialized = false;
+
+
+
+  @override
+
+  void didChangeDependencies() {
+
+    super.didChangeDependencies();
+
+    if (!_isInitialized) {
+
+      final args = widget.journalData ??
+
+          (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?);
+
+      if (args != null && args['selectedSessionId'] != null) {
+
+        _selectedSessionId = args['selectedSessionId'].toString();
+
+      } else {
+
+        _selectedSessionId = 'all';
+
+      }
+
+      _isInitialized = true;
+
+    }
+
+  }
 
 
 
@@ -40,7 +72,13 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
     // Default fallback data if passed data is null
 
-    final data = widget.journalData ?? {
+    final args = widget.journalData ??
+
+        (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?);
+
+
+
+    final data = args ?? {
 
       'title': 'Refleksi Harian & Evaluasi Ujian',
 

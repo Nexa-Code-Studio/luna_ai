@@ -864,19 +864,23 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
                               children: _emotionLegend.map((item) {
 
+                                final Color solidColor = item['color'] as Color;
+
                                 return Container(
 
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
 
                                   decoration: BoxDecoration(
 
-                                    color: (item['color'] as Color).withValues(alpha: 0.12),
+                                    color: Colors.white,
 
-                                    borderRadius: BorderRadius.circular(999),
+                                    borderRadius: BorderRadius.circular(8),
 
                                     border: Border.all(
 
-                                      color: (item['color'] as Color).withValues(alpha: 0.4),
+                                      color: const Color(0xFFE2E8F0),
+
+                                      width: 1,
 
                                     ),
 
@@ -888,7 +892,27 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
                                     children: [
 
-                                      Text(item['emoji'], style: const TextStyle(fontSize: 11)),
+                                      // 100% Solid Color Box Indicator
+
+                                      Container(
+
+                                        width: 12,
+
+                                        height: 12,
+
+                                        decoration: BoxDecoration(
+
+                                          color: solidColor,
+
+                                          borderRadius: BorderRadius.circular(3),
+
+                                        ),
+
+                                      ),
+
+                                      const SizedBox(width: 6),
+
+                                      Text(item['emoji'], style: const TextStyle(fontSize: 12)),
 
                                       const SizedBox(width: 4),
 
@@ -898,7 +922,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
                                         style: GoogleFonts.inter(
 
-                                          fontSize: 10,
+                                          fontSize: 11,
 
                                           fontWeight: FontWeight.w700,
 
