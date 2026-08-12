@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter/rendering.dart';
+
 import '../widgets/floating_nav_bar.dart';
 
 import 'ai_diary_screen.dart';
@@ -30,6 +32,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   int _currentIndex = 0;
 
+  bool _isNavBarVisible = true;
+
 
 
   final List<Widget> _pages = const [
@@ -56,19 +60,47 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
         children: [
 
-          // Tab pages inside IndexedStack for instant, stateful, smooth switching
+          // Listen to UserScrollNotification to show/hide FloatingNavBar on scroll
 
-          IndexedStack(
+          NotificationListener<UserScrollNotification>(
 
-            index: _currentIndex,
+            onNotification: (notification) {
 
-            children: _pages,
+              if (notification.direction == ScrollDirection.reverse && _isNavBarVisible) {
+
+                setState(() {
+
+                  _isNavBarVisible = false;
+
+                });
+
+              } else if (notification.direction == ScrollDirection.forward && !_isNavBarVisible) {
+
+                setState(() {
+
+                  _isNavBarVisible = true;
+
+                });
+
+              }
+
+              return true;
+
+            },
+
+            child: IndexedStack(
+
+              index: _currentIndex,
+
+              children: _pages,
+
+            ),
 
           ),
 
 
 
-          // Floating Navigation Bar overlay
+          // Animated Floating Navigation Bar (Slides down when scrolling down, slides up on scroll up)
 
           Positioned(
 
@@ -78,19 +110,29 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
             bottom: 0,
 
-            child: FloatingNavBar(
+            child: AnimatedSlide(
 
-              currentIndex: _currentIndex,
+              offset: _isNavBarVisible ? Offset.zero : const Offset(0, 2.0),
 
-              onTap: (index) {
+              duration: const Duration(milliseconds: 250),
 
-                setState(() {
+              curve: Curves.easeInOut,
 
-                  _currentIndex = index;
+              child: FloatingNavBar(
 
-                });
+                currentIndex: _currentIndex,
 
-              },
+                onTap: (index) {
+
+                  setState(() {
+
+                    _currentIndex = index;
+
+                  });
+
+                },
+
+              ),
 
             ),
 
