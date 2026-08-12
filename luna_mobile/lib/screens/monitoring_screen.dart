@@ -54,7 +54,7 @@ class MonitoringScreen extends StatelessWidget {
 
             children: [
 
-              // Header Bar
+              // Header Bar with Settings Gear Icon
 
               Padding(
 
@@ -112,7 +112,7 @@ class MonitoringScreen extends StatelessWidget {
 
                     IconButton(
 
-                      icon: const Icon(Icons.notifications_none_outlined),
+                      icon: const Icon(Icons.settings_outlined),
 
                       color: AppColors.primary,
 

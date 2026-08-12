@@ -6,69 +6,11 @@ import '../theme/app_colors.dart';
 
 import '../widgets/glass_card.dart';
 
-import '../widgets/mood_checkin_bottom_sheet.dart';
 
 
-
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
 
   const HomeScreen({super.key});
-
-
-
-  @override
-
-  State<HomeScreen> createState() => _HomeScreenState();
-
-}
-
-
-
-class _HomeScreenState extends State<HomeScreen> {
-
-  String _currentMoodLabel = 'Tenang & Damai';
-
-  String _currentMoodEmoji = '😌';
-
-
-
-  void _openMoodCheckinSheet() {
-
-    showModalBottomSheet(
-
-      context: context,
-
-      isScrollControlled: true,
-
-      backgroundColor: Colors.transparent,
-
-      builder: (context) {
-
-        return MoodCheckinBottomSheet(
-
-          initialMoodLabel: _currentMoodLabel,
-
-          initialMoodEmoji: _currentMoodEmoji,
-
-          onSave: (newLabel, newEmoji) {
-
-            setState(() {
-
-              _currentMoodLabel = newLabel;
-
-              _currentMoodEmoji = newEmoji;
-
-            });
-
-          },
-
-        );
-
-      },
-
-    );
-
-  }
 
 
 
@@ -112,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             children: [
 
-              // Header Bar
+              // Header Bar with Settings Gear Icon
 
               Padding(
 
@@ -170,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     IconButton(
 
-                      icon: const Icon(Icons.notifications_none_outlined),
+                      icon: const Icon(Icons.settings_outlined),
 
                       color: AppColors.primary,
 
@@ -229,132 +171,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontSize: 14,
 
                           color: AppColors.textSecondary,
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 16),
-
-
-
-                      // Current Mood Card (Interactive: Opens Mood Check-in Sheet)
-
-                      GlassCard(
-
-                        width: double.infinity,
-
-                        onTap: _openMoodCheckinSheet,
-
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-
-                        child: Row(
-
-                          children: [
-
-                            Container(
-
-                              width: 48,
-
-                              height: 48,
-
-                              decoration: BoxDecoration(
-
-                                color: const Color(0xFFEADBFF),
-
-                                borderRadius: BorderRadius.circular(16),
-
-                              ),
-
-                              child: Center(
-
-                                child: Text(
-
-                                  _currentMoodEmoji,
-
-                                  style: const TextStyle(fontSize: 26),
-
-                                ),
-
-                              ),
-
-                            ),
-
-                            const SizedBox(width: 16),
-
-                            Expanded(
-
-                              child: Column(
-
-                                crossAxisAlignment: CrossAxisAlignment.start,
-
-                                children: [
-
-                                  Text(
-
-                                    'Suasana Hati Terdeteksi',
-
-                                    style: GoogleFonts.inter(
-
-                                      fontSize: 12,
-
-                                      color: AppColors.textLight,
-
-                                      fontWeight: FontWeight.w500,
-
-                                    ),
-
-                                  ),
-
-                                  const SizedBox(height: 2),
-
-                                  Text(
-
-                                    _currentMoodLabel,
-
-                                    style: GoogleFonts.inter(
-
-                                      fontSize: 16,
-
-                                      fontWeight: FontWeight.w700,
-
-                                      color: AppColors.textPrimary,
-
-                                    ),
-
-                                  ),
-
-                                ],
-
-                              ),
-
-                            ),
-
-                            Container(
-
-                              padding: const EdgeInsets.all(6),
-
-                              decoration: BoxDecoration(
-
-                                shape: BoxShape.circle,
-
-                                color: AppColors.primaryContainer,
-
-                              ),
-
-                              child: const Icon(
-
-                                Icons.edit_outlined,
-
-                                size: 18,
-
-                                color: AppColors.primary,
-
-                              ),
-
-                            ),
-
-                          ],
 
                         ),
 
