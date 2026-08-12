@@ -6,6 +6,8 @@ import 'screens/ai_diary_detail_screen.dart';
 
 import 'screens/ai_diary_screen.dart';
 
+import 'screens/emergency_contacts_screen.dart';
+
 import 'screens/login_screen.dart';
 
 import 'screens/main_shell_screen.dart';
@@ -87,6 +89,8 @@ class LunaApp extends StatelessWidget {
         '/support': (context) => const SupportEmergencyScreen(),
 
         '/profile': (context) => const ProfileScreen(),
+
+        '/emergency_contacts': (context) => const EmergencyContactsScreen(),
 
       },
 
