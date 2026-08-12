@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 
-import '../widgets/emergency_contact_bottom_sheet.dart';
+import '../widgets/custom_button.dart';
 
 import '../widgets/glass_card.dart';
 
@@ -26,61 +26,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
 
-  bool _memoryEnabled = true;
+  final String _emergencyContactName = 'Budi Utami (Ibu)';
 
-  bool _notificationsEnabled = true;
-
-
-
-  String _emergencyName = 'Ibu';
-
-  String _emergencyRelation = 'Orang Tua';
-
-  String _emergencyPhone = '+62 812-3456-7890';
-
-
-
-  void _openEmergencyContactSheet() {
-
-    showModalBottomSheet(
-
-      context: context,
-
-      isScrollControlled: true,
-
-      backgroundColor: Colors.transparent,
-
-      builder: (context) {
-
-        return EmergencyContactBottomSheet(
-
-          initialName: _emergencyName,
-
-          initialRelation: _emergencyRelation,
-
-          initialPhone: _emergencyPhone,
-
-          onSave: (newName, newRelation, newPhone) {
-
-            setState(() {
-
-              _emergencyName = newName;
-
-              _emergencyRelation = newRelation;
-
-              _emergencyPhone = newPhone;
-
-            });
-
-          },
-
-        );
-
-      },
-
-    );
-
-  }
+  final String _emergencyContactPhone = '+62 812-3456-7890';
 
 
 
@@ -96,17 +44,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
 
-          title: Text(
+          title: Row(
 
-            'Hapus Memori AI?',
+            children: [
 
-            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+              Container(
+
+                padding: const EdgeInsets.all(8),
+
+                decoration: BoxDecoration(
+
+                  color: const Color(0xFFFFDCDD),
+
+                  borderRadius: BorderRadius.circular(12),
+
+                ),
+
+                child: const Icon(
+
+                  Icons.warning_amber_rounded,
+
+                  color: Color(0xFFD32F2F),
+
+                  size: 22,
+
+                ),
+
+              ),
+
+              const SizedBox(width: 10),
+
+              Expanded(
+
+                child: Text(
+
+                  'Hapus Memori AI?',
+
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+
+                ),
+
+              ),
+
+            ],
 
           ),
 
           content: Text(
 
-            'Tindakan ini akan menghapus semua riwayat ritem emosional, konteks preferensi, dan memori percakapan yang dipelajari LUNA. Tindakan ini tidak dapat dibatalkan.',
+            'Apakah Anda yakin ingin menghapus seluruh catatan memori AI? LUNA akan menghapus riwayat konteks emosional yang telah dipelajari.',
 
             style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
 
@@ -132,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               style: ElevatedButton.styleFrom(
 
-                backgroundColor: Colors.redAccent,
+                backgroundColor: const Color(0xFFD32F2F),
 
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
 
@@ -144,19 +130,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 ScaffoldMessenger.of(context).showSnackBar(
 
-                  SnackBar(
+                  const SnackBar(
 
-                    content: Text(
+                    content: Text('Seluruh catatan memori AI telah berhasil dihapus.'),
 
-                      'Catatan memori AI berhasil dihapus.',
-
-                      style: GoogleFonts.inter(),
-
-                    ),
-
-                    backgroundColor: Colors.redAccent,
-
-                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Color(0xFFD32F2F),
 
                   ),
 
@@ -226,7 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             children: [
 
-              // Header Bar
+              // Header Bar with Brand Title LUNA & Settings Icon
 
               Padding(
 
@@ -266,7 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     Text(
 
-                      'Profil & Pengaturan',
+                      'LUNA',
 
                       style: GoogleFonts.inter(
 
@@ -300,7 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 
 
-              // Scrollable Content
+              // Scrollable Content Body
 
               Expanded(
 
@@ -314,7 +292,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     children: [
 
-                      // User Header Glass Card
+                      // User Profile Header Glass Card
 
                       GlassCard(
 
@@ -326,19 +304,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           children: [
 
-                            CircleAvatar(
+                            Container(
 
-                              radius: 30,
+                              width: 60,
 
-                              backgroundColor: AppColors.primaryLight.withValues(alpha: 0.3),
+                              height: 60,
 
-                              child: const Icon(
+                              decoration: const BoxDecoration(
 
-                                Icons.person,
+                                shape: BoxShape.circle,
 
-                                size: 36,
+                                gradient: LinearGradient(
 
-                                color: AppColors.primary,
+                                  colors: [Color(0xFF8B93FF), Color(0xFF5358CB)],
+
+                                ),
+
+                              ),
+
+                              child: const Center(
+
+                                child: Text(
+
+                                  'SJ',
+
+                                  style: TextStyle(
+
+                                    fontSize: 20,
+
+                                    fontWeight: FontWeight.bold,
+
+                                    color: Colors.white,
+
+                                  ),
+
+                                ),
 
                               ),
 
@@ -358,6 +358,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                                     'Sarah Jenkins',
 
+                                    maxLines: 1,
+
+                                    overflow: TextOverflow.ellipsis,
+
                                     style: GoogleFonts.inter(
 
                                       fontSize: 18,
@@ -374,7 +378,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                                   Text(
 
-                                    'sarah.j@example.com',
+                                    'sarah.jenkins@example.com',
+
+                                    maxLines: 1,
+
+                                    overflow: TextOverflow.ellipsis,
 
                                     style: GoogleFonts.inter(
 
@@ -386,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                                   ),
 
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 6),
 
                                   Container(
 
@@ -394,7 +402,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                                       horizontal: 10,
 
-                                      vertical: 4,
+                                      vertical: 3,
 
                                     ),
 
@@ -408,11 +416,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                                     child: Text(
 
-                                      'Anggota Pendamping LUNA',
+                                      'ANGGOTA PREMIUM',
 
                                       style: GoogleFonts.inter(
 
-                                        fontSize: 11,
+                                        fontSize: 9,
 
                                         fontWeight: FontWeight.w700,
 
@@ -436,19 +444,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
 
 
-                      // Section 1: Memori Jangka Panjang AI
+                      // Section 1: AI & PRIVASI (No Toggle ON, Only Delete Button)
 
                       Text(
 
-                        'Memori Jangka Panjang AI',
+                        'AI & PRIVASI MEMORI',
 
                         style: GoogleFonts.inter(
 
-                          fontSize: 14,
+                          fontSize: 11,
 
                           fontWeight: FontWeight.w700,
 
@@ -466,83 +474,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         width: double.infinity,
 
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.all(16),
 
                         child: Column(
 
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
                           children: [
 
-                            SwitchListTile(
+                            Row(
 
-                              activeThumbColor: AppColors.primary,
+                              children: [
 
-                              title: Text(
+                                Container(
 
-                                'Aktifkan Memori Jangka Panjang',
+                                  width: 36,
 
-                                style: GoogleFonts.inter(
+                                  height: 36,
 
-                                  fontSize: 14,
+                                  decoration: BoxDecoration(
 
-                                  fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFE2DAFF),
 
-                                  color: AppColors.textPrimary,
+                                    borderRadius: BorderRadius.circular(12),
 
-                                ),
+                                  ),
 
-                              ),
+                                  child: const Icon(
 
-                              subtitle: Text(
+                                    Icons.psychology_outlined,
 
-                                'Mengizinkan LUNA mengingat ritem emosi & target pribadimu',
+                                    color: AppColors.primary,
 
-                                style: GoogleFonts.inter(
+                                    size: 20,
 
-                                  fontSize: 12,
-
-                                  color: AppColors.textSecondary,
+                                  ),
 
                                 ),
 
-                              ),
+                                const SizedBox(width: 12),
 
-                              value: _memoryEnabled,
+                                Expanded(
 
-                              onChanged: (val) {
+                                  child: Column(
 
-                                setState(() {
+                                    crossAxisAlignment: CrossAxisAlignment.start,
 
-                                  _memoryEnabled = val;
+                                    children: [
 
-                                });
+                                      Text(
 
-                              },
+                                        'Memori Jangka Panjang AI',
+
+                                        style: GoogleFonts.inter(
+
+                                          fontSize: 14,
+
+                                          fontWeight: FontWeight.w700,
+
+                                          color: AppColors.textPrimary,
+
+                                        ),
+
+                                      ),
+
+                                      Text(
+
+                                        'LUNA menyimpan konteks emosional harianmu.',
+
+                                        style: GoogleFonts.inter(
+
+                                          fontSize: 12,
+
+                                          color: AppColors.textSecondary,
+
+                                        ),
+
+                                      ),
+
+                                    ],
+
+                                  ),
+
+                                ),
+
+                              ],
 
                             ),
 
-                            const Divider(height: 1, color: Color(0xFFEBECEF)),
+                            const SizedBox(height: 14),
 
-                            ListTile(
+                            CustomPillButton(
 
-                              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                              text: 'Hapus Catatan Memori AI',
 
-                              title: Text(
+                              isOutline: true,
 
-                                'Hapus Catatan Memori AI',
+                              height: 44,
 
-                                style: GoogleFonts.inter(
-
-                                  fontSize: 14,
-
-                                  fontWeight: FontWeight.w600,
-
-                                  color: Colors.redAccent,
-
-                                ),
-
-                              ),
-
-                              onTap: _showDeleteMemoryConfirmationDialog,
+                              onPressed: _showDeleteMemoryConfirmationDialog,
 
                             ),
 
@@ -552,19 +582,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
 
 
-                      // Section 2: Kontak Darurat & Rencana Krisis
+                      // Section 2: RENCANA KESELAMATAN KRISIS
 
                       Text(
 
-                        'Rencana Keselamatan Krisis',
+                        'RENCANA KESELAMATAN KRISIS',
 
                         style: GoogleFonts.inter(
 
-                          fontSize: 14,
+                          fontSize: 11,
 
                           fontWeight: FontWeight.w700,
 
@@ -582,209 +612,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         width: double.infinity,
 
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
 
-                        child: Column(
+                        child: ListTile(
 
-                          children: [
+                          leading: Container(
 
-                            ListTile(
+                            width: 36,
 
-                              leading: const Icon(Icons.phone_outlined, color: AppColors.primary),
+                            height: 36,
 
-                              title: Text(
+                            decoration: BoxDecoration(
 
-                                'Kontak Darurat Utama',
+                              color: const Color(0xFFFFDCDD),
 
-                                style: GoogleFonts.inter(
-
-                                  fontSize: 14,
-
-                                  fontWeight: FontWeight.w600,
-
-                                  color: AppColors.textPrimary,
-
-                                ),
-
-                              ),
-
-                              subtitle: Text(
-
-                                '$_emergencyName ($_emergencyPhone)',
-
-                                style: GoogleFonts.inter(
-
-                                  fontSize: 12,
-
-                                  color: AppColors.textSecondary,
-
-                                ),
-
-                              ),
-
-                              trailing: const Icon(Icons.edit_outlined, size: 18),
-
-                              onTap: _openEmergencyContactSheet,
+                              borderRadius: BorderRadius.circular(12),
 
                             ),
 
-                            const Divider(height: 1, color: Color(0xFFEBECEF)),
+                            child: const Icon(
 
-                            ListTile(
+                              Icons.contact_phone_outlined,
 
-                              leading: const Icon(Icons.favorite_outline, color: Color(0xFFE57373)),
+                              color: Color(0xFFD32F2F),
 
-                              title: Text(
-
-                                'Buka Pusat Bantuan Krisis',
-
-                                style: GoogleFonts.inter(
-
-                                  fontSize: 14,
-
-                                  fontWeight: FontWeight.w600,
-
-                                  color: AppColors.textPrimary,
-
-                                ),
-
-                              ),
-
-                              subtitle: Text(
-
-                                'Akses cepat hotline & bantuan darurat',
-
-                                style: GoogleFonts.inter(
-
-                                  fontSize: 12,
-
-                                  color: AppColors.textSecondary,
-
-                                ),
-
-                              ),
-
-                              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-
-                              onTap: () {
-
-                                Navigator.pushNamed(context, '/support');
-
-                              },
+                              size: 20,
 
                             ),
 
-                          ],
+                          ),
+
+                          title: Text(
+
+                            'Kontak Darurat Utama',
+
+                            style: GoogleFonts.inter(
+
+                              fontSize: 14,
+
+                              fontWeight: FontWeight.w700,
+
+                              color: AppColors.textPrimary,
+
+                            ),
+
+                          ),
+
+                          subtitle: Text(
+
+                            '$_emergencyContactName • $_emergencyContactPhone',
+
+                            maxLines: 1,
+
+                            overflow: TextOverflow.ellipsis,
+
+                            style: GoogleFonts.inter(
+
+                              fontSize: 12,
+
+                              color: AppColors.textSecondary,
+
+                            ),
+
+                          ),
+
+                          trailing: const Icon(
+
+                            Icons.arrow_forward_ios,
+
+                            size: 16,
+
+                            color: AppColors.textLight,
+
+                          ),
+
+                          onTap: () async {
+
+                            await Navigator.pushNamed(context, '/emergency_contacts');
+
+                          },
 
                         ),
 
                       ),
 
-                      const SizedBox(height: 20),
-
-
-
-                      // Section 3: Pengaturan & Privasi
-
-                      Text(
-
-                        'Preferensi & Privasi',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 14,
-
-                          fontWeight: FontWeight.w700,
-
-                          color: AppColors.textLight,
-
-                          letterSpacing: 0.8,
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      GlassCard(
-
-                        width: double.infinity,
-
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-
-                        child: Column(
-
-                          children: [
-
-                            SwitchListTile(
-
-                              activeThumbColor: AppColors.primary,
-
-                              title: Text(
-
-                                'Notifikasi Pengingat Harian',
-
-                                style: GoogleFonts.inter(
-
-                                  fontSize: 14,
-
-                                  fontWeight: FontWeight.w600,
-
-                                  color: AppColors.textPrimary,
-
-                                ),
-
-                              ),
-
-                              value: _notificationsEnabled,
-
-                              onChanged: (val) {
-
-                                setState(() {
-
-                                  _notificationsEnabled = val;
-
-                                });
-
-                              },
-
-                            ),
-
-                            const Divider(height: 1, color: Color(0xFFEBECEF)),
-
-                            ListTile(
-
-                              leading: const Icon(Icons.lock_outline, color: AppColors.primary),
-
-                              title: Text(
-
-                                'Kebijakan Privasi & Enkripsi Data',
-
-                                style: GoogleFonts.inter(
-
-                                  fontSize: 14,
-
-                                  fontWeight: FontWeight.w600,
-
-                                  color: AppColors.textPrimary,
-
-                                ),
-
-                              ),
-
-                              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-
-                              onTap: () {},
-
-                            ),
-
-                          ],
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 36),
 
 
 
@@ -806,9 +718,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           style: OutlinedButton.styleFrom(
 
-                            foregroundColor: Colors.redAccent,
-
-                            side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                            side: const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
 
                             shape: RoundedRectangleBorder(
 
@@ -816,9 +726,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                             ),
 
+                            backgroundColor: Colors.transparent,
+
                           ),
 
-                          icon: const Icon(Icons.logout, size: 20),
+                          icon: const Icon(
+
+                            Icons.logout,
+
+                            color: Color(0xFFD32F2F),
+
+                            size: 20,
+
+                          ),
 
                           label: Text(
 
@@ -829,6 +749,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               fontSize: 15,
 
                               fontWeight: FontWeight.w700,
+
+                              color: const Color(0xFFD32F2F),
 
                             ),
 
