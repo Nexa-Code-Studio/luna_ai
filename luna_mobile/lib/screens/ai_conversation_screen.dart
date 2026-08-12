@@ -4,125 +4,15 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 
+import '../widgets/custom_button.dart';
+
 import '../widgets/glass_card.dart';
 
 
 
-class AiConversationScreen extends StatefulWidget {
+class AiConversationScreen extends StatelessWidget {
 
   const AiConversationScreen({super.key});
-
-
-
-  @override
-
-  State<AiConversationScreen> createState() => _AiConversationScreenState();
-
-}
-
-
-
-class _AiConversationScreenState extends State<AiConversationScreen> {
-
-  final List<Map<String, dynamic>> _messages = [
-
-    {
-
-      'isUser': true,
-
-      'text': 'Saya merasa sangat kewalahan dengan tugas-tugas kuliah.',
-
-      'time': '10:42 AM',
-
-    },
-
-    {
-
-      'isUser': false,
-
-      'text':
-
-          'Saya memahami bahwa kamu sedang merasa tertekan saat ini. Maukah kamu bercerita lebih banyak tentang apa yang membuatmu terbebani hari ini?',
-
-      'time': '10:42 AM',
-
-    },
-
-  ];
-
-
-
-  final TextEditingController _textController = TextEditingController();
-
-  bool _hasText = false;
-
-
-
-  @override
-
-  void initState() {
-
-    super.initState();
-
-    _textController.addListener(_onTextChanged);
-
-  }
-
-
-
-  void _onTextChanged() {
-
-    final hasText = _textController.text.trim().isNotEmpty;
-
-    if (hasText != _hasText) {
-
-      setState(() {
-
-        _hasText = hasText;
-
-      });
-
-    }
-
-  }
-
-
-
-  @override
-
-  void dispose() {
-
-    _textController.removeListener(_onTextChanged);
-
-    _textController.dispose();
-
-    super.dispose();
-
-  }
-
-
-
-  void _sendMessage() {
-
-    if (_textController.text.trim().isEmpty) return;
-
-    setState(() {
-
-      _messages.add({
-
-        'isUser': true,
-
-        'text': _textController.text.trim(),
-
-        'time': '10:43 AM',
-
-      });
-
-      _textController.clear();
-
-    });
-
-  }
 
 
 
@@ -166,11 +56,11 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
             children: [
 
-              // Custom App Bar
+              // Header Bar
 
               Padding(
 
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
 
                 child: Row(
 
@@ -189,8 +79,6 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
                       },
 
                     ),
-
-                    // App Logo
 
                     Image.asset(
 
@@ -220,81 +108,77 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
                     const SizedBox(width: 8),
 
-                    Column(
+                    Text(
 
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      'Sesi Suara LUNA',
 
-                      children: [
+                      style: GoogleFonts.inter(
 
-                        Text(
+                        fontSize: 16,
 
-                          'LUNA',
+                        fontWeight: FontWeight.w700,
 
-                          style: GoogleFonts.inter(
+                        color: AppColors.primary,
 
-                            fontSize: 15,
-
-                            fontWeight: FontWeight.w700,
-
-                            color: AppColors.primary,
-
-                          ),
-
-                        ),
-
-                        Row(
-
-                          children: [
-
-                            Container(
-
-                              width: 7,
-
-                              height: 7,
-
-                              decoration: const BoxDecoration(
-
-                                shape: BoxShape.circle,
-
-                                color: Color(0xFF4CAF50),
-
-                              ),
-
-                            ),
-
-                            const SizedBox(width: 4),
-
-                            Text(
-
-                              'Sedang mendengarkan...',
-
-                              style: GoogleFonts.inter(
-
-                                fontSize: 12,
-
-                                color: AppColors.textLight,
-
-                              ),
-
-                            ),
-
-                          ],
-
-                        ),
-
-                      ],
+                      ),
 
                     ),
 
                     const Spacer(),
 
-                    IconButton(
+                    Container(
 
-                      icon: const Icon(Icons.more_vert),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
 
-                      color: AppColors.textPrimary,
+                      decoration: BoxDecoration(
 
-                      onPressed: () {},
+                        color: AppColors.primaryContainer,
+
+                        borderRadius: BorderRadius.circular(999),
+
+                      ),
+
+                      child: Row(
+
+                        children: [
+
+                          Container(
+
+                            width: 6,
+
+                            height: 6,
+
+                            decoration: const BoxDecoration(
+
+                              shape: BoxShape.circle,
+
+                              color: Color(0xFF4CAF50),
+
+                            ),
+
+                          ),
+
+                          const SizedBox(width: 6),
+
+                          Text(
+
+                            'MODE SUARA AI',
+
+                            style: GoogleFonts.inter(
+
+                              fontSize: 10,
+
+                              fontWeight: FontWeight.w700,
+
+                              color: AppColors.primary,
+
+                            ),
+
+                          ),
+
+                        ],
+
+                      ),
 
                     ),
 
@@ -308,277 +192,161 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
 
 
-              // Messages List
+              // Scrollable Content Body
 
               Expanded(
 
-                child: ListView.builder(
+                child: SingleChildScrollView(
 
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
 
-                  itemCount: _messages.length,
+                  child: Column(
 
-                  itemBuilder: (context, index) {
+                    children: [
 
-                    final msg = _messages[index];
+                      const SizedBox(height: 12),
 
-                    final isUser = msg['isUser'] as bool;
 
-                    return Align(
 
-                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      // 3D Glowing Iridescent Orb Visual
 
-                      child: Container(
+                      Center(
 
-                        margin: const EdgeInsets.only(bottom: 16),
+                        child: Container(
 
-                        constraints: BoxConstraints(
+                          width: 180,
 
-                          maxWidth: MediaQuery.of(context).size.width * 0.75,
+                          height: 180,
 
-                        ),
+                          decoration: BoxDecoration(
 
-                        child: Column(
+                            shape: BoxShape.circle,
 
-                          crossAxisAlignment:
+                            gradient: const SweepGradient(
 
-                              isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              colors: [
 
-                          children: [
+                                Color(0xFFFFB6C1),
 
-                            isUser
+                                Color(0xFFE2DAFF),
 
-                                ? Container(
+                                Color(0xFFA7E6FF),
 
-                                    padding: const EdgeInsets.all(16),
+                                Color(0xFF8B93FF),
 
-                                    decoration: const BoxDecoration(
+                                Color(0xFFFFB6C1),
 
-                                      color: AppColors.primary,
+                              ],
 
-                                      borderRadius: BorderRadius.only(
+                            ),
 
-                                        topLeft: Radius.circular(20),
+                            boxShadow: [
 
-                                        topRight: Radius.circular(20),
+                              BoxShadow(
 
-                                        bottomLeft: Radius.circular(20),
+                                color: AppColors.primary.withValues(alpha: 0.3),
 
-                                        bottomRight: Radius.circular(6),
+                                blurRadius: 40,
 
-                                      ),
+                                spreadRadius: 4,
 
-                                    ),
+                              ),
 
-                                    child: Text(
+                            ],
 
-                                      msg['text'],
+                          ),
 
-                                      style: GoogleFonts.inter(
+                          child: Container(
 
-                                        fontSize: 14,
+                            margin: const EdgeInsets.all(3),
 
-                                        color: Colors.white,
+                            decoration: const BoxDecoration(
 
-                                        height: 1.4,
+                              shape: BoxShape.circle,
 
-                                      ),
+                              gradient: RadialGradient(
 
-                                    ),
+                                colors: [
 
-                                  )
+                                  Colors.white,
 
-                                : GlassCard(
+                                  Color(0xFFEADBFF),
 
-                                    padding: const EdgeInsets.all(16),
+                                  Color(0xFFA7E6FF),
 
-                                    borderRadius: 20,
+                                ],
 
-                                    child: Text(
+                                center: Alignment(-0.3, -0.3),
 
-                                      msg['text'],
-
-                                      style: GoogleFonts.inter(
-
-                                        fontSize: 14,
-
-                                        color: AppColors.textPrimary,
-
-                                        height: 1.4,
-
-                                      ),
-
-                                    ),
-
-                                  ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-
-                              msg['time'],
-
-                              style: GoogleFonts.inter(
-
-                                fontSize: 11,
-
-                                color: AppColors.textLight,
+                                radius: 0.8,
 
                               ),
 
                             ),
 
-                          ],
+                            child: const Center(
+
+                              child: Icon(
+
+                                Icons.graphic_eq,
+
+                                size: 48,
+
+                                color: AppColors.primary,
+
+                              ),
+
+                            ),
+
+                          ),
 
                         ),
 
                       ),
 
-                    );
-
-                  },
-
-                ),
-
-              ),
+                      const SizedBox(height: 28),
 
 
 
-              // Stress Status Indicator Pill
+                      // Title & Subtitle Greeting
 
-              Container(
+                      Text(
 
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        'LUNA Siap Mendengarkan',
 
-                decoration: BoxDecoration(
+                        textAlign: TextAlign.center,
 
-                  color: const Color(0xFFE0F4FB),
+                        style: GoogleFonts.inter(
 
-                  borderRadius: BorderRadius.circular(999),
+                          fontSize: 22,
 
-                ),
+                          fontWeight: FontWeight.w800,
 
-                child: Row(
+                          color: AppColors.textPrimary,
 
-                  mainAxisSize: MainAxisSize.min,
-
-                  children: [
-
-                    const Icon(
-
-                      Icons.show_chart,
-
-                      size: 16,
-
-                      color: Color(0xFF20667B),
-
-                    ),
-
-                    const SizedBox(width: 6),
-
-                    Text(
-
-                      'Tingkat Stres: Sedang',
-
-                      style: GoogleFonts.inter(
-
-                        fontSize: 12,
-
-                        fontWeight: FontWeight.w600,
-
-                        color: const Color(0xFF20667B),
+                        ),
 
                       ),
 
-                    ),
+                      const SizedBox(height: 8),
 
-                  ],
+                      Padding(
 
-                ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
 
-              ),
+                        child: Text(
 
-              const SizedBox(height: 12),
+                          'Bicara secara alami kapan saja tanpa mengetik. LUNA hadir mendampingi dan mendengarkan perasaanmu.',
 
-
-
-              // Floating Bottom Input Bar
-
-              Padding(
-
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-
-                child: Container(
-
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-
-                  decoration: BoxDecoration(
-
-                    color: Colors.white,
-
-                    borderRadius: BorderRadius.circular(999),
-
-                    border: Border.all(color: Colors.grey.shade300, width: 1),
-
-                    boxShadow: [
-
-                      BoxShadow(
-
-                        color: Colors.black.withValues(alpha: 0.04),
-
-                        blurRadius: 16,
-
-                        offset: const Offset(0, 4),
-
-                      ),
-
-                    ],
-
-                  ),
-
-                  child: Row(
-
-                    children: [
-
-                      IconButton(
-
-                        icon: const Icon(Icons.add, color: AppColors.textSecondary),
-
-                        onPressed: () {},
-
-                      ),
-
-                      Expanded(
-
-                        child: TextField(
-
-                          controller: _textController,
-
-                          onSubmitted: (_) => _sendMessage(),
+                          textAlign: TextAlign.center,
 
                           style: GoogleFonts.inter(
 
                             fontSize: 14,
 
-                            color: AppColors.textPrimary,
+                            color: AppColors.textSecondary,
 
-                          ),
-
-                          decoration: InputDecoration(
-
-                            hintText: 'Ketik atau bicara dengan LUNA...',
-
-                            hintStyle: GoogleFonts.inter(
-
-                              fontSize: 14,
-
-                              color: AppColors.textLight,
-
-                            ),
-
-                            border: InputBorder.none,
-
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                            height: 1.5,
 
                           ),
 
@@ -586,57 +354,97 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
 
                       ),
 
-                      IconButton(
+                      const SizedBox(height: 32),
 
-                        icon: const Icon(Icons.mic_none, color: AppColors.primary),
 
-                        onPressed: () {},
+
+                      // Main Action Button: Mulai Sesi Suara
+
+                      CustomPillButton(
+
+                        text: 'Mulai Sesi Suara',
+
+                        suffixIcon: Icons.mic,
+
+                        onPressed: () {
+
+                          Navigator.pushNamed(context, '/voice_call');
+
+                        },
 
                       ),
 
-                      const SizedBox(width: 4),
+                      const SizedBox(height: 36),
 
-                      // Audio Wave / Send Button
 
-                      GestureDetector(
 
-                        onTap: _hasText
+                      // Recent Voice Sessions Section
 
-                            ? _sendMessage
+                      Align(
 
-                            : () {
+                        alignment: Alignment.centerLeft,
 
-                                Navigator.pushNamed(context, '/voice_call');
+                        child: Text(
 
-                              },
+                          'RIWAYAT SESI SUARA TERAKHIR',
 
-                        child: Container(
+                          style: GoogleFonts.inter(
 
-                          width: 44,
+                            fontSize: 11,
 
-                          height: 44,
+                            fontWeight: FontWeight.w700,
 
-                          decoration: const BoxDecoration(
+                            color: AppColors.textLight,
 
-                            shape: BoxShape.circle,
-
-                            color: AppColors.primary,
-
-                          ),
-
-                          child: Icon(
-
-                            _hasText ? Icons.send : Icons.graphic_eq,
-
-                            color: Colors.white,
-
-                            size: 20,
+                            letterSpacing: 0.8,
 
                           ),
 
                         ),
 
                       ),
+
+                      const SizedBox(height: 12),
+
+
+
+                      // History Card 1
+
+                      _buildSessionHistoryCard(
+
+                        title: 'Sesi Refleksi Pagi',
+
+                        duration: '04:12',
+
+                        date: 'Hari ini, 09:15',
+
+                        moodTag: 'Tenang & Reflektif',
+
+                        onTap: () {},
+
+                      ),
+
+                      const SizedBox(height: 10),
+
+
+
+                      // History Card 2
+
+                      _buildSessionHistoryCard(
+
+                        title: 'Curhat Bebas Sore Hari',
+
+                        duration: '06:45',
+
+                        date: 'Kemarin, 16:30',
+
+                        moodTag: 'Lega & Nyaman',
+
+                        onTap: () {},
+
+                      ),
+
+                      const SizedBox(height: 24),
 
                     ],
 
@@ -651,6 +459,146 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
           ),
 
         ),
+
+      ),
+
+    );
+
+  }
+
+
+
+  Widget _buildSessionHistoryCard({
+
+    required String title,
+
+    required String duration,
+
+    required String date,
+
+    required String moodTag,
+
+    required VoidCallback onTap,
+
+  }) {
+
+    return GlassCard(
+
+      width: double.infinity,
+
+      onTap: onTap,
+
+      padding: const EdgeInsets.all(16),
+
+      child: Row(
+
+        children: [
+
+          Container(
+
+            width: 44,
+
+            height: 44,
+
+            decoration: BoxDecoration(
+
+              color: AppColors.primaryContainer,
+
+              borderRadius: BorderRadius.circular(14),
+
+            ),
+
+            child: const Icon(
+
+              Icons.volume_up_outlined,
+
+              color: AppColors.primary,
+
+              size: 22,
+
+            ),
+
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+
+            child: Column(
+
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: [
+
+                Text(
+
+                  title,
+
+                  style: GoogleFonts.inter(
+
+                    fontSize: 14,
+
+                    fontWeight: FontWeight.w700,
+
+                    color: AppColors.textPrimary,
+
+                  ),
+
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+
+                  '$date • $duration',
+
+                  style: GoogleFonts.inter(
+
+                    fontSize: 12,
+
+                    color: AppColors.textLight,
+
+                  ),
+
+                ),
+
+              ],
+
+            ),
+
+          ),
+
+          Container(
+
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+
+            decoration: BoxDecoration(
+
+              color: const Color(0xFFEADBFF),
+
+              borderRadius: BorderRadius.circular(999),
+
+            ),
+
+            child: Text(
+
+              moodTag,
+
+              style: GoogleFonts.inter(
+
+                fontSize: 11,
+
+                fontWeight: FontWeight.w600,
+
+                color: AppColors.primary,
+
+              ),
+
+            ),
+
+          ),
+
+        ],
 
       ),
 
