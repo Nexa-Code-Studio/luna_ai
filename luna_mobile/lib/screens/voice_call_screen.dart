@@ -1,8 +1,10 @@
-import 'dart:ui';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
+
+import '../services/vad_audio_service.dart';
 
 import '../theme/app_colors.dart';
 
@@ -28,9 +30,115 @@ class VoiceCallScreen extends StatefulWidget {
 
 class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
+  final VadAudioService _vadService = VadAudioService();
+
+  late StreamSubscription<VadState> _vadStateSubscription;
+
+  late StreamSubscription<double> _amplitudeSubscription;
+
+
+
+  VadState _currentVadState = VadState.listening;
+
+  double _currentAmplitude = 0.1;
+
   bool _isMuted = false;
 
-  bool _isSpeakerOn = false;
+  int _callDurationSeconds = 0;
+
+  Timer? _durationTimer;
+
+
+
+  @override
+
+  void initState() {
+
+    super.initState();
+
+    _vadService.startListening();
+
+
+
+    _vadStateSubscription = _vadService.vadStateStream.listen((state) {
+
+      if (mounted) {
+
+        setState(() {
+
+          _currentVadState = state;
+
+        });
+
+      }
+
+    });
+
+
+
+    _amplitudeSubscription = _vadService.audioAmplitudeStream.listen((amp) {
+
+      if (mounted) {
+
+        setState(() {
+
+          _currentAmplitude = amp;
+
+        });
+
+      }
+
+    });
+
+
+
+    // Call duration timer
+
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+
+      if (mounted) {
+
+        setState(() {
+
+          _callDurationSeconds++;
+
+        });
+
+      }
+
+    });
+
+  }
+
+
+
+  @override
+
+  void dispose() {
+
+    _vadStateSubscription.cancel();
+
+    _amplitudeSubscription.cancel();
+
+    _durationTimer?.cancel();
+
+    _vadService.stopListening();
+
+    super.dispose();
+
+  }
+
+
+
+  String _formatDuration(int totalSeconds) {
+
+    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+
+    return '$minutes:$seconds';
+
+  }
 
 
 
@@ -46,141 +154,109 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
       builder: (context) {
 
-        return ClipRRect(
+        return Container(
 
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          padding: const EdgeInsets.all(24),
 
-          child: BackdropFilter(
+          decoration: const BoxDecoration(
 
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            color: Colors.white,
 
-            child: Container(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
 
-              padding: const EdgeInsets.all(24.0),
+          ),
 
-              decoration: BoxDecoration(
+          child: Column(
 
-                color: Colors.white.withValues(alpha: 0.95),
+            mainAxisSize: MainAxisSize.min,
 
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            crossAxisAlignment: CrossAxisAlignment.start,
 
-                border: Border.all(
+            children: [
 
-                  color: Colors.white.withValues(alpha: 0.8),
+              Center(
 
-                  width: 1.5,
+                child: Container(
+
+                  width: 40,
+
+                  height: 4,
+
+                  decoration: BoxDecoration(
+
+                    color: Colors.grey.shade300,
+
+                    borderRadius: BorderRadius.circular(999),
+
+                  ),
 
                 ),
 
               ),
 
-              child: Column(
+              const SizedBox(height: 16),
 
-                mainAxisSize: MainAxisSize.min,
-
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
 
                 children: [
 
-                  // Handle Bar
+                  Container(
 
-                  Center(
+                    padding: const EdgeInsets.all(10),
 
-                    child: Container(
+                    decoration: BoxDecoration(
 
-                      width: 48,
+                      color: AppColors.primaryContainer,
 
-                      height: 5,
+                      borderRadius: BorderRadius.circular(14),
 
-                      decoration: BoxDecoration(
+                    ),
 
-                        color: Colors.grey.shade300,
+                    child: const Icon(
 
-                        borderRadius: BorderRadius.circular(999),
+                      Icons.check_circle_outline,
 
-                      ),
+                      color: AppColors.primary,
+
+                      size: 24,
 
                     ),
 
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(width: 12),
 
+                  Column(
 
-
-                  // Header Title
-
-                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
 
                     children: [
 
-                      Container(
+                      Text(
 
-                        width: 42,
+                        'Sesi Suara Selesai 🍃',
 
-                        height: 42,
+                        style: GoogleFonts.inter(
 
-                        decoration: BoxDecoration(
+                          fontSize: 18,
 
-                          color: const Color(0xFFEADBFF),
+                          fontWeight: FontWeight.w800,
 
-                          borderRadius: BorderRadius.circular(14),
-
-                        ),
-
-                        child: const Icon(
-
-                          Icons.auto_awesome,
-
-                          color: AppColors.primary,
-
-                          size: 22,
+                          color: AppColors.textPrimary,
 
                         ),
 
                       ),
 
-                      const SizedBox(width: 14),
+                      Text(
 
-                      Expanded(
+                        'Durasi: ${_formatDuration(_callDurationSeconds)} • VAD Terdeteksi',
 
-                        child: Column(
+                        style: GoogleFonts.inter(
 
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          fontSize: 12,
 
-                          children: [
-
-                            Text(
-
-                              'Sesi Suara Selesai 🍃',
-
-                              style: GoogleFonts.inter(
-
-                                fontSize: 18,
-
-                                fontWeight: FontWeight.w800,
-
-                                color: AppColors.textPrimary,
-
-                              ),
-
-                            ),
-
-                            Text(
-
-                              'Ringkasan singkat dari LUNA untuk sesi ini.',
-
-                              style: GoogleFonts.inter(
-
-                                fontSize: 12,
-
-                                color: AppColors.textSecondary,
-
-                              ),
-
-                            ),
-
-                          ],
+                          color: AppColors.textSecondary,
 
                         ),
 
@@ -190,203 +266,85 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                   ),
 
-                  const SizedBox(height: 20),
-
-
-
-                  // Session Stats Summary Glass Card
-
-                  GlassCard(
-
-                    width: double.infinity,
-
-                    padding: const EdgeInsets.all(18),
-
-                    child: Column(
-
-                      children: [
-
-                        Row(
-
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                          children: [
-
-                            Column(
-
-                              crossAxisAlignment: CrossAxisAlignment.start,
-
-                              children: [
-
-                                Text(
-
-                                  'DURASI SESI',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 10,
-
-                                    fontWeight: FontWeight.w700,
-
-                                    color: AppColors.textLight,
-
-                                    letterSpacing: 0.8,
-
-                                  ),
-
-                                ),
-
-                                const SizedBox(height: 4),
-
-                                Text(
-
-                                  '03 : 12',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 18,
-
-                                    fontWeight: FontWeight.w800,
-
-                                    color: AppColors.textPrimary,
-
-                                  ),
-
-                                ),
-
-                              ],
-
-                            ),
-
-                            Container(
-
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-
-                              decoration: BoxDecoration(
-
-                                color: const Color(0xFFEADBFF),
-
-                                borderRadius: BorderRadius.circular(999),
-
-                              ),
-
-                              child: Row(
-
-                                children: [
-
-                                  const Text('😌', style: TextStyle(fontSize: 16)),
-
-                                  const SizedBox(width: 6),
-
-                                  Text(
-
-                                    'Tenang & Reflektif',
-
-                                    style: GoogleFonts.inter(
-
-                                      fontSize: 12,
-
-                                      fontWeight: FontWeight.w600,
-
-                                      color: AppColors.primary,
-
-                                    ),
-
-                                  ),
-
-                                ],
-
-                              ),
-
-                            ),
-
-                          ],
-
-                        ),
-
-                        const Padding(
-
-                          padding: EdgeInsets.symmetric(vertical: 12.0),
-
-                          child: Divider(height: 1, color: Color(0xFFEBECEF)),
-
-                        ),
-
-                        Row(
-
-                          crossAxisAlignment: CrossAxisAlignment.start,
-
-                          children: [
-
-                            const Icon(
-
-                              Icons.format_quote_rounded,
-
-                              color: AppColors.primary,
-
-                              size: 20,
-
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            Expanded(
-
-                              child: Text(
-
-                                'LUNA mencatat kamu merasa lebih tenang setelah menceritakan kecemasan ujianmu. Langkah yang sangat baik!',
-
-                                style: GoogleFonts.inter(
-
-                                  fontSize: 13,
-
-                                  color: AppColors.textPrimary,
-
-                                  height: 1.4,
-
-                                ),
-
-                              ),
-
-                            ),
-
-                          ],
-
-                        ),
-
-                      ],
-
-                    ),
-
-                  ),
-
-                  const SizedBox(height: 24),
-
-
-
-                  // Return to Home Button
-
-                  CustomPillButton(
-
-                    text: 'Selesai & Kembali ke Beranda',
-
-                    onPressed: () {
-
-                      Navigator.pop(context); // Close bottom sheet
-
-                      Navigator.pop(context); // Return to previous screen
-
-                    },
-
-                  ),
-
-                  const SizedBox(height: 16),
-
                 ],
 
               ),
 
-            ),
+              const SizedBox(height: 20),
+
+              GlassCard(
+
+                width: double.infinity,
+
+                padding: const EdgeInsets.all(16),
+
+                child: Column(
+
+                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                  children: [
+
+                    Text(
+
+                      'ANALISIS AI SESI INI',
+
+                      style: GoogleFonts.inter(
+
+                        fontSize: 10,
+
+                        fontWeight: FontWeight.w700,
+
+                        color: AppColors.textLight,
+
+                        letterSpacing: 0.8,
+
+                      ),
+
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Text(
+
+                      'LUNA telah berhasil merekam dan menganalisis percakapan suaramu. Ringkasan emosi harianmu di jurnal telah diperbarui secara otomatis.',
+
+                      style: GoogleFonts.inter(
+
+                        fontSize: 13,
+
+                        color: AppColors.textPrimary,
+
+                        height: 1.4,
+
+                      ),
+
+                    ),
+
+                  ],
+
+                ),
+
+              ),
+
+              const SizedBox(height: 20),
+
+              CustomPillButton(
+
+                text: 'Lihat Detail Jurnal',
+
+                onPressed: () {
+
+                  Navigator.pop(context); // Close Bottom Sheet
+
+                  Navigator.pop(context); // Back to Chat/Home
+
+                  Navigator.pushNamed(context, '/diary');
+
+                },
+
+              ),
+
+            ],
 
           ),
 
@@ -404,6 +362,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   Widget build(BuildContext context) {
 
+    final int dbPercent = (_currentAmplitude * 100).round();
+
+
+
     return Scaffold(
 
       body: Container(
@@ -418,11 +380,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
             colors: [
 
-              Color(0xFF1D2353),
+              Color(0xFF1E1B2E),
 
-              Color(0xFF161B3D),
+              Color(0xFF282545),
 
-              Color(0xFF11142F),
+              Color(0xFF1A1829),
 
             ],
 
@@ -436,267 +398,381 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
         child: SafeArea(
 
-          child: Padding(
+          child: Column(
 
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            children: [
 
-            child: Column(
+              // Header Bar with VAD Status Badge
 
-              children: [
+              Padding(
 
-                // Top Navigation & Status Bar
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
 
-                Row(
+                child: Row(
+
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                   children: [
 
-                    // Minimize Arrow Dropdown Button
+                    IconButton(
 
-                    GestureDetector(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
 
-                      onTap: () {
+                      onPressed: () => Navigator.pop(context),
 
-                        Navigator.pop(context);
+                    ),
 
-                      },
+                    _buildVadStatusBadge(),
 
-                      child: Container(
+                    Text(
 
-                        width: 44,
+                      _formatDuration(_callDurationSeconds),
 
-                        height: 44,
+                      style: GoogleFonts.inter(
 
-                        decoration: BoxDecoration(
+                        fontSize: 14,
 
-                          shape: BoxShape.circle,
+                        fontWeight: FontWeight.w700,
 
-                          color: Colors.white.withValues(alpha: 0.12),
-
-                        ),
-
-                        child: const Icon(
-
-                          Icons.keyboard_arrow_down,
-
-                          color: Colors.white,
-
-                          size: 26,
-
-                        ),
+                        color: Colors.white70,
 
                       ),
 
                     ),
-
-                    const Spacer(),
-
-                    // Listening Chip Indicator
-
-                    Container(
-
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-
-                      decoration: BoxDecoration(
-
-                        color: Colors.white.withValues(alpha: 0.12),
-
-                        borderRadius: BorderRadius.circular(999),
-
-                      ),
-
-                      child: Row(
-
-                        children: [
-
-                          Container(
-
-                            width: 8,
-
-                            height: 8,
-
-                            decoration: const BoxDecoration(
-
-                              shape: BoxShape.circle,
-
-                              color: Color(0xFF4CAF50),
-
-                            ),
-
-                          ),
-
-                          const SizedBox(width: 8),
-
-                          Text(
-
-                            'LUNA SEDANG MENDENGARKAN',
-
-                            style: GoogleFonts.inter(
-
-                              fontSize: 11,
-
-                              fontWeight: FontWeight.w700,
-
-                              color: Colors.white,
-
-                              letterSpacing: 1.0,
-
-                            ),
-
-                          ),
-
-                        ],
-
-                      ),
-
-                    ),
-
-                    const Spacer(),
-
-                    const SizedBox(width: 44),
 
                   ],
 
                 ),
 
-                const Spacer(),
+              ),
 
 
 
-                // Center 3D Iridescent Sphere Visual
+              const Spacer(),
 
-                Container(
 
-                  width: 220,
 
-                  height: 220,
+              // Center Avatar Orb with Dynamic Amplitude Glow
 
-                  decoration: BoxDecoration(
+              Center(
 
-                    shape: BoxShape.circle,
+                child: Stack(
 
-                    gradient: const SweepGradient(
+                  alignment: Alignment.center,
 
-                      colors: [
+                  children: [
 
-                        Color(0xFFFFB6C1),
+                    // Outer Amplitude Glow Ring
 
-                        Color(0xFFE2DAFF),
+                    AnimatedContainer(
 
-                        Color(0xFFA7E6FF),
+                      duration: const Duration(milliseconds: 120),
 
-                        Color(0xFF8B93FF),
+                      width: 160 + (_currentAmplitude * 60),
 
-                        Color(0xFFFFB6C1),
+                      height: 160 + (_currentAmplitude * 60),
 
-                      ],
+                      decoration: BoxDecoration(
 
-                    ),
+                        shape: BoxShape.circle,
 
-                    boxShadow: [
-
-                      BoxShadow(
-
-                        color: const Color(0xFF8B93FF).withValues(alpha: 0.4),
-
-                        blurRadius: 50,
-
-                        spreadRadius: 8,
+                        color: _getVadColor().withValues(alpha: 0.25),
 
                       ),
 
-                    ],
+                    ),
 
-                  ),
+                    // Inner Avatar Orb
 
-                  child: Container(
+                    Container(
 
-                    margin: const EdgeInsets.all(3),
+                      width: 150,
 
-                    decoration: const BoxDecoration(
+                      height: 150,
 
-                      shape: BoxShape.circle,
+                      decoration: BoxDecoration(
 
-                      gradient: RadialGradient(
+                        shape: BoxShape.circle,
 
-                        colors: [
+                        gradient: const LinearGradient(
 
-                          Colors.white,
+                          colors: [Color(0xFF8B93FF), Color(0xFF5358CB)],
 
-                          Color(0xFFE0DAFF),
+                        ),
 
-                          Color(0xFF7A83FF),
+                        boxShadow: [
+
+                          BoxShadow(
+
+                            color: _getVadColor().withValues(alpha: 0.5),
+
+                            blurRadius: 30,
+
+                            spreadRadius: 4,
+
+                          ),
 
                         ],
 
-                        center: Alignment(-0.3, -0.3),
+                      ),
 
-                        radius: 0.8,
+                      child: const Center(
+
+                        child: Icon(
+
+                          Icons.nightlight_round,
+
+                          size: 64,
+
+                          color: Colors.white,
+
+                        ),
 
                       ),
 
                     ),
 
-                  ),
+                  ],
 
                 ),
 
-                const SizedBox(height: 40),
+              ),
 
 
 
-                // Title & Duration Timer
+              const SizedBox(height: 24),
 
-                Text(
 
-                  'LUNA Voice',
 
-                  style: GoogleFonts.inter(
+              // Title & Subtitle Info
 
-                    fontSize: 26,
+              Text(
 
-                    fontWeight: FontWeight.w800,
+                'LUNA AI Assistant',
 
-                    color: Colors.white,
+                style: GoogleFonts.inter(
 
-                    letterSpacing: 1.2,
+                  fontSize: 22,
 
-                  ),
+                  fontWeight: FontWeight.w800,
 
-                ),
-
-                const SizedBox(height: 6),
-
-                Text(
-
-                  '02 : 46',
-
-                  style: GoogleFonts.inter(
-
-                    fontSize: 18,
-
-                    fontWeight: FontWeight.w500,
-
-                    color: Colors.white.withValues(alpha: 0.7),
-
-                    letterSpacing: 1.5,
-
-                  ),
+                  color: Colors.white,
 
                 ),
 
-                const Spacer(),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+
+                _getVadStatusDescription(),
+
+                style: GoogleFonts.inter(
+
+                  fontSize: 13,
+
+                  color: Colors.white70,
+
+                ),
+
+              ),
 
 
 
-                // Bottom Action Control Buttons
+              const SizedBox(height: 24),
 
-                Row(
+
+
+              // AMPLITUDE REACTIVE AUDIO WAVES (Visual VAD Equalizer)
+
+              Padding(
+
+                padding: const EdgeInsets.symmetric(horizontal: 40.0),
+
+                child: Column(
+
+                  children: [
+
+                    SizedBox(
+
+                      height: 50,
+
+                      child: Row(
+
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+
+                        crossAxisAlignment: CrossAxisAlignment.center,
+
+                        children: List.generate(12, (index) {
+
+                          // Calculate dynamic height based on current amplitude & position
+
+                          final multiplier = (index % 3 + 1) * 0.3;
+
+                          final barHeight = (10 + (_currentAmplitude * 38 * multiplier))
+
+                              .clamp(8.0, 48.0);
+
+
+
+                          return AnimatedContainer(
+
+                            duration: const Duration(milliseconds: 90),
+
+                            width: 6,
+
+                            height: barHeight,
+
+                            decoration: BoxDecoration(
+
+                              color: _getVadColor().withValues(alpha: _isMuted ? 0.3 : 0.9),
+
+                              borderRadius: BorderRadius.circular(999),
+
+                            ),
+
+                          );
+
+                        }),
+
+                      ),
+
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+
+                      'Input Amplitudo VAD: $dbPercent dB',
+
+                      style: GoogleFonts.inter(
+
+                        fontSize: 11,
+
+                        fontWeight: FontWeight.w600,
+
+                        color: Colors.white38,
+
+                      ),
+
+                    ),
+
+                  ],
+
+                ),
+
+              ),
+
+
+
+              const Spacer(),
+
+
+
+              // INTERACTIVE SPEECH DEMO CONTROLLER (Tap to speak / pause / barge-in)
+
+              Padding(
+
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+
+                child: Row(
+
+                  mainAxisAlignment: MainAxisAlignment.center,
+
+                  children: [
+
+                    ElevatedButton.icon(
+
+                      onPressed: () {
+
+                        if (_currentVadState == VadState.userSpeaking) {
+
+                          _vadService.triggerSpeechPause();
+
+                        } else {
+
+                          _vadService.triggerSpeechStart();
+
+                        }
+
+                      },
+
+                      style: ElevatedButton.styleFrom(
+
+                        backgroundColor: _currentVadState == VadState.userSpeaking
+
+                            ? const Color(0xFFE53935)
+
+                            : AppColors.primary,
+
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+
+                      ),
+
+                      icon: Icon(
+
+                        _currentVadState == VadState.userSpeaking
+
+                            ? Icons.pause_circle_outline
+
+                            : Icons.record_voice_over,
+
+                        color: Colors.white,
+
+                        size: 18,
+
+                      ),
+
+                      label: Text(
+
+                        _currentVadState == VadState.userSpeaking
+
+                            ? 'Selesaikan Bicara (Hening)'
+
+                            : 'Mulai Bicara (VAD Trigger)',
+
+                        style: GoogleFonts.inter(
+
+                          fontSize: 12,
+
+                          fontWeight: FontWeight.w700,
+
+                          color: Colors.white,
+
+                        ),
+
+                      ),
+
+                    ),
+
+                  ],
+
+                ),
+
+              ),
+
+
+
+              const SizedBox(height: 24),
+
+
+
+              // Bottom Control Bar (Mute, End Call)
+
+              Padding(
+
+                padding: const EdgeInsets.fromLTRB(36.0, 0, 36.0, 32.0),
+
+                child: Row(
 
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 
                   children: [
 
-                    // Mute Button
+                    // Mute Microphone Button
 
                     GestureDetector(
 
@@ -704,7 +780,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                         setState(() {
 
-                          _isMuted = !_isMuted;
+                          _isMuted = _vadService.toggleMute();
 
                         });
 
@@ -722,7 +798,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                           color: _isMuted
 
-                              ? Colors.white
+                              ? const Color(0xFFE53935)
 
                               : Colors.white.withValues(alpha: 0.15),
 
@@ -730,11 +806,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                         child: Icon(
 
-                          _isMuted ? Icons.mic_off : Icons.mic_none,
+                          _isMuted ? Icons.mic_off : Icons.mic,
 
-                          color: _isMuted ? const Color(0xFF1D2353) : Colors.white,
+                          color: Colors.white,
 
-                          size: 24,
+                          size: 26,
 
                         ),
 
@@ -744,37 +820,27 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
 
 
-                    // End Session Button (Red Circle) -> Shows AI Summary Modal
+                    // End Call Button
 
                     GestureDetector(
 
-                      onTap: _showSessionSummaryBottomSheet,
+                      onTap: () {
+
+                        _showSessionSummaryBottomSheet();
+
+                      },
 
                       child: Container(
 
-                        width: 72,
+                        width: 64,
 
-                        height: 72,
+                        height: 64,
 
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
 
                           shape: BoxShape.circle,
 
-                          color: const Color(0xFFD32F2F),
-
-                          boxShadow: [
-
-                            BoxShadow(
-
-                              color: const Color(0xFFD32F2F).withValues(alpha: 0.4),
-
-                              blurRadius: 20,
-
-                              offset: const Offset(0, 6),
-
-                            ),
-
-                          ],
+                          color: Color(0xFFD32F2F),
 
                         ),
 
@@ -784,55 +850,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                           color: Colors.white,
 
-                          size: 32,
-
-                        ),
-
-                      ),
-
-                    ),
-
-
-
-                    // Speaker Button
-
-                    GestureDetector(
-
-                      onTap: () {
-
-                        setState(() {
-
-                          _isSpeakerOn = !_isSpeakerOn;
-
-                        });
-
-                      },
-
-                      child: Container(
-
-                        width: 56,
-
-                        height: 56,
-
-                        decoration: BoxDecoration(
-
-                          shape: BoxShape.circle,
-
-                          color: _isSpeakerOn
-
-                              ? Colors.white
-
-                              : Colors.white.withValues(alpha: 0.15),
-
-                        ),
-
-                        child: Icon(
-
-                          _isSpeakerOn ? Icons.volume_up : Icons.volume_up_outlined,
-
-                          color: _isSpeakerOn ? const Color(0xFF1D2353) : Colors.white,
-
-                          size: 24,
+                          size: 30,
 
                         ),
 
@@ -844,11 +862,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
                 ),
 
-                const SizedBox(height: 24),
+              ),
 
-              ],
-
-            ),
+            ],
 
           ),
 
@@ -858,6 +874,138 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
     );
 
+  }
+
+
+
+  Widget _buildVadStatusBadge() {
+
+    String label;
+
+    Color badgeBg;
+
+    Color textColor;
+
+    IconData icon;
+
+
+
+    switch (_currentVadState) {
+
+      case VadState.userSpeaking:
+
+        label = 'BICARA TERDETEKSI';
+
+        badgeBg = const Color(0xFFFFDCDD);
+
+        textColor = const Color(0xFFD32F2F);
+
+        icon = Icons.graphic_eq;
+
+        break;
+
+      case VadState.aiProcessing:
+
+        label = 'MENYINTESIS JAWABAN...';
+
+        badgeBg = const Color(0xFFE2F3FF);
+
+        textColor = const Color(0xFF0288D1);
+
+        icon = Icons.hourglass_top_rounded;
+
+        break;
+
+      case VadState.aiSpeaking:
+
+        label = 'LUNA MERESPONS';
+
+        badgeBg = const Color(0xFFEADBFF);
+
+        textColor = AppColors.primary;
+
+        icon = Icons.volume_up;
+
+        break;
+
+      case VadState.bargeInInterrupted:
+
+        label = 'BARGE-IN INTERRUPT!';
+
+        badgeBg = const Color(0xFFFFF3E0);
+
+        textColor = const Color(0xFFFB8C00);
+
+        icon = Icons.bolt;
+
+        break;
+
+      case VadState.idle:
+      case VadState.listening:
+        label = 'MENDENGARKAN SUARA';
+        badgeBg = const Color(0xFFE8F5E9);
+        textColor = const Color(0xFF2E7D32);
+        icon = Icons.mic_none;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: badgeBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: textColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getVadColor() {
+    switch (_currentVadState) {
+      case VadState.userSpeaking:
+        return const Color(0xFFE53935);
+      case VadState.aiProcessing:
+        return const Color(0xFF0288D1);
+      case VadState.aiSpeaking:
+        return AppColors.primary;
+      case VadState.bargeInInterrupted:
+        return const Color(0xFFFB8C00);
+      case VadState.idle:
+      case VadState.listening:
+        return const Color(0xFF4CAF50);
+    }
+  }
+
+  String _getVadStatusDescription() {
+    if (_isMuted) return 'Mikrofon Di-mute';
+
+    switch (_currentVadState) {
+      case VadState.userSpeaking:
+        return 'VAD Aktif • Merekam Suara Pengguna...';
+      case VadState.aiProcessing:
+        return 'Hening Terdeteksi • Menyiapkan Jawaban AI...';
+      case VadState.aiSpeaking:
+        return 'LUNA Sedang Bicara (Dapat Disela Kapan Saja)';
+      case VadState.bargeInInterrupted:
+        return 'Interrupsi Terdeteksi! Memotong Suara LUNA...';
+      case VadState.idle:
+      case VadState.listening:
+        return 'VAD Siap • Silakan Bicara Kapan Saja';
+    }
   }
 
 }
