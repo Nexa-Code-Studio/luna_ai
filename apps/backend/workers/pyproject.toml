@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "luna-workers"
+version = "0.1.0"
+description = "Async Redis background worker tasks for Luna AI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "shared",
+    "ai",
+    "arq>=0.25.0",
+    "redis>=5.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
+
