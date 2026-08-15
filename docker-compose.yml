@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/backend/api/Dockerfile
+    container_name: luna_api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/luna_ai
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - luna_network
+
+  mcp:
+    build:
+      context: .
+      dockerfile: apps/backend/mcp/Dockerfile
+    container_name: luna_mcp
+    ports:
+      - "8001:8001"
+    environment:
+      - APP_ENV=development
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - redis
+      - qdrant
+    networks:
+      - luna_network
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/backend/workers/Dockerfile
+    container_name: luna_worker
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/luna_ai
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - luna_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: luna_postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=luna_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d luna_ai"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - luna_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: luna_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - luna_network
+
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    container_name: luna_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - luna_network
+
+networks:
+  luna_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
