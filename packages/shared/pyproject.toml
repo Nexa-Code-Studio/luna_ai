@@ -16,4 +16,4 @@ dependencies = [
 ]
 
 [tool.setuptools.package-dir]
-shared = "."
+"shared" = "."
