@@ -19,9 +19,17 @@ class BaseLLMProvider(ABC):
         self,
         messages: list[LLMMessage],
         temperature: float = 0.7,
+        response_format: str | dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
-        """Generate complete LLM response."""
+        """Generate complete LLM response.
+        
+        Args:
+            messages: List of system, user, assistant messages.
+            temperature: Sampling temperature (0.0 to 1.0).
+            response_format: Output format, e.g. "json" / "text" or provider-specific dict.
+            **kwargs: Extra provider-specific parameters.
+        """
         pass
 
     @abstractmethod
@@ -29,6 +37,7 @@ class BaseLLMProvider(ABC):
         self,
         messages: list[LLMMessage],
         temperature: float = 0.7,
+        response_format: str | dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         """Stream LLM response tokens."""

@@ -27,6 +27,7 @@ from app.models.enums import (
     VoiceSessionStatus,
     VoiceSpeaker,
 )
+from app.models.diary import DiaryEntry
 from app.models.memory import Memory
 from app.models.notification import Notification, NotificationPolicy
 from app.models.rag import (
@@ -58,6 +59,7 @@ __all__ = [
     "ConversationStatus",
     "ConversationSummary",
     "DeviceType",
+    "DiaryEntry",
     "EmotionAnalysis",
     "EvidenceLevel",
     "Knowledge",

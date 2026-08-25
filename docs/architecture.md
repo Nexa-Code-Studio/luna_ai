@@ -66,5 +66,6 @@ flowchart TD
 - Executes background operations (conversation summarization, memory extraction, emotion analysis, embedding generation).
 
 ### 5. Shared Domain Packages (`packages/shared` & `packages/ai`)
-- `packages/shared`: Common types, settings, database session setup, custom exception hierarchy.
-- `packages/ai`: Provider-agnostic abstractions (`BaseSTTProvider`, `BaseLLMProvider`, `BaseTTSProvider`, `BaseVectorStore`), `AIOrchestrator`, `RAGService`.
+- `packages/shared`: Common types, environment settings (`BaseConfig`), database session setup, custom exception hierarchy.
+- `packages/ai`: Provider-agnostic abstractions (`BaseLLMProvider`, `BaseTTSProvider`, `BaseSTTProvider`, `BaseVectorStore`), `LLMFactory`, `TTSFactory`, `AIOrchestrator`, `RAGService`.
+  - Supports dynamic provider switching via `.env` (`LLM_PROVIDER=openai|gemini|mock`, `TTS_PROVIDER=elevenlabs|openai|mock`).
