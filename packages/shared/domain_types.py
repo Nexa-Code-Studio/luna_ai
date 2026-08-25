@@ -26,3 +26,17 @@ class ApiResponse(BaseModel, Generic[T]):
     success: bool
     data: T | None = None
     error: str | None = None
+
+
+class EmotionDetectionResult(BaseModel):
+    """
+    Structured output schema for voice emotion detection.
+    Note: Emotion detection results represent voice-level signals/context only
+    and do NOT constitute clinical mental health diagnoses.
+    """
+    primary_emotion: str
+    confidence: float
+    scores: dict[str, float]
+    model_used: str = "iic/emotion2vec_plus_large"
+    latency_ms: float
+
