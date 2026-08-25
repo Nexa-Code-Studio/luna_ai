@@ -1,3 +1,4 @@
+from app.tasks.emotion_task import detect_voice_emotion_task
 from app.tasks.summarization import extract_memory_task, summarize_conversation_task
 from arq.connections import RedisSettings
 from shared.config import settings
@@ -15,6 +16,11 @@ def parse_redis_settings(url: str) -> RedisSettings:
 
 
 class WorkerSettings:
-    functions = [summarize_conversation_task, extract_memory_task]
+    functions = [
+        summarize_conversation_task,
+        extract_memory_task,
+        detect_voice_emotion_task,
+    ]
     redis_settings = parse_redis_settings(settings.REDIS_URL)
     max_jobs = 10
+
