@@ -1,0 +1,112 @@
+[
+  {
+    "id": "K001",
+    "condition": "stress",
+    "knowledge_type": "psychoeducation",
+    "title": "Pengertian Stres dan Bagaimana Pikiran Menjebak Kita ('Hooking')",
+    "content": "Stres didefinisikan sebagai keadaan ketegangan mental atau emosional yang dihasilkan dari keadaan yang merugikan atau menuntut. Hal ini terjadi ketika seseorang merasa tidak yakin dapat mengatasi situasi yang mengancam dan merasa negatif tentang hal itu. Dalam kondisi stres, seseorang sering kali mengalami 'emotional storms' atau badai emosional, di mana pikiran dan perasaan yang menyakitkan atau mengkhawatirkan menjebak kita ('hooking'). Mekanisme 'hooking' terjadi ketika pikiran-pikiran stres (seperti kekhawatiran tentang masa depan, penyesalan masa lalu, atau penilaian diri yang keras) menarik perhatian kita sepenuhnya, sehingga kita kehilangan fokus pada lingkungan sekitar dan melakukan tindakan yang tidak sejalan dengan nilai-nilai hidup kita.",
+    "evidence_level": "strong",
+    "source": "Doing What Matters in Times of Stress: An Illustrated Guide (WHO) & dreaddit dataset study",
+    "source_reference": "Doing What Matters in Times of Stress, Bagian Background & Halaman 5-7, 122; dreaddit paper, Halaman 1-2",
+    "limitations": "Penjelasan ini bersifat umum untuk populasi dewasa non-klinis; efektivitas pemahaman psikoedukasi ini secara mandiri tanpa panduan minimal bervariasi tergantung kapasitas kognitif individu."
+  },
+  {
+    "id": "K002",
+    "condition": "stress",
+    "knowledge_type": "self_help",
+    "title": "Teknik Grounding untuk Mengatasi Badai Emosional",
+    "content": "Teknik Grounding membantu menstabilkan diri selama 'badai emosional' dengan membawa perhatian kembali ke saat ini dan melepaskan diri dari pikiran yang menjebak ('unhooking'). Langkah-langkah melakukan Grounding secara mandiri: 1. Sadar dan Perhatikan (Notice): Sadari pikiran serta perasaan saat ini dengan penuh rasa ingin tahu. 2. Pelankan dan Hubungkan dengan Tubuh (Slow Down & Connect): Perlambat napas, hembuskan napas secara perlahan, hirup lembut, regangkan tubuh, dan tekan kedua kaki ke lantai. 3. Fokus Kembali dan Terlibat (Refocus & Engage): Alihkan perhatian penuh ke dunia sekitar menggunakan kelima indra (Lihat 5 benda, Dengarkan suara, Sentuh permukaan, Cium/Rasakan). Sadari di mana Anda berada dan libatkan diri sepenuhnya.",
+    "evidence_level": "strong",
+    "source": "Doing What Matters in Times of Stress: An Illustrated Guide (WHO)",
+    "source_reference": "Doing What Matters in Times of Stress, Modul 1 (Halaman 73-75, 122)",
+    "limitations": "Grounding tidak menghilangkan masalah mendasar yang menyebabkan stres, melainkan menstabilkan emosi agar individu dapat berpikir jernih sebelum mengambil tindakan."
+  },
+  {
+    "id": "K003",
+    "condition": "anxiety",
+    "knowledge_type": "self_help",
+    "title": "Melepaskan Diri dari Pikiran Negatif Menggunakan Metode 'Notice and Name'",
+    "content": "Saat kita dijebak oleh pikiran atau perasaan sulit, kita dapat menggunakan teknik 'Notice and Name' untuk melepaskan diri ('unhook'). Langkah-langkahnya adalah: 1. Sadar (Notice): Sadari bahwa Anda telah terjebak oleh sebuah pikiran atau perasaan sulit. Perhatikan hal tersebut dengan rasa ingin tahu. 2. Berikan Nama (Name): Berikan label atau nama pada pikiran/perasaan tersebut secara sunyi di dalam hati. Gunakan formula: 'Saya menyadari di sini ada pikiran bahwa [sebutkan pikiran]' atau 'Saya menyadari di sini ada perasaan [sebutkan emosi]'. 3. Fokus Kembali (Refocus): Arahkan kembali fokus Anda sepenuhnya pada apa yang sedang Anda lakukan saat ini.",
+    "evidence_level": "strong",
+    "source": "Doing What Matters in Times of Stress: An Illustrated Guide (WHO)",
+    "source_reference": "Doing What Matters in Times of Stress, Modul 2 (Halaman 73-74, 124)",
+    "limitations": "Memerlukan latihan rutin. Beberapa pengguna mungkin merasa aneh pada awalnya saat berbicara secara internal kepada diri sendiri."
+  },
+  {
+    "id": "K004",
+    "condition": "anxiety",
+    "knowledge_type": "psychoeducation",
+    "title": "Definisi Kecemasan dan Respons Ketakutan Individu",
+    "content": "Kecemasan didefinisikan sebagai respons ketakutan (fear response) yang dialami oleh individu ketika menghadapi situasi yang menimbulkan kekhawatiran atau kecemasan. Respons ini mencakup gejala somatis (autonomic arousal, efek otot rangka, ketegangan fisik), kecemasan situasional, dan pengalaman subjektif dari perasaan cemas atau panik. Kecemasan berbeda dengan stres; stres merujuk pada ketegangan persisten akibat tuntutan lingkungan, sedangkan kecemasan lebih berfokus pada respons ketakutan fisik dan subjektif yang mendekati kepanikan.",
+    "evidence_level": "moderate",
+    "source": "Studi Validasi DASS-21 Indonesia & Journal of Psychological Evaluation",
+    "source_reference": "7815-Article Text, Halaman 64-65; DASS-21 PDF, Halaman 208-210",
+    "limitations": "Studi validasi ini utamanya diuji pada populasi non-klinis di Indonesia. Diagnosa klinis gangguan kecemasan tetap memerlukan asesmen klinis formal oleh profesional."
+  },
+  {
+    "id": "K005",
+    "condition": "depression",
+    "knowledge_type": "psychoeducation",
+    "title": "Definisi Depresi, Kehilangan Semangat, dan Devaluasi Diri",
+    "content": "Depresi didefinisikan sebagai keadaan emosional negatif di mana individu mengalami kehilangan harga diri (loss of self-esteem), merasa tidak mampu mencapai tujuan hidup yang diharapkan, dysphoria, keputusasaan (hopelessness), ketiadaan minat/anhedonia (lack of positive affect), serta perasaan bahwa hidup tidak berharga atau tidak berarti. Depresi dalam konteks non-klinis diidentifikasi sebagai tingkat keparahan gejala emosional negatif, bukan sebagai diagnosis gangguan depresi mayor (Major Depressive Disorder).",
+    "evidence_level": "moderate",
+    "source": "Studi Validasi DASS-21 Indonesia (Muttaqin, 2021; Hakim, 2023)",
+    "source_reference": "7815-Article Text, Halaman 64-65; Uji Reliabilitas DASS-21, Halaman 61-63",
+    "limitations": "Deteksi emosional depresi melalui instrumen laporan diri tidak boleh dijadikan dasar diagnosis tunggal tanpa wawancara klinis terstruktur."
+  },
+  {
+    "id": "K008",
+    "condition": "emotional_regulation",
+    "knowledge_type": "psychoeducation",
+    "title": "Edukasi Mengidentifikasi Emosi untuk Remaja dan Dewasa",
+    "content": "Langkah pertama dalam meregulasi emosi adalah mengenali dan mengidentifikasi apa yang sedang kita rasakan secara akurat ('Understanding My Feelings'). Ketika seseorang mengalami situasi sulit, mereka sering kali mengalami perpaduan emosi yang membingungkan. Membantu pengguna memetakan perasaan mereka dapat dilakukan dengan mengajarkan bahwa emosi memiliki komponen fisik (sensasi di tubuh) dan komponen pikiran. Menyadari emosi membantu menghentikan siklus buruk yang memperparah stres.",
+    "evidence_level": "strong",
+    "source": "Early Adolescent Skills for Emotions (EASE) Manual (WHO & UNICEF)",
+    "source_reference": "EASE WHO, Bab 1.9.1, Bab 4a, Halaman 83-84",
+    "limitations": "Pendekatan visual EASE dirancang untuk kelompok usia remaja, namun prinsip dasar identifikasi sensasi somatik emosi tetap berlaku untuk dewasa awal."
+  },
+  {
+    "id": "K009",
+    "condition": "anxiety",
+    "knowledge_type": "self_help",
+    "title": "Teknik Napas Lambat 'Slow Breathing' untuk Menenangkan Tubuh",
+    "content": "Ketika mengalami stres atau kecemasan, tubuh secara otomatis mengambil napas pendek dan cepat, yang meningkatkan ketegangan fisik. Teknik 'Slow Breathing' membantu mengembalikan kendali tubuh ke kondisi tenang. Langkah-langkahnya: 1. Rilekskan Tubuh: Duduk nyaman, kendurkan ketegangan tubuh. 2. Napas dari Perut: Letakkan satu tangan di perut. 3. Bernapas Lambat: Hirup napas perlahan melalui hidung selama 3 detik. Hembuskan perlahan melalui mulut selama 3 detik. 4. Latihan Mandiri: Lanjutkan latihan selama 2 hingga 4 menit.",
+    "evidence_level": "strong",
+    "source": "Early Adolescent Skills for Emotions (EASE) Manual (WHO)",
+    "source_reference": "EASE WHO, Aktivitas 2.2 (Halaman 676-681); DWM Halaman 664-665",
+    "limitations": "Melakukan napas terlalu cepat atau terlalu dalam dapat menyebabkan pusing. Jika merasa pusing, kembali ke pola napas normal yang santai."
+  },
+  {
+    "id": "K010",
+    "condition": "depression",
+    "knowledge_type": "self_help",
+    "title": "Aktivasi Perilaku Menggunakan Metode Tangga 'Changing My Actions'",
+    "content": "Ketika seseorang mengalami depresi atau stres berat, mereka cenderung menarik diri dari aktivitas, yang membuat suasana hati semakin memburuk. Aktivasi Perilaku membantu memutus siklus ini dengan memulai tindakan secara bertahap menggunakan metode tangga (Staircase Method): 1. Pilih Aktivitas: Pilih satu aktivitas yang menyenangkan atau memberikan rasa pencapaian. 2. Pecah Menjadi Langkah Kecil: Gambar tangga dengan 4 anak tangga dari langkah termudah hingga lengkap. 3. Buat Rencana: Tentukan secara spesifik kapan dan di mana melakukan langkah terbawah. 4. Ulangi dan Tingkatkan: Jalankan langkah pertama, lalu melangkah ke anak tangga berikutnya.",
+    "evidence_level": "strong",
+    "source": "Early Adolescent Skills for Emotions (EASE) Manual (WHO & UNICEF)",
+    "source_reference": "EASE WHO, Aktivitas 3.4 & 4.3 (Halaman 682-686, 689-694)",
+    "limitations": "Pengguna dengan tingkat depresi sangat berat mungkin kesulitan menemukan motivasi awal bahkan untuk langkah terkecil."
+  },
+  {
+    "id": "K011",
+    "condition": "stress",
+    "knowledge_type": "self_help",
+    "title": "Metode 'Stop, Think, Go' untuk Pemecahan Masalah Praktis",
+    "content": "Tekanan emosional sering kali memperburuk kemampuan kognitif dalam memecahkan masalah praktis. Metode 'Stop, Think, Go' membantu mengorganisasi pikiran: 1. STOP (Berhenti & Pilih): Berhentilah sejenak. Pilih satu masalah praktis yang spesifik, kecil, dan paling mudah diselesaikan. 2. THINK (Pikirkan Solusi): Pikirkan solusi sebanyak mungkin (minimal 5 ide solusi). 3. GO (Pilih & Lakukan): Evaluasi baik-buruknya setiap ide. Pilih satu solusi terbukti paling mudah dan jalankan rencana tersebut.",
+    "evidence_level": "strong",
+    "source": "Early Adolescent Skills for Emotions (EASE) Manual (WHO & UNICEF)",
+    "source_reference": "EASE WHO, Aktivitas 5.4 & 5.5 (Halaman 698-707); DWM Modul 3",
+    "limitations": "Metode ini tidak dirancang untuk masalah emosional internal atau trauma masa lalu, melainkan untuk masalah praktis yang dapat dikendalikan langsung."
+  },
+  {
+    "id": "K013",
+    "condition": "general",
+    "knowledge_type": "treatment",
+    "title": "Kriteria Eksklusi Layanan Mandiri Luna dan Rujukan Profesional",
+    "content": "Layanan AI counseling non-klinis Luna tidak boleh memberikan pendampingan mandiri (eksklusi) dan wajib memberikan rujukan profesional (psikolog/psikiater/puskesmas/kontak darurat) jika pengguna menunjukkan salah satu dari kriteria berikut: 1. Risk of Suicide (niat aktif atau percobaan bunuh diri). 2. Gangguan Neurologis / Psikosis Berat (halusinasi pendengaran/visual, delusi aktif). 3. Ketergantungan zat adiktif/narkoba aktif. 4. Ancaman kekerasan fisik/KDRT aktif yang mengancam jiwa. 5. Disfungsi perawatan diri ekstrem (menolak mandi/makan berhari-hari).",
+    "evidence_level": "strong",
+    "source": "EASE Guidelines (WHO & UNICEF)",
+    "source_reference": "EASE WHO, Bab 1.4 & 1.5, Table 5 (Halaman 56-59, 73-74)",
+    "limitations": "Identifikasi kriteria eksklusi ini dalam percakapan teks AI membutuhkan sistem penyaringan kata kunci yang sensitif terhadap bahasa informal."
+  }
+]
