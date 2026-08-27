@@ -28,8 +28,10 @@ class EmotionAnalysis(BaseModel):
     primary_emotion: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     secondary_emotion: Mapped[str | None] = mapped_column(String(50), nullable=True)
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    emotions: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     intensity: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
+    
+    # Stores complete 9-class raw probability distribution JSON (emotion2vec_plus_large)
+    emotions: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     __table_args__ = (Index("idx_emotion_analyses_created_at", "created_at"),)
 
