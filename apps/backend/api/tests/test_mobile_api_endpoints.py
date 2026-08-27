@@ -15,15 +15,15 @@ async def dispose_engine():
 @pytest.mark.asyncio
 async def test_auth_login_and_me():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        login_res = await client.post("/api/v1/auth/login", json={"email": "user.luna@gmail.com", "password": "password123"})
+        login_res = await client.post("/api/v1/auth/login", json={"email": "samsul@gmail.com", "password": "password123"})
         assert login_res.status_code == 200
         data = login_res.json()
         assert "access_token" in data
-        assert data["user"]["email"] == "user.luna@gmail.com"
+        assert data["user"]["email"] == "samsul@gmail.com"
 
         me_res = await client.get("/api/v1/auth/me")
         assert me_res.status_code == 200
-        assert me_res.json()["email"] == "user.luna@gmail.com"
+        assert me_res.json()["email"] == "samsul@gmail.com"
 
 
 @pytest.mark.asyncio

@@ -21,16 +21,31 @@ async def seed_master_data() -> User:
         await conn.run_sync(BaseModel.metadata.create_all)
 
     async with AsyncSessionLocal() as session:
-        # 1. Seed Master User
-        query_user = select(User).where(User.email == "user.luna@gmail.com")
+        # 1. Seed Master User (Samsul)
+        query_user = select(User).where(User.email == "samsul@gmail.com")
         res_user = await session.execute(query_user)
         user = res_user.scalar_one_or_none()
 
+        # Check for legacy user.luna@gmail.com to migrate/update
+        if not user:
+            query_old = select(User).where(User.email == "user.luna@gmail.com")
+            res_old = await session.execute(query_old)
+            old_user = res_old.scalar_one_or_none()
+            if old_user:
+                user = old_user
+                user.email = "samsul@gmail.com"
+                user.username = "samsul"
+                user.display_name = "Samsul"
+                user.password_hash = "password123"
+                await session.commit()
+                await session.refresh(user)
+                logger.info(f"Migrated existing user to Samsul: samsul@gmail.com ({user.id})")
+
         if not user:
             user = User(
-                email="user.luna@gmail.com",
-                username="user.luna",
-                display_name="User Luna",
+                email="samsul@gmail.com",
+                username="samsul",
+                display_name="Samsul",
                 password_hash="password123",
                 is_active=True,
                 is_verified=True,
@@ -38,9 +53,12 @@ async def seed_master_data() -> User:
             session.add(user)
             await session.commit()
             await session.refresh(user)
-            logger.info(f"Seeded User: user.luna@gmail.com ({user.id})")
+            logger.info(f"Seeded Master User: samsul@gmail.com ({user.id})")
         else:
-            logger.info(f"Existing User found: {user.email}")
+            user.display_name = "Samsul"
+            user.username = "samsul"
+            await session.commit()
+            logger.info(f"Existing Master User updated: {user.email}")
 
         # 2. Seed Emergency Contacts
         query_contacts = select(EmergencyContact).where(EmergencyContact.user_id == user.id)

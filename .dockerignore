@@ -1,0 +1,16 @@
+.git
+.gitignore
+.vscode
+.opencode
+.idea
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+logs/
+graphify-out/
+build/
+.dart_tool/
+.pub-cache/

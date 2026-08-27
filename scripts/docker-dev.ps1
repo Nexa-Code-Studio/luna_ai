@@ -20,12 +20,9 @@ if ((-not (Test-Path $EnvFile)) -and (Test-Path $EnvExampleFile)) {
 $env:DOCKER_BUILDKIT = "1"
 $env:COMPOSE_DOCKER_CLI_BUILD = "1"
 
-# Spin up containers in detached mode with build
-docker compose up -d --build
-
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Green
-Write-Host "✅ All LUNA AI Docker containers started successfully!" -ForegroundColor Green
+Write-Host "🚀 Starting LUNA AI Interactive Docker Environment" -ForegroundColor Green
 Write-Host "------------------------------------------------------------"
 Write-Host "  • FastAPI Application  : http://localhost:8888"
 Write-Host "  • FastMCP Tool Server : http://localhost:8889"
@@ -33,8 +30,15 @@ Write-Host "  • PostgreSQL Database  : localhost:5432"
 Write-Host "  • Redis Cache / Queue : localhost:6379"
 Write-Host "  • Qdrant Vector DB    : http://localhost:6333"
 Write-Host "============================================================" -ForegroundColor Green
+Write-Host "💡 Press Ctrl+C at any time to stop all services automatically." -ForegroundColor Yellow
 Write-Host ""
-Write-Host "💡 Useful commands:"
-Write-Host "  • View live logs : docker compose logs -f"
-Write-Host "  • Stop containers: docker compose down"
-Write-Host ""
+
+try {
+    # Run docker compose in foreground mode to stream colored logs directly to terminal
+    docker compose up $args
+} finally {
+    Write-Host ""
+    Write-Host "🛑 [STOPPING DOCKER]: Shutting down all LUNA AI containers..." -ForegroundColor Yellow
+    docker compose down
+    Write-Host "✅ All containers stopped cleanly." -ForegroundColor Green
+}
