@@ -27,6 +27,7 @@ from app.models.enums import (
     VoiceSessionStatus,
     VoiceSpeaker,
 )
+from app.models.diary import DiaryEntry
 from app.models.memory import Memory
 from app.models.notification import Notification, NotificationPolicy
 from app.models.rag import (
@@ -39,9 +40,11 @@ from app.models.rag import (
     Source,
     Symptom,
 )
+from app.models.recommendation import RecommendationItem
 from app.models.safety import EmotionAnalysis, SafetyAnalysis, SafetyEvent
-from app.models.user import User, UserDevice
+from app.models.user import EmergencyContact, User, UserDevice
 from app.models.voice import VoiceSession, VoiceTurn
+
 
 __all__ = [
     "AIRun",
@@ -58,6 +61,7 @@ __all__ = [
     "ConversationStatus",
     "ConversationSummary",
     "DeviceType",
+    "DiaryEntry",
     "EmotionAnalysis",
     "EvidenceLevel",
     "Knowledge",
