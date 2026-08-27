@@ -10,7 +10,8 @@
 - **Database:** PostgreSQL 16 + SQLAlchemy 2.0 (Async ORM) + Alembic migrations
 - **Vector DB:** Qdrant (Semantic search & RAG)
 - **Cache & Message Broker:** Redis 7 (ARQ Async Worker Queue & Cache)
-- **MCP Framework:** FastMCP (Model Context Protocol server on port `:8001`)
+- **MCP Framework:** FastMCP (Model Context Protocol server on port `:8889`)
+
 
 ---
 
@@ -71,7 +72,8 @@ Key domain entities in `apps/backend/api/app/models`:
 
 ## 5. FastMCP Tool Layer (`apps/backend/mcp`)
 
-FastMCP runs on port `:8001` exposing controlled tools to LLM agents:
+FastMCP runs on port `:8889` exposing controlled tools to LLM agents:
+
 
 - `search_knowledge(query: str, category: str = None)`: Vector search on RAG psychoeducation articles.
 - `search_memory(user_id: str, query: str)`: Semantic search over user's long-term memory embeddings.

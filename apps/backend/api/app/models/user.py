@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship as orm_relationship
 
 from app.models.base import BaseModel
 
@@ -21,8 +21,11 @@ class User(BaseModel):
     is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Relationships
-    devices: Mapped[list["UserDevice"]] = relationship(
+    devices: Mapped[list["UserDevice"]] = orm_relationship(
         "UserDevice", back_populates="user", cascade="all, delete-orphan"
+    )
+    emergency_contacts: Mapped[list["EmergencyContact"]] = orm_relationship(
+        "EmergencyContact", back_populates="user", cascade="all, delete-orphan"
     )
 
 
@@ -42,7 +45,21 @@ class UserDevice(BaseModel):
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="devices")
+    user: Mapped["User"] = orm_relationship("User", back_populates="devices")
 
 
-__table_args__ = (Index("idx_user_devices_user_active", UserDevice.user_id, UserDevice.is_active),)
+class EmergencyContact(BaseModel):
+    __tablename__ = "emergency_contacts"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    relationship: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    phone_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    user: Mapped["User"] = orm_relationship("User", back_populates="emergency_contacts")

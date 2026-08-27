@@ -30,17 +30,22 @@ cleanup() {
 
 trap cleanup INT TERM EXIT
 
-echo "==> Starting FastAPI application server (port 8000)..."
-(cd "$ROOT_DIR/apps/backend/api" && PYTHONPATH=. uvicorn app.main:app --reload --port 8000) &
+PORT_NUM=${PORT:-8888}
+echo "==> Starting FastAPI application server (port $PORT_NUM)..."
+(cd "$ROOT_DIR/apps/backend/api" && PYTHONPATH="$ROOT_DIR:." uvicorn app.main:app --reload --port "$PORT_NUM") &
+
 PIDS+=($!)
 
-echo "==> Starting FastMCP AI tool server (port 8001)..."
-(cd "$ROOT_DIR/apps/backend/mcp" && PYTHONPATH=. python -m app.main) &
+MCP_PORT_NUM=${MCP_PORT:-8889}
+echo "==> Starting FastMCP AI tool server (port $MCP_PORT_NUM)..."
+(cd "$ROOT_DIR/apps/backend/mcp" && PYTHONPATH="$ROOT_DIR:." MCP_PORT="$MCP_PORT_NUM" python -m app.main) &
+
 PIDS+=($!)
 
 echo "==> Starting ARQ Worker..."
-(cd "$ROOT_DIR/apps/backend/workers" && PYTHONPATH=. arq app.workers.settings.WorkerSettings) &
+(cd "$ROOT_DIR/apps/backend/workers" && PYTHONPATH="$ROOT_DIR:." arq app.workers.settings.WorkerSettings) &
 PIDS+=($!)
+
 
 echo "==> All backend services started concurrently. Press Ctrl+C to stop."
 

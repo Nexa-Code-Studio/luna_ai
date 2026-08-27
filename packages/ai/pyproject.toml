@@ -12,6 +12,8 @@ dependencies = [
     "shared",
     "pydantic>=2.0.0",
     "qdrant-client>=1.9.0",
+    "httpx>=0.25.0",
+    "edge-tts>=6.1.9",
 ]
 
 [tool.setuptools.package-dir]

@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -e ./apps/backend/mcp
 
 WORKDIR /workspace/apps/backend/mcp
 
-EXPOSE 8001
+EXPOSE 8889
+
 
 CMD ["python", "-m", "app.main"]
