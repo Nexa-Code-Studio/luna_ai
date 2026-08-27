@@ -32,11 +32,12 @@ python -m pip install --upgrade pip
 
 # Install local packages in editable mode
 Write-Host "==> Installing local packages using editable installs (pip install -e)..."
-pip install -e packages/shared
-pip install -e packages/ai
-pip install -e apps/backend/api
-pip install -e apps/backend/mcp
-pip install -e apps/backend/workers
+pip install -e "$RootDir\packages\shared"
+pip install -e "$RootDir\packages\ai"
+pip install -e "$RootDir\apps\backend\api"
+pip install -e "$RootDir\apps\backend\mcp"
+pip install -e "$RootDir\apps\backend\workers"
+
 
 # Create .env from .env.example if it doesn't exist
 $EnvFile = Join-Path $RootDir ".env"

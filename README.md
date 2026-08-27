@@ -107,8 +107,10 @@ docker compose up --build
 ```
 
 Services will start with the following local port bindings:
-- **FastAPI**: `http://localhost:8000`
-- **FastMCP**: `http://localhost:8001`
+- **FastAPI**: `http://localhost:8888`
+
+- **FastMCP**: `http://localhost:8889`
+
 - **PostgreSQL**: `localhost:5432`
 - **Redis**: `localhost:6379`
 - **Qdrant**: `http://localhost:6333`
@@ -130,12 +132,12 @@ pip install -e apps/backend/api
 
 # Run uvicorn server
 cd apps/backend/api
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8888
 ```
 
 Verify health check:
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8888/health
 ```
 
 ---
@@ -174,7 +176,9 @@ pytest apps/backend/workers/tests
 
 ## 12. Service Communication Architecture
 
-1. **Mobile Application → FastAPI**: Direct REST / WebSocket HTTP communication on port 8000.
+1. **Mobile Application → FastAPI**: Direct REST / WebSocket HTTP communication on port 8888.
+
 2. **FastAPI → Database / Cache / Vector**: Direct connections to PostgreSQL (`postgres:5432`), Redis (`redis:6379`), and Qdrant (`qdrant:6333`).
 3. **FastAPI → Worker**: FastAPI enqueues jobs to Redis; ARQ Worker process pops and executes jobs asynchronously.
-4. **LLM Client → FastMCP**: External LLMs connect to FastMCP on port 8001 to execute registered tools and query knowledge context.
+4. **LLM Client → FastMCP**: External LLMs connect to FastMCP on port 8889 to execute registered tools and query knowledge context.
+

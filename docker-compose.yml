@@ -7,7 +7,7 @@ services:
       dockerfile: apps/backend/api/Dockerfile
     container_name: luna_api
     ports:
-      - "8000:8000"
+      - "8888:8888"
     environment:
       - APP_ENV=development
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/luna_ai
@@ -21,7 +21,8 @@ services:
       qdrant:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+
       interval: 10s
       timeout: 5s
       retries: 3
@@ -34,7 +35,8 @@ services:
       dockerfile: apps/backend/mcp/Dockerfile
     container_name: luna_mcp
     ports:
-      - "8001:8001"
+      - "8889:8889"
+
     environment:
       - APP_ENV=development
       - REDIS_URL=redis://redis:6379/0

@@ -2,8 +2,10 @@ import logging
 from typing import ClassVar
 
 from packages.ai.interfaces.llm import BaseLLMProvider
+from packages.ai.providers.llm.deepseek_llm import DeepSeekLLMProvider
 from packages.ai.providers.llm.gemini_llm import GeminiLLMProvider
 from packages.ai.providers.llm.mock_llm import MockLLMProvider
+from packages.ai.providers.llm.ollama_llm import OllamaLLMProvider
 from packages.ai.providers.llm.openai_llm import OpenAILLMProvider
 from packages.shared.config import settings
 
@@ -32,7 +34,13 @@ class LLMFactory:
 
         logger.info(f"Instantiating LLM Provider: '{target}'")
 
-        if target == "openai":
+        if target in ("deepseek", "deepseek-chat"):
+            if _is_placeholder(settings.LLM_API_KEY):
+                logger.warning("LLM_API_KEY is empty or placeholder in .env. Falling back to MockLLMProvider.")
+                instance = MockLLMProvider()
+            else:
+                instance = DeepSeekLLMProvider()
+        elif target == "openai":
             if _is_placeholder(settings.LLM_API_KEY):
                 logger.warning("LLM_API_KEY is empty or placeholder in .env. Falling back to MockLLMProvider.")
                 instance = MockLLMProvider()
@@ -44,6 +52,8 @@ class LLMFactory:
                 instance = MockLLMProvider()
             else:
                 instance = GeminiLLMProvider()
+        elif target == "ollama":
+            instance = OllamaLLMProvider()
         elif target == "mock":
             instance = MockLLMProvider()
         else:

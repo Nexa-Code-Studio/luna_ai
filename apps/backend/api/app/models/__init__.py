@@ -40,9 +40,11 @@ from app.models.rag import (
     Source,
     Symptom,
 )
+from app.models.recommendation import RecommendationItem
 from app.models.safety import EmotionAnalysis, SafetyAnalysis, SafetyEvent
-from app.models.user import User, UserDevice
+from app.models.user import EmergencyContact, User, UserDevice
 from app.models.voice import VoiceSession, VoiceTurn
+
 
 __all__ = [
     "AIRun",

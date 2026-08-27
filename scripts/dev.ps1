@@ -18,7 +18,8 @@ $services = @(
     @{
         Name = "FastAPI Application Server"
         Path = Join-Path $RootDir "apps\backend\api"
-        Command = "uvicorn app.main:app --reload --port 8000"
+        Command = "uvicorn app.main:app --reload --port 8888"
+
     },
     @{
         Name = "FastMCP AI Tool Server"
@@ -34,8 +35,9 @@ $services = @(
 
 foreach ($service in $services) {
     Write-Host "==> Starting $($service.Name)..."
-    $scriptBlock = "Set-Location '$($service.Path)'; `$env:PYTHONPATH='.'; if (Test-Path '$VenvActivate') { . '$VenvActivate' } else { `$env:PATH = '$(Join-Path $VenvPath 'Scripts');' + `$env:PATH }; $($service.Command)"
+    $scriptBlock = "Set-Location '$($service.Path)'; `$env:PYTHONPATH='$RootDir;.'; if (Test-Path '$VenvActivate') { . '$VenvActivate' } else { `$env:PATH = '$(Join-Path $VenvPath 'Scripts');' + `$env:PATH }; $($service.Command)"
     Start-Process powershell -ArgumentList "-NoExit", "-Command", $scriptBlock
 }
+
 
 Write-Host "==> All backend services started in separate PowerShell windows."

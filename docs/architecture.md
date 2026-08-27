@@ -11,8 +11,10 @@ flowchart TD
     end
 
     subgraph Backend Infrastructure
-        API[FastAPI Application Server\n:8000]
-        MCP[FastMCP Server\n:8001]
+        API[FastAPI Application Server\n:8888]
+
+        MCP[FastMCP Server\n:8889]
+
         Worker[ARQ Async Worker]
     end
 
