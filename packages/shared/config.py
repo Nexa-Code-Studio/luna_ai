@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -21,9 +22,21 @@ class BaseConfig(BaseSettings):
 
 
 
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/luna_ai"
-    REDIS_URL: str = "redis://localhost:6379/0"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5433/luna_ai"
+    REDIS_URL: str = "redis://localhost:6380/0"
     QDRANT_URL: str = "http://localhost:6333"
+
+    @model_validator(mode="after")
+    def _apply_os_environment_overrides(self) -> "BaseConfig":
+        """Force explicit OS environment variables (e.g. from Docker Compose) to override .env file."""
+        import os
+        if "DATABASE_URL" in os.environ:
+            self.DATABASE_URL = os.environ["DATABASE_URL"]
+        if "REDIS_URL" in os.environ:
+            self.REDIS_URL = os.environ["REDIS_URL"]
+        if "QDRANT_URL" in os.environ:
+            self.QDRANT_URL = os.environ["QDRANT_URL"]
+        return self
 
     # LLM Settings (openai | gemini | ollama | mock)
     LLM_PROVIDER: str = "openai"
