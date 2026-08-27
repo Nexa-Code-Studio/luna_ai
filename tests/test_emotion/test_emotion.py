@@ -7,7 +7,7 @@ def run_poc(audio_paths: list[str]):
     existing_paths = [p for p in audio_paths if os.path.exists(p)]
     if not existing_paths:
         print(f"❌ Error: Tidak ada file audio yang ditemukan di path: {audio_paths}")
-        print("Silakan letakkan file audio WAV (misal: scripts/1.wav ... scripts/5.wav) lalu jalankan kembali script ini.")
+        print("Silakan letakkan file audio WAV (misal: tests/test_emotion/1.wav ... tests/test_emotion/5.wav) lalu jalankan kembali script ini.")
         return
 
     print("==================================================")
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         audio_files = sys.argv[1:]
     else:
-        # Default: cari 1.wav sampai 5.wav di folder scripts
+        # Default: cari 1.wav sampai 5.wav di folder tests/test_emotion
         default_files = [str(script_dir / f"{i}.wav") for i in range(1, 6)]
         audio_files = [f for f in default_files if os.path.exists(f)]
         if not audio_files:
