@@ -56,8 +56,8 @@ class BaseConfig(BaseSettings):
     # TTS Settings (elevenlabs | openai | edge_tts | mock)
     TTS_PROVIDER: str = "elevenlabs"
     TTS_API_KEY: str = ""
-    TTS_VOICE_ID: str = "21m00Tcm4TlvDq8ikWAM"  # Default ElevenLabs voice ID (Rachel)
-    TTS_MODEL: str = "eleven_monolingual_v1"
+    TTS_VOICE_ID: str = "cgSgspJ2msm6clMCkdW9"  # ElevenLabs Jessica voice ID
+    TTS_MODEL: str = "eleven_multilingual_v2"
     EDGE_TTS_VOICE: str = "id-ID-GadisNeural"
 
 
