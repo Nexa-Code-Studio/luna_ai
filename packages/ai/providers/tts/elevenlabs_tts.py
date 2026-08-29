@@ -1,8 +1,11 @@
+import logging
 from collections.abc import AsyncGenerator
 
 import httpx
 from packages.ai.interfaces.tts import BaseTTSProvider
 from packages.shared.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ElevenLabsTTSProvider(BaseTTSProvider):
@@ -10,8 +13,8 @@ class ElevenLabsTTSProvider(BaseTTSProvider):
 
     def __init__(self, api_key: str | None = None, voice_id: str | None = None) -> None:
         self.api_key = api_key or settings.TTS_API_KEY
-        self.default_voice = voice_id or settings.TTS_VOICE_ID or "21m00Tcm4TlvDq8ikWAM"
-        self.model_id = settings.TTS_MODEL or "eleven_monolingual_v1"
+        self.default_voice = voice_id or settings.TTS_VOICE_ID or "cgSgspJ2msm6clMCkdW9"
+        self.model_id = settings.TTS_MODEL or "eleven_multilingual_v2"
 
     async def synthesize(self, text: str, voice_id: str | None = None) -> bytes:
         if not self.api_key:
@@ -36,6 +39,12 @@ class ElevenLabsTTSProvider(BaseTTSProvider):
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, headers=headers, timeout=30.0)
             if response.status_code != 200:
+                if response.status_code == 402 and "paid_plan_required" in response.text and voice != "EXAVITQu4vr4xnSDxMaL":
+                    logger.warning(
+                        f"ElevenLabs library voice '{voice}' requires a paid plan. "
+                        "Falling back to premade multilingual voice 'EXAVITQu4vr4xnSDxMaL' (Sarah)."
+                    )
+                    return await self.synthesize(text, voice_id="EXAVITQu4vr4xnSDxMaL")
                 raise RuntimeError(f"ElevenLabs TTS API error {response.status_code}: {response.text}")
             return response.content
 
