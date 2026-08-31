@@ -4,10 +4,6 @@ import tempfile
 import time
 from typing import Dict, Tuple
 
-import soundfile as sf
-import torch
-import torchaudio
-
 from shared.domain_types import EmotionDetectionResult
 
 
@@ -66,6 +62,10 @@ class EmotionService:
         """
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f"Audio file not found at: {audio_path}")
+
+        import soundfile as sf
+        import torch
+        import torchaudio
 
         try:
             info = sf.info(audio_path)

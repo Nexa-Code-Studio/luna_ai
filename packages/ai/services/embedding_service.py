@@ -1,7 +1,5 @@
 import logging
-from typing import List
-
-from fastembed import TextEmbedding
+from typing import Any, List
 
 from ai.interfaces.embedding import BaseEmbeddingProvider
 
@@ -17,11 +15,16 @@ class DefaultEmbeddingProvider(BaseEmbeddingProvider):
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.model_name = model_name
         self.vector_size = 384
-        self._model: TextEmbedding | None = None
+        self._model: Any | None = None
 
     def _load_model(self) -> None:
-
         if self._model is None:
+            try:
+                from fastembed import TextEmbedding
+            except ImportError as e:
+                logger.error("fastembed library is missing. Install fastembed package.")
+                raise ImportError("fastembed library is required for DefaultEmbeddingProvider.") from e
+
             logger.info(f"Loading FastEmbed model '{self.model_name}'...")
             self._model = TextEmbedding(model_name=self.model_name)
             logger.info(f"FastEmbed model '{self.model_name}' loaded successfully.")

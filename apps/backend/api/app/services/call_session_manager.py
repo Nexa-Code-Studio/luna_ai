@@ -7,6 +7,7 @@ from fastapi import WebSocket
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from app.core.prompt_templates import LUNA_SYSTEM_PROMPT
 from app.db.session import AsyncSessionLocal
 from app.models.conversation import Conversation, Message
 from app.models.diary import DiaryEntry
@@ -30,14 +31,7 @@ class CallSession:
         self.user_id: Any | None = None
         self.is_history_loaded: bool = False
         self.conversation_history: list[LLMMessage] = [
-            LLMMessage(
-                role="system",
-                content=(
-                    "Anda adalah Luna, seorang konselor AI empati yang membantu pengguna "
-                    "merasa tenang, didengarkan, dan didukung. Jawab dengan singkat, ramah, "
-                    "dan hangat dalam Bahasa Indonesia (maksimal 2-3 kalimat agar nyaman didengar)."
-                ),
-            )
+            LLMMessage(role="system", content=LUNA_SYSTEM_PROMPT)
         ]
         self.current_task_id: int = 0
         self._current_ai_task: asyncio.Task[Any] | None = None
@@ -287,32 +281,65 @@ class CallSessionManager:
 
             session.state = "ai_speaking"
 
-            # 1. Stream LLM text response tokens live to client for captions while collecting full response
+            # 1. Stream LLM tokens and synthesize TTS in sentence chunks for ultra-low latency (< 1.2s response time)
             full_text_list = []
+            sentence_buffer = ""
+            total_audio_bytes = 0
+
+            async def _synthesize_and_send_chunk(text_chunk: str) -> None:
+                nonlocal total_audio_bytes
+                clean_chunk = text_chunk.strip()
+                if not clean_chunk or session.current_task_id != task_id:
+                    return
+                try:
+                    logger.info(f"🎙️ [TTS CHUNK SYNTHESIZING] Session {session.session_id}: '{clean_chunk}'")
+                    audio_bytes = await tts_provider.synthesize(clean_chunk)
+                    if session.current_task_id == task_id and audio_bytes:
+                        total_audio_bytes += len(audio_bytes)
+                        logger.info(f"🔊 [OUTGOING TTS AUDIO CHUNK] Session {session.session_id}: Sent {len(audio_bytes)} audio bytes")
+                        await session.websocket.send_bytes(audio_bytes)
+                except Exception as ex:
+                    logger.error(f"⚠️ [TTS CHUNK SYNTHESIS ERROR] Session {session.session_id}: {ex}")
+
             try:
                 async for token in llm_provider.stream_response(session.conversation_history):
                     if session.current_task_id != task_id:
                         logger.info(f"⚡ [LLM STREAM SUPERSEDED] Session {session.session_id} (Task {task_id})")
                         break
                     full_text_list.append(token)
-                    # Stream text chunk to client for real-time caption
+                    sentence_buffer += token
+
+                    # Stream text chunk to client
                     await session.websocket.send_json({
                         "type": "ai_transcript_chunk",
                         "text": token,
                     })
+
+                    # Check for sentence end punctuation for immediate audio synthesis
+                    if any(p in sentence_buffer for p in [".", "!", "?", "\n"]) or ("," in sentence_buffer and len(sentence_buffer) >= 35):
+                        chunk_to_speak = sentence_buffer
+                        sentence_buffer = ""
+                        await _synthesize_and_send_chunk(chunk_to_speak)
+
+                # Process any trailing text remaining in buffer
+                if sentence_buffer.strip() and session.current_task_id == task_id:
+                    await _synthesize_and_send_chunk(sentence_buffer)
+                    sentence_buffer = ""
+
             except asyncio.CancelledError:
                 logger.info(f"⚡ [LLM STREAM CANCELLED] Session {session.session_id} (Task {task_id})")
                 raise
             except Exception as e:
                 logger.error(f"❌ [LLM STREAM ERROR] Session {session.session_id} (Task {task_id}): {e}")
-                full_text_list = ["Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"]
+                fallback_msg = "Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"
+                full_text_list = [fallback_msg]
+                await _synthesize_and_send_chunk(fallback_msg)
 
             if session.current_task_id != task_id:
                 return
 
             full_response = "".join(full_text_list).strip()
-            logger.info(f"🧠 [AI GENERATED TEXT] Session {session.session_id} (Task {task_id}): '{full_response}'")
-            audio_count = 0
+            logger.info(f"🧠 [AI GENERATED TEXT COMPLETE] Session {session.session_id} (Task {task_id}): '{full_response}'")
 
             if full_response and session.current_task_id == task_id:
                 session.conversation_history.append(
@@ -320,17 +347,10 @@ class CallSessionManager:
                 )
                 await self._save_message_to_db(session, "assistant", full_response)
 
-                # 2. Synthesize complete full response with TTS for natural prosody, intact emotion & clear intonation
-                audio_bytes = await tts_provider.synthesize(full_response)
-                if session.current_task_id == task_id and audio_bytes:
-                    audio_count = len(audio_bytes)
-                    logger.info(f"🔊 [OUTGOING FULL TTS AUDIO] Session {session.session_id} (Task {task_id}): Sent full audio ({audio_count} bytes)")
-                    await session.websocket.send_bytes(audio_bytes)
-
             # Signal speech completion if this task is still active
             if session.current_task_id == task_id:
                 session.state = "listening"
-                logger.info(f"✅ [AI SPEECH COMPLETE] Session {session.session_id} (Task {task_id}): Sent total {audio_count} audio bytes.")
+                logger.info(f"✅ [AI SPEECH COMPLETE] Session {session.session_id} (Task {task_id}): Sent total {total_audio_bytes} audio bytes.")
                 await session.websocket.send_json({"type": "ai_speech_finished"})
                 await self._send_session_summary_event(session)
 
