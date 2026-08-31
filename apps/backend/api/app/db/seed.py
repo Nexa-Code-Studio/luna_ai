@@ -127,46 +127,8 @@ async def seed_master_data() -> User:
             await session.commit()
             logger.info("Seeded Recommendations.")
 
-        # 5. Seed Conversations & Messages
-        query_convs = select(Conversation).where(Conversation.user_id == user.id)
-        res_convs = await session.execute(query_convs)
-        existing_convs = res_convs.scalars().all()
-
-        if not existing_convs:
-            conv = Conversation(
-                user_id=user.id,
-                title="Curhat Akademik & Ujian",
-                status=ConversationStatus.ACTIVE,
-                started_at=datetime.now(UTC),
-            )
-            session.add(conv)
-            await session.commit()
-            await session.refresh(conv)
-
-            m1 = Message(
-                conversation_id=conv.id,
-                role="assistant",
-                content="Halo! Aku Luna. Ada yang ingin kamu ceritakan hari ini?",
-                message_type=MessageType.TEXT,
-                sequence_number=1,
-            )
-            m2 = Message(
-                conversation_id=conv.id,
-                role="user",
-                content="Aku merasa agak cemas dengan ujian besok.",
-                message_type=MessageType.TEXT,
-                sequence_number=2,
-            )
-            m3 = Message(
-                conversation_id=conv.id,
-                role="assistant",
-                content="Terima kasih sudah berbagi. Wajar sekali merasa cemas sebelum ujian. Mari ambil napas perlahan bersama.",
-                message_type=MessageType.TEXT,
-                sequence_number=3,
-            )
-            session.add_all([m1, m2, m3])
-            await session.commit()
-            logger.info("Seeded Conversation and Messages.")
+        # 5. Conversations & Messages (Skipped: Start with 0 conversations for clean user state)
+        logger.info("Skipping conversation seeding for 100% clean conversation history.")
 
         return user
 
