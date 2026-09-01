@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.tz import get_wib_day_range_utc, get_wib_today, to_wib
 from app.db.session import get_db_session
 from app.models.conversation import Conversation, Message
 from app.models.diary import DiaryEntry
@@ -43,11 +44,8 @@ def _format_time_local(dt: datetime | None) -> str:
     if not dt:
         return "09:15 AM"
     try:
-        if dt.tzinfo is not None:
-            dt_local = dt.astimezone()
-        else:
-            dt_local = dt
-        return dt_local.strftime("%I:%M %p")
+        dt_wib = to_wib(dt)
+        return dt_wib.strftime("%I:%M %p") if dt_wib else "09:15 AM"
     except Exception:
         return dt.strftime("%I:%M %p")
 
@@ -109,13 +107,18 @@ async def get_today_conversations(
 ) -> dict[str, Any]:
     """Retrieve today's voice call sessions with local time formatting and backend pagination."""
     user = await _get_default_user(db)
-    today_start = datetime.combine(date.today(), time.min)
+    today_wib = get_wib_today()
+    start_utc, end_utc = get_wib_day_range_utc(today_wib)
 
     # Count total today conversations
     count_query = (
         select(func.count())
         .select_from(Conversation)
-        .where(Conversation.user_id == user.id, Conversation.started_at >= today_start)
+        .where(
+            Conversation.user_id == user.id,
+            Conversation.started_at >= start_utc,
+            Conversation.started_at <= end_utc,
+        )
     )
     total_res = await db.execute(count_query)
     total_items = total_res.scalar() or 0
@@ -124,7 +127,11 @@ async def get_today_conversations(
     query = (
         select(Conversation)
         .options(selectinload(Conversation.messages))
-        .where(Conversation.user_id == user.id, Conversation.started_at >= today_start)
+        .where(
+            Conversation.user_id == user.id,
+            Conversation.started_at >= start_utc,
+            Conversation.started_at <= end_utc,
+        )
         .order_by(Conversation.started_at.desc())
         .offset(offset)
         .limit(limit)
@@ -133,7 +140,7 @@ async def get_today_conversations(
     convs = res.scalars().all()
 
     # Query today's diary entry for cached emotion summary
-    diary_query = select(DiaryEntry).where(DiaryEntry.user_id == user.id, DiaryEntry.entry_date == date.today())
+    diary_query = select(DiaryEntry).where(DiaryEntry.user_id == user.id, DiaryEntry.entry_date == today_wib)
     res_diary = await db.execute(diary_query)
     today_diary = res_diary.scalar_one_or_none()
 
@@ -198,13 +205,18 @@ async def get_today_conversation_messages(
 ) -> dict[str, Any]:
     """Retrieve all messages from today's conversations ordered chronologically (Oldest First) with pagination."""
     user = await _get_default_user(db)
-    today_start = datetime.combine(date.today(), time.min)
+    today_wib = get_wib_today()
+    start_utc, end_utc = get_wib_day_range_utc(today_wib)
 
     # Query all today's conversations ordered chronologically (Oldest First)
     conv_query = (
         select(Conversation)
         .options(selectinload(Conversation.messages))
-        .where(Conversation.user_id == user.id, Conversation.started_at >= today_start)
+        .where(
+            Conversation.user_id == user.id,
+            Conversation.started_at >= start_utc,
+            Conversation.started_at <= end_utc,
+        )
         .order_by(Conversation.started_at.asc())
     )
     conv_res = await db.execute(conv_query)

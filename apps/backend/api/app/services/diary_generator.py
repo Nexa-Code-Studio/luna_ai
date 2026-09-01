@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.tz import get_wib_day_range_utc, get_wib_now, get_wib_today, to_wib
 from app.models.conversation import Conversation
 from app.models.diary import DiaryEntry
 from app.models.user import User
@@ -22,15 +23,17 @@ class DiaryGeneratorService:
 
     @staticmethod
     async def generate_today_diary(user_id: uuid.UUID, db: AsyncSession) -> DiaryEntry:
-        today_date = date.today()
+        today_date = get_wib_today()
 
         # 1. Retrieve all conversations for today
+        start_utc, end_utc = get_wib_day_range_utc(today_date)
         query = (
             select(Conversation)
             .options(selectinload(Conversation.messages))
             .where(
                 Conversation.user_id == user_id,
-                func.date(Conversation.started_at) == today_date,
+                Conversation.started_at >= start_utc,
+                Conversation.started_at <= end_utc,
             )
             .order_by(Conversation.started_at.asc())
         )
@@ -43,7 +46,8 @@ class DiaryGeneratorService:
             sorted_msgs = sorted(conv.messages, key=lambda m: m.sequence_number) if conv.messages else []
             for msg in sorted_msgs:
                 if msg.role in ("user", "assistant") and msg.content and msg.content.strip():
-                    time_str = msg.created_at.strftime("%H:%M") if msg.created_at else "09:00"
+                    msg_t = to_wib(msg.created_at)
+                    time_str = msg_t.strftime("%H:%M") if msg_t else "09:00"
                     all_formatted_msgs.append(f"[{time_str}] {msg.role.upper()}: {msg.content}")
 
         if not all_formatted_msgs:
@@ -111,7 +115,7 @@ class DiaryGeneratorService:
         mood_emoji = data.get("mood_emoji") or "🌿"
         ai_insight = data.get("ai_insight") or "Kondisi emosional pengguna terpantau stabil."
         emotional_reflection = data.get("emotional_reflection") or "Pengguna merasa lebih tenang setelah berdialog bersama LUNA."
-        important_events = data.get("important_events") or [f"[{datetime.now().strftime('%H:%M')}] Sesi Percakapan LUNA"]
+        important_events = data.get("important_events") or [f"[{get_wib_now().strftime('%H:%M')}] Sesi Percakapan LUNA"]
 
         # Check existing diary entry for today
         query = select(DiaryEntry).where(DiaryEntry.user_id == user_id, DiaryEntry.entry_date == entry_date).order_by(DiaryEntry.created_at.desc())
@@ -156,6 +160,6 @@ class DiaryGeneratorService:
             "mood_emoji": "🌿",
             "ai_insight": "Pengguna merasa didengarkan dan mulai merasa lebih rileks selama percakapan.",
             "emotional_reflection": "Refleksi emosi menunjukkan respon positif terhadap konseling LUNA.",
-            "important_events": [f"[{datetime.now().strftime('%H:%M')}] Sesi Panggilan Suara & Chat LUNA"],
+            "important_events": [f"[{get_wib_now().strftime('%H:%M')}] Sesi Panggilan Suara & Chat LUNA"],
         }
         return await DiaryGeneratorService._save_parsed_diary(user_id, entry_date, default_data, db)

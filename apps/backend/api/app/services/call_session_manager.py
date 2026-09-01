@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.core.prompt_templates import LUNA_SYSTEM_PROMPT
+from app.core.tz import get_wib_now
 from app.db.session import AsyncSessionLocal
 from app.models.conversation import Conversation, Message
 from app.models.diary import DiaryEntry
@@ -110,7 +111,7 @@ class CallSessionManager:
                             )
 
                     # Always create a NEW distinct Conversation record for this new voice session
-                    now_str = datetime.now().strftime("%d %b %Y %H:%M")
+                    now_str = get_wib_now().strftime("%d %b %Y %H:%M")
                     new_conv = Conversation(
                         user_id=user.id,
                         title=f"Panggilan Suara LUNA $skeleton"
