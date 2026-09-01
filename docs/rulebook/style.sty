@@ -1,0 +1,251 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{style}[2026/09/01 Luna AI Rulebook Styling Package]
+
+% --- Core & Geometry Packages ---
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[indonesian]{babel}
+\RequirePackage[margin=2.5cm, headheight=15pt]{geometry}
+\RequirePackage{graphicx}
+\RequirePackage{xcolor}
+\RequirePackage{tikz}
+\RequirePackage{fancyhdr}
+\RequirePackage{titlesec}
+\RequirePackage{hyperref}
+\RequirePackage{caption}
+\RequirePackage{enumitem}
+\RequirePackage{array}
+\RequirePackage{booktabs}
+\RequirePackage{float}
+
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, patterns}
+
+% --- Luna AI Color Palette ---
+\definecolor{LunaPrimary}{HTML}{4C1D95}     % Deep Purple
+\definecolor{LunaSecondary}{HTML}{6D28D9}   % Bright Violet
+\definecolor{LunaAccent}{HTML}{8B5CF6}      % Light Violet
+\definecolor{LunaBgSoft}{HTML}{F5F3FF}      % Soft Purple Background
+\definecolor{LunaDarkText}{HTML}{1E1B4B}    % Dark Navy/Purple Text
+\definecolor{LunaGrayText}{HTML}{4B5563}    % Slate Gray Text
+\definecolor{LunaPlaceholderBg}{HTML}{F8FAFC}% Light Gray Canvas
+\definecolor{LunaBorderGray}{HTML}{CBD5E1}   % Border Gray
+\definecolor{LunaAmberBg}{HTML}{FEF3C7}     % Light Amber Warning Bg
+\definecolor{LunaAmberBorder}{HTML}{D97706} % Amber Warning Border
+
+% --- Hyperlink Settings ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=LunaSecondary,
+    filecolor=LunaAccent,      
+    urlcolor=LunaSecondary,
+    pdftitle={Luna AI - Official Rule Book \& Operations Manual},
+    pdfpagemode=UseOutlines,
+}
+
+% --- Header & Footer Styling ---
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\color{LunaGrayText}\small\itshape Luna AI Rule Book}
+\lhead{\parbox[b]{0.62\textwidth}{\raggedright \color{LunaGrayText}\small\nouppercase{\leftmark}}}
+\cfoot{\color{LunaGrayText}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\headrule}{\color{LunaBorderGray}\hrule width\headwidth height\headrulewidth \vspace{1pt}}
+\renewcommand{\footrule}{\color{LunaBorderGray}\hrule width\headwidth height\footrulewidth}
+
+% --- Heading Styles ---
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{LunaPrimary}}
+  {\Large\filleft\color{LunaSecondary}BAB \thechapter}
+  {1ex}
+  {\Huge\filleft}
+  [\vspace{1ex}\color{LunaBorderGray}\hrule]
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{LunaPrimary}}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{LunaSecondary}}
+  {\thesubsection}{1em}{}
+
+% --- Custom Callout Environments using Pure TikZ ---
+\newenvironment{lunacallout}[1]{
+    \vspace{0.5em}
+    \noindent
+    \begin{tikzpicture}
+    \node[
+        draw=LunaSecondary,
+        fill=LunaBgSoft,
+        line width=1pt,
+        rounded corners=6pt,
+        text width=\dimexpr\textwidth-24pt\relax,
+        inner sep=12pt
+    ] \bgroup
+    \textbf{\textcolor{LunaPrimary}{\Large #1}}\\[0.4em]\color{LunaDarkText}
+}{
+    \egroup;
+    \end{tikzpicture}
+    \vspace{0.5em}
+}
+
+\newenvironment{lunanote}[1][Catatan]{
+    \vspace{0.5em}
+    \noindent
+    \begin{tikzpicture}
+    \node[
+        draw=LunaAccent,
+        fill=LunaBgSoft,
+        line width=0.8pt,
+        rounded corners=4pt,
+        text width=\dimexpr\textwidth-24pt\relax,
+        inner sep=10pt
+    ] \bgroup
+    \textbf{\textcolor{LunaSecondary}{[CATATAN] #1}}\\[0.3em]\color{LunaDarkText}
+}{
+    \egroup;
+    \end{tikzpicture}
+    \vspace{0.5em}
+}
+
+\newenvironment{lunawarning}[1][Peringatan]{
+    \vspace{0.5em}
+    \noindent
+    \begin{tikzpicture}
+    \node[
+        draw=LunaAmberBorder,
+        fill=LunaAmberBg,
+        line width=0.9pt,
+        rounded corners=4pt,
+        text width=\dimexpr\textwidth-24pt\relax,
+        inner sep=10pt
+    ] \bgroup
+    \textbf{\textcolor{LunaAmberBorder}{[PERINGATAN] #1}}\\[0.3em]\color{LunaDarkText}
+}{
+    \egroup;
+    \end{tikzpicture}
+    \vspace{0.5em}
+}
+
+% --- SCREENSHOT PLACEHOLDER MACROS ---
+
+% 1. Command Standard Screenshot Placeholder
+% Usage: \screenshotplaceholder[width]{height}{Screen Title / Caption}{Sub-instruction or description}
+\newcommand{\screenshotplaceholder}[4][0.9\textwidth]{
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        % Background Box
+        \node[
+            draw=LunaSecondary,
+            dashed,
+            line width=1.2pt,
+            fill=LunaPlaceholderBg,
+            rounded corners=8pt,
+            minimum width=#1,
+            minimum height=#2,
+            align=center,
+            inner sep=12pt
+        ] (box) {
+            \begin{tabular}{c}
+                \textcolor{LunaSecondary}{\Large\textbf{[ SCREENSHOT PLACEHOLDER ]}} \\[8pt]
+                \textcolor{LunaDarkText}{\large\textbf{#3}} \\[6pt]
+                \textcolor{LunaGrayText}{\small\itshape #4} \\[12pt]
+                \begin{tikzpicture}
+                    % Camera Icon Graphics
+                    \draw[draw=LunaSecondary, fill=LunaBgSoft, line width=1pt, rounded corners=2pt] (-0.8,-0.5) rectangle (0.8,0.5);
+                    \draw[draw=LunaSecondary, fill=LunaBgSoft, line width=1pt] (-0.3,0.5) -- (-0.2,0.7) -- (0.2,0.7) -- (0.3,0.5) -- cycle;
+                    \draw[draw=LunaSecondary, line width=1pt] (0,0) circle (0.25cm);
+                \end{tikzpicture} \\[6pt]
+                \textcolor{LunaSecondary}{\footnotesize Tempelkan tangkapan layar di area kotak ini}
+            \end{tabular}
+        };
+    \end{tikzpicture}
+    \caption{#3}
+\end{figure}
+}
+
+% 2. Inline / Compact Screenshot Box
+% Usage: \screenshotbox[width]{height}{Title}{Description}
+\newcommand{\screenshotbox}[4][0.85\textwidth]{
+\begin{center}
+    \begin{tikzpicture}
+        \node[
+            draw=LunaBorderGray,
+            dashed,
+            line width=1pt,
+            fill=LunaPlaceholderBg,
+            rounded corners=6pt,
+            minimum width=#1,
+            minimum height=#2,
+            align=center,
+            inner sep=10pt
+        ] {
+            \textcolor{LunaSecondary}{\textbf{[SCREENSHOT BOX] #3}} \\[4pt]
+            \textcolor{LunaGrayText}{\small #4}
+        };
+    \end{tikzpicture}
+\end{center}
+}
+
+% 3. Real App Screenshot Figure Command
+% Usage: \appfigure[width]{image_path}{Caption / Title}{Description}
+\newcommand{\appfigure}[4][0.30\textwidth]{
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \node[
+            draw=LunaBorderGray,
+            fill=white,
+            line width=0.8pt,
+            rounded corners=6pt,
+            inner sep=1.5pt
+        ] {
+            \includegraphics[width=#1]{#2}
+        };
+    \end{tikzpicture}\\[0.2em]
+    \caption{\textbf{#3} --- \small #4}
+\end{figure}
+}
+
+% 4. Pair / Side-by-Side App Screenshot Figure Command
+% Usage: \appfigurepair[width]{img1}{subcaption1}{img2}{subcaption2}{Main Title}{Main Description}
+\newcommand{\appfigurepair}[7][0.28\textwidth]{
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \begin{tikzpicture}
+            \node[
+                draw=LunaBorderGray,
+                fill=white,
+                line width=0.8pt,
+                rounded corners=6pt,
+                inner sep=1.5pt
+            ] {
+                \includegraphics[width=#1]{#2}
+            };
+        \end{tikzpicture}\\[0.2em]
+        {\small (a) #3}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \begin{tikzpicture}
+            \node[
+                draw=LunaBorderGray,
+                fill=white,
+                line width=0.8pt,
+                rounded corners=6pt,
+                inner sep=1.5pt
+            ] {
+                \includegraphics[width=#1]{#4}
+            };
+        \end{tikzpicture}\\[0.2em]
+        {\small (b) #5}
+    \end{minipage}
+    \vspace{0.2em}
+    \caption{\textbf{#6} --- \small #7}
+\end{figure}
+}
+
+\endinput

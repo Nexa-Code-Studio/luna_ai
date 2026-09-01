@@ -1,0 +1,53 @@
+\chapter{Panduan Antarmuka \& Flow Aplikasi}
+
+\section{Alur Pendaftaran dan Autentikasi}
+Pengguna baru diwajibkan melakukan pendaftaran akun melalui aplikasi mobile Luna AI untuk memastikan privasi dan keamanan data konseling.
+
+\begin{enumerate}
+    \item Buka aplikasi Luna AI pada perangkat seluler.
+    \item Pilih menu \textbf{Daftar Akun} dan isi Nama Panggilan, Email, serta Kata Sandi.
+    \item Baca dan setujui \textit{Syarat \& Disclaimer Etika Layanan}.
+\end{enumerate}
+
+\appfigure[0.26\textwidth]{images/auth_firstscreen.jpeg}{Tampilan Onboarding Utama}{Layar sambutan awal aplikasi Luna AI saat dibuka.}
+
+\appfigurepair[0.25\textwidth]{images/auth_signin.jpeg}{Form Masuk (Sign In)}{images/auth_signup.jpeg}{Form Pendaftaran (Sign Up)}{Autentikasi Pengguna}{Antarmuka login dan registrasi akun baru menggunakan Nama Panggilan.}
+
+
+\section{Dashboard Utama \& Tracker Suasana Hati}
+Setelah berhasil masuk, pengguna akan diarahkan ke Dashboard Utama. Dashboard ini memberikan gambaran umum kondisi emosional mingguan pengguna.
+
+\appfigure[0.26\textwidth]{images/auth_home.jpeg}{Tampilan Utama Dashboard}{Menu navigasi utama dan pintasan sesi konseling.}
+
+\appfigurepair[0.25\textwidth]{images/dashboard_page_1.jpeg}{Bagian Atas Dashboard}{images/dashboard_page_2.jpeg}{Bagian Bawah Dashboard}{Monitoring \& Mood Tracker}{Pencatatan mood harian dan grafik analisis tren emosional pengguna.}
+
+\begin{lunanote}[Fitur Utama Dashboard]
+Pengguna dapat memilih emoji suasana hati (\textit{mood rating}) harian dan menambahkan catatan singkat sebelum memulai sesi interaktif bersama Luna AI.
+\end{lunanote}
+
+
+\section{Sesi Konseling Interaktif \& Voice Call}
+Sesi konseling dijalankan secara langsung dengan agen Luna AI berbasis LLM yang responsif dan empati melalui antarmuka percakapan maupun panggilan suara real-time.
+
+\subsection{Langkah Memulai Chat \& Voice Call Konseling}
+\begin{itemize}
+    \item Tekan tombol \textbf{"Mulai Konseling"} pada bar navigasi bawah.
+    \item Pilih moda konseling percakapan atau sesi telepon suara real-time.
+    \item Luna AI akan membalas dengan respon empati berbasis metode \textit{Cognitive Behavioral Therapy} (CBT) ringan.
+\end{itemize}
+
+\appfigurepair[0.25\textwidth]{images/counseling_nav.jpeg}{Navigasi Konseling}{images/counseling_voice_entry.jpeg}{Menu Panggilan Suara}{Inisiasi Sesi Konseling}{Akses tombol konseling utama dan penyiapan sesi panggilan suara.}
+
+\appfigurepair[0.25\textwidth]{images/counseling_in_call.jpeg}{Panggilan Aktif}{images/counseling_end_call.jpeg}{Kontrol \& Penghentian Panggilan}{Sesi Panggilan Suara Real-Time}{Antarmuka percakapan suara aktif dan kontrol tombol penghentian sesi.}
+
+
+\section{Sintesis Jurnal \& Harian Emosional}
+Setiap sesi konseling yang selesai akan diproses oleh sistem backend (\textit{ARQ Risk \& Synthesis Worker}) untuk menghasilkan ringkasan reflektif harian.
+
+\appfigurepair[0.25\textwidth]{images/journal_list_crisis.jpeg}{Daftar Jurnal Krisis (28 Ags)}{images/journal_detail_crisis.jpeg}{Detail Jurnal Krisis Emosional}{Sintesis Jurnal Emosional Krisis}{Tampilan daftar jurnal berlabel Risiko Tinggi dan halaman detail analisis krisis.}
+
+\appfigure[0.26\textwidth]{images/journal_voice_detail.jpeg}{Detail Sesi \& Transkrip Suara}{Halaman detail transkrip teks dan analisis sesi suara.}
+
+\begin{lunawarning}[Kerahasiaan Sintesis]
+Hasil sintesis jurnal disimpan menggunakan enkripsi dan hanya dapat diakses oleh pemilik akun.
+\end{lunawarning}

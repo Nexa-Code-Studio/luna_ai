@@ -1,0 +1,45 @@
+\chapter{Protokol Keselamatan \& Risk Safety Gates}
+
+\section{Arsitektur Safety Gate \& Risk Worker}
+Luna AI dilengkapi dengan sistem proteksi berlapis (\textit{Multi-layered Safety Gate}) yang memindai setiap input pesan pengguna dan output balasan AI secara real-time.
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.5cm, auto]
+    % Block Styles
+    \tikzstyle{block} = [rectangle, draw=LunaPrimary, fill=LunaBgSoft, text width=3.5cm, text centered, rounded corners, minimum height=1cm, line width=1pt]
+    \tikzstyle{gate} = [diamond, draw=red!70!black, fill=red!10, text centered, rounded corners, inner sep=0pt, text width=2.2cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth,color=LunaSecondary]
+    
+    % Nodes
+    \node [block] (input) {Input Pesan Pengguna};
+    \node [gate, right=1cm of input] (safety) {Safety Gate Check};
+    \node [block, right=1.2cm of safety] (llm) {Luna AI LLM Response};
+    \node [block, below=1cm of safety] (crisis) {Risk Worker \& Intervensi Darurat};
+    
+    % Paths
+    \draw [arrow] (input) -- (safety);
+    \draw [arrow] (safety) -- node[above]{\small Aman} (llm);
+    \draw [arrow] (safety) -- node[right]{\small Berbahaya / Krisis} (crisis);
+\end{tikzpicture}
+\end{center}
+
+\section{Tingkat Risiko Emosional (Risk Levels)}
+Sistem secara otomatis mengklasifikasikan pesan pengguna ke dalam 3 kategori risiko:
+\begin{enumerate}
+    \item \textbf{Low Risk (Hijau)}: Percakapan sehari-hari, refleksi emosi ringan, keluh kesah umum.
+    \item \textbf{Medium Risk (Kuning)}: Kecemasan berlebih, stres akademis/pekerjaan, indikasi kelelahan emosional mendalam.
+    \item \textbf{High Risk (Merah)}: Indikasi menyakiti diri sendiri (\textit{self-harm}), ideasi bunuh diri, atau ancaman bahaya fisik.
+\end{enumerate}
+
+\section{Protokol Penanganan Situasi Krisis}
+Jika pengguna terdeteksi dalam kondisi \textbf{High Risk}, sistem Luna AI akan secara otomatis memicu protokol keselamatan:
+
+\appfigurepair[0.25\textwidth]{images/crisis_alert_dialog.jpeg}{Pop-up Peringatan High Risk}{images/crisis_module_screen.jpeg}{Layar Modul Krisis \& Bantuan}{Protokol Penanganan Krisis Emosional}{Intervensi otomatis sistem saat terdeteksi indikasi krisis emosional tinggi (High Risk).}
+
+\begin{lunacallout}{Langkah Intervensi Otomatis}
+\begin{itemize}
+    \item Chat AI akan menghentikan respon generik dan mengaktifkan mode \textit{De-escalation}.
+    \item Menampilkan nomor telepon darurat kesehatan mental (misal: Hotlines Kesehatan Jiwa Kemenkes 119 ext 8, LSM Sejiwa, Into The Light).
+    \item Menyediakan pilihan tombol langsung untuk menghubungi kontak darurat yang didaftarkan pengguna.
+\end{itemize}
+\end{lunacallout}
