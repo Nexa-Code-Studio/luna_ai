@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.tz import get_wib_day_range_utc, get_wib_today, to_wib
 from app.db.session import get_db_session
 from app.models.conversation import Conversation
 from app.models.diary import DiaryEntry
@@ -105,7 +106,7 @@ async def get_diaries(
 @router.get("/today")
 async def get_today_diary(db: AsyncSession = Depends(get_db_session)) -> dict[str, Any]:
     user = await _get_default_user(db)
-    today = date.today()
+    today = get_wib_today()
     query = select(DiaryEntry).where(DiaryEntry.user_id == user.id, DiaryEntry.entry_date == today)
     res = await db.execute(query)
     entry = res.scalar_one_or_none()
@@ -116,12 +117,14 @@ async def get_today_diary(db: AsyncSession = Depends(get_db_session)) -> dict[st
     formatted = _format_diary_entry(entry)
 
     # Fetch today's actual conversations for dynamic sessions breakdown
+    start_utc, end_utc = get_wib_day_range_utc(today)
     conv_query = (
         select(Conversation)
         .options(selectinload(Conversation.messages))
         .where(
             Conversation.user_id == user.id,
-            func.date(Conversation.started_at) == today,
+            Conversation.started_at >= start_utc,
+            Conversation.started_at <= end_utc,
         )
         .order_by(Conversation.started_at.asc())
     )
@@ -130,27 +133,29 @@ async def get_today_diary(db: AsyncSession = Depends(get_db_session)) -> dict[st
 
     if convs:
         formatted["sessionCount"] = len(convs)
-        formatted["lastSessionTime"] = convs[-1].started_at.strftime("%H:%M") if convs[-1].started_at else "21:45 PM"
+        last_t = to_wib(convs[-1].started_at)
+        formatted["lastSessionTime"] = last_t.strftime("%H:%M") if last_t else "21:45 PM"
         
         sessions_data = []
         for i, c in enumerate(convs):
             sorted_msgs = sorted(c.messages, key=lambda m: m.sequence_number) if c.messages else []
-            sess_transcripts = [
-                {
-                    "isUser": m.role == "user",
-                    "time": m.created_at.strftime("%H:%M") if m.created_at else "09:00 AM",
-                    "text": m.content,
-                    "emotionTag": "calm (85%)" if m.role == "user" else "empathy",
-                    "emotionEmoji": "😌" if m.role == "user" else "💙",
-                }
-                for m in sorted_msgs
-                if m.role in ("user", "assistant") and m.content
-            ]
+            sess_transcripts = []
+            for m in sorted_msgs:
+                if m.role in ("user", "assistant") and m.content:
+                    msg_t = to_wib(m.created_at)
+                    sess_transcripts.append({
+                        "isUser": m.role == "user",
+                        "time": msg_t.strftime("%H:%M") if msg_t else "09:00 AM",
+                        "text": m.content,
+                        "emotionTag": "calm (85%)" if m.role == "user" else "empathy",
+                        "emotionEmoji": "😌" if m.role == "user" else "💙",
+                    })
             
+            c_t = to_wib(c.started_at)
             sessions_data.append({
                 "id": str(c.id),
                 "title": (c.title or f"Sesi #{i+1} Percakapan Suara").replace("$skeleton", "").strip(),
-                "time": c.started_at.strftime("%H:%M") if c.started_at else "09:00 AM",
+                "time": c_t.strftime("%H:%M") if c_t else "09:00 AM",
                 "moodTag": entry.mood_tag or "Netral",
                 "moodEmoji": entry.mood_emoji or "😌",
                 "emotionsBreakdown": [
@@ -192,7 +197,7 @@ async def generate_today_diary(db: AsyncSession = Depends(get_db_session)) -> di
 @router.post("")
 async def create_diary(payload: CreateDiaryRequest, db: AsyncSession = Depends(get_db_session)) -> dict[str, Any]:
     user = await _get_default_user(db)
-    today = date.today()
+    today = get_wib_today()
     
     query = select(DiaryEntry).where(DiaryEntry.user_id == user.id, DiaryEntry.entry_date == today)
     res = await db.execute(query)
