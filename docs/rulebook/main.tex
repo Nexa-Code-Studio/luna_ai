@@ -1,0 +1,81 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage{style}
+
+\begin{document}
+
+% ==========================================
+% COVER PAGE / HALAMAN JUDUL
+% ==========================================
+\begin{titlepage}
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[at=(current page.center), inner sep=0pt] {
+            \includegraphics[width=\paperwidth, height=\paperheight]{cover_propo_bg.png}
+        };
+    \end{tikzpicture}
+    
+    \centering
+    \vspace*{2.0cm}
+    
+    % Logo / Graphic Header
+    \includegraphics[width=4.0cm]{luna_logo_square.png}
+    
+    \vspace{1.2cm}
+    
+    {\Huge \bfseries \color{LunaPrimary} LUNA AI RULE BOOK} \\[0.5em]
+    {\Large \bfseries \color{LunaSecondary} Official Operations Manual \& Guidelines}
+    
+    \vspace{0.8cm}
+    \color{LunaBorderGray}\rule{0.85\textwidth}{1.5pt}
+    \vspace{0.8cm}
+    
+    {\large \color{LunaGrayText} Buku Panduan Resmi Penggunaan Aplikasi, Etika Konseling AI,\\[0.3em] Protokol Keselamatan Emosional, dan Dokumen Antarmuka}
+    
+    \vfill
+    
+    \begin{tikzpicture}
+        \node[
+            draw=LunaSecondary,
+            fill=white,
+            line width=1pt,
+            rounded corners=6pt,
+            text width=0.85\textwidth,
+            align=center,
+            inner sep=10pt
+        ] {
+            \color{LunaDarkText}\small
+            \textbf{Versi Dokumen}: 1.0.0 \\
+            \textbf{Pengembang}: L'importante e finire — Luna AI Team \\
+            \textbf{Tanggal Terbit}: 1 September 2026
+        };
+    \end{tikzpicture}
+    
+    \vspace{1cm}
+\end{titlepage}
+
+% ==========================================
+% DAFTAR ISI
+% ==========================================
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+
+\pagenumbering{arabic}
+
+% ==========================================
+% BAB-BAB DOKUMEN
+% ==========================================
+\input{chapters/01_introduction}
+\newpage
+
+\input{chapters/02_user_guide}
+\newpage
+
+\input{chapters/03_counseling_rules}
+\newpage
+
+\input{chapters/04_safety_protocols}
+\newpage
+
+\input{chapters/05_troubleshooting}
+
+\end{document}

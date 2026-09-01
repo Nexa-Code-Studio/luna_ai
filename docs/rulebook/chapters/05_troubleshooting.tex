@@ -1,0 +1,39 @@
+\chapter{Troubleshooting \& Frequently Asked Questions}
+
+\section{Pertanyaan yang Sering Diajukan (FAQ)}
+
+\begin{description}
+    \item[Apakah percakapan saya aman dan tidak dapat dibaca orang lain?] \hfill \\
+    Ya, seluruh percakapan dienkripsi saat transit dan penyimpanan. Data hanya diolah oleh sistem AI untuk memberikan respon dan tidak dibuka untuk publik.
+    
+    \item[Bagaimana jika Luna AI memberikan saran yang terasa kurang tepat?] \hfill \\
+    Anda dapat memberikan umpan balik melalui tombol \textit{Thumbs Down} pada balasan pesan terkait. Hal ini akan membantu tim kami menyempurnakan kualitas respon AI.
+    
+    \item[Apakah aplikasi Luna AI membutuhkan koneksi internet terus menerus?] \hfill \\
+    Ya, Luna AI memerlukan koneksi internet aktif untuk terhubung dengan server backend, FastMCP tools, dan model LLM.
+\end{description}
+
+\section{Panduan Troubleshooting Masalah Teknis}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Panduan Masalah Teknis \& Solusi}
+    \begin{tabular}{p{4cm} p{5.5cm} p{5.5cm}}
+        \toprule
+        \textbf{Masalah} & \textbf{Kemungkinan Penyebab} & \textbf{Langkah Solusi} \\
+        \midrule
+        Gagal Login / Token Expired & Sesi autentikasi telah habis (JWT Expired). & Keluar dari aplikasi, lalu lakukan login ulang. \\
+        \addlinespace
+        Pesan Chat Menunggu Lama (\textit{Loading}) & Gangguan jaringan atau antrean worker backend. & Periksa koneksi internet Anda atau coba muat ulang halaman. \\
+        \addlinespace
+        Aplikasi Terhenti (\textit{Crash}) & Memori perangkat penuh atau versi aplikasi lama. & Perbarui aplikasi ke versi terbaru dan bersihkan cache perangkat. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Kontak Dukungan Teknis}
+Jika Anda mengalami masalah yang tidak tercantum dalam panduan ini, silakan hubungi tim pengembang Luna AI melalui:
+\begin{itemize}
+    \item \textbf{Email Support}: \texttt{support@luna-ai.id}
+    \item \textbf{Repository Issue Tracker}: \texttt{github.com/nexa-code-studio/luna\_ai/issues}
+\end{itemize}

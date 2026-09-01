@@ -6,7 +6,7 @@
 
     <application
 
-        android:label="luna_mobile"
+        android:label="Luna"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
