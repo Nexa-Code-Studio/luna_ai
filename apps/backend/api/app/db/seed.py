@@ -84,8 +84,59 @@ async def seed_master_data() -> User:
             await session.commit()
             logger.info("Seeded Emergency Contacts.")
 
-        # 3. Seed Diary Entries (Skipped: Real diaries are generated automatically via AI)
-        logger.info("Skipping dummy diary seeding to use dynamic AI entries.")
+        # 3. Seed Full Diary Entries History (including 28 Agustus 2026 Emergency Entry)
+        target_entries = [
+            {
+                "entry_date": date(2026, 9, 1),
+                "title": "Jurnal Refleksi Hari Ini",
+                "summary": "Samsul merasa lebih semangat dan positif setelah berdiskusi mengenai target pribadi dan meditasi pagi bersama LUNA.",
+                "content": "Catatan harian mengenai target positif dan meditasi.",
+                "mood_tag": "Bahagia 😃",
+                "mood_emoji": "😃",
+                "ai_insight": "Progres emosional Samsul menunjukkan peningkatan kebahagiaan dan motivasi positif.",
+                "emotional_reflection": "Merasa optimis menghadapi tantangan hari ini.",
+                "important_events": ["[Sesi #1] Afirmasi positif pagi dan perencanaan aktivitas produktif."],
+            },
+            {
+                "entry_date": date(2026, 8, 31),
+                "title": "Catatan Refleksi Emosi Harian",
+                "summary": "Samsul merasakan ketenangan setelah menyelesaikan sesi konsultasi mengenai manajemen waktu dan relaksasi pikiran.",
+                "content": "Diskusi relaksasi emosional.",
+                "mood_tag": "Tenang 😌",
+                "mood_emoji": "😌",
+                "ai_insight": "Kondisi emosional Samsul tergolong stabil.",
+                "emotional_reflection": "Merasa lebih lega dan siap melanjutkan aktivitas.",
+                "important_events": ["[Sesi #1] Refleksi mengenai rutinitas harian dan teknik olah napas."],
+            },
+            {
+                "entry_date": date(2026, 8, 28),
+                "title": "Jurnal Emosional Krisis — Samsul",
+                "summary": "Samsul mengutarakan rasa kecemasan dan kelelahan mental ekstrem terkait beban kerja dan kondisi krisis. Terdeteksi indikasi krisis emosional tinggi.",
+                "content": "Sesi konseling mengindikasikan kecemasan mendalam dan risiko tinggi emosional.",
+                "mood_tag": "Darurat 🚨",
+                "mood_emoji": "🚨",
+                "ai_insight": "Luna AI mengaktifkan mode de-eskalasi dan menyajikan rujukan kontak krisis darurat (Hotline 119 ext 8).",
+                "emotional_reflection": "Samsul menganjurkan diri untuk beristirahat penuh dan menghubungi Kontak Darurat Utama atau Konselor Profesional.",
+                "important_events": [
+                    "[Sesi #1] Samsul menyampaikan keluhan kelelahan fisik dan kecemasan mendalam.",
+                    "[Sesi #2] Terdeteksi puncak stres emosional tinggi — Protokol Krisis dipicu.",
+                ],
+            },
+        ]
+
+        for entry_data in target_entries:
+            query_d = select(DiaryEntry).where(
+                DiaryEntry.user_id == user.id,
+                DiaryEntry.entry_date == entry_data["entry_date"],
+            )
+            res_d = await session.execute(query_d)
+            existing_d = res_d.scalar_one_or_none()
+
+            if not existing_d:
+                new_d = DiaryEntry(user_id=user.id, **entry_data)
+                session.add(new_d)
+                await session.commit()
+                logger.info(f"Seeded Diary Entry for date {entry_data['entry_date']}: {entry_data['title']}")
 
         # 4. Seed Recommendations
         query_recs = select(RecommendationItem)

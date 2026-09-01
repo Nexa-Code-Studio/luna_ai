@@ -73,7 +73,7 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db_s
 
     user = User(
         email=payload.email,
-        username=payload.email.split("@")[0],
+        username=payload.name,
         display_name=payload.name,
         password_hash=payload.password,
         is_active=True,
