@@ -1,0 +1,208 @@
+\documentclass[12pt,a4paper]{article}
+
+% --- Packages Setup ---
+\usepackage[utf8]{inputenc}
+\usepackage[indonesian]{babel}
+\usepackage[margin=2.5cm,top=2.5cm,bottom=2.5cm,headheight=20pt,headsep=15pt,footskip=25pt]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{eso-pic}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{mathptmx} % Times New Roman font
+\usepackage{amssymb}  % For symbols
+\usepackage{setspace} % Line spacing
+\usepackage{float}    % For [H] exact float placement
+\usepackage{indentfirst} % Indent first paragraph of sections
+\usepackage{xurl}     % Better URL line breaking
+
+% --- Line & Paragraph Spacing ---
+\setstretch{1.15}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{1cm}
+
+% --- Color Definitions (Matching propo-luna.pdf Palette) ---
+\definecolor{PrimaryBlue}{HTML}{1E295B}       % Dark Navy Blue for headings
+\definecolor{TealAccent}{HTML}{20A090}        % Teal Accent for subheadings, borders & captions
+\definecolor{SectionBoxBg}{HTML}{F0F2FA}      % Light Lavender/Blue for section headers
+\definecolor{TableHeaderPurple}{HTML}{5B4B9A} % Dark Purple for table header (propo-luna.pdf)
+\definecolor{TableAltRowBg}{HTML}{F4F1FB}     % Soft purple background for alternating table rows
+\definecolor{TableBorderColor}{HTML}{C4C7C5}  % Soft gray border color for table grid lines
+\definecolor{PageFrameColor}{HTML}{E2E8F4}    % Soft frame border color
+\definecolor{CalloutBg}{HTML}{EBEFF8}         % Soft background for abstract box
+
+% --- Hyperlink Setup ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=PrimaryBlue,
+    citecolor=TealAccent,
+    urlcolor=TealAccent
+}
+
+% --- Outer Page Frame Border Setup (Matching propo-luna.pdf) ---
+\AddToShipoutPictureBG{%
+  \begin{tikzpicture}[overlay,remember picture]
+    \draw[line width=0.5pt, PageFrameColor] 
+      ($(current page.north west) + (0.9cm,-0.9cm)$) 
+      rectangle 
+      ($(current page.south east) + (-0.9cm,0.9cm)$);
+  \end{tikzpicture}%
+}
+
+% --- Header & Footer Setup ---
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\itshape\color{TableHeaderPurple} LUNA -- HOLOGY 9.0}
+\rhead{\small\itshape\color{TealAccent} HoloDev Software Development}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{TealAccent}\hrule width\headwidth height \headrulewidth}
+
+\cfoot{\small\color{TealAccent} $\blacklozenge$~\thepage~$\blacklozenge$}
+\renewcommand{\footrulewidth}{0.5pt}
+\renewcommand{\footrule}{\color{TealAccent}\hrule width\headwidth height \footrulewidth}
+
+% --- Custom Section Box Macro (Bulletproof, 100% textwidth) ---
+\newcommand{\secbox}[2]{%
+  \par\addvspace{1.4em}\noindent
+  \begingroup
+  \setlength{\fboxsep}{7pt}%
+  \colorbox{SectionBoxBg}{%
+    \parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
+      {\large\bfseries\color{PrimaryBlue} #1\quad #2}%
+    }%
+  }%
+  \par\nointerlineskip
+  \vspace{1pt}%
+  {\color{TealAccent}\hrule height 2pt width \textwidth}%
+  \endgroup
+  \par\addvspace{0.7em}\nopagebreak
+}
+
+% --- Custom Subsection Macro Bar (Vertically centered green line) ---
+\newcommand{\subsecbar}[1]{%
+  \par\addvspace{1.0em}\noindent
+  \setbox0=\hbox{{\large\bfseries\color{PrimaryBlue} #1}}%
+  {\color{TealAccent}\vrule width 3.5pt height \dimexpr\ht0+1pt\relax depth \dimexpr\dp0+1pt\relax}%
+  \hspace{6pt}%
+  \usebox0%
+  \par\addvspace{0.4em}\nopagebreak
+}
+
+% --- Custom Lampiran Subheading ---
+\newcommand{\lampiranhead}[1]{%
+  \par\addvspace{0.9em}\noindent
+  {\large\bfseries\color{PrimaryBlue} #1}%
+  \par\addvspace{0.4em}\nopagebreak
+}
+
+% --- Custom Subsubsection Style ---
+\newcommand{\subsubsecstyle}[1]{%
+  \par\addvspace{0.5em}\noindent
+  {\bfseries\itshape\color{TealAccent} #1}\par\vspace{0.2em}\nopagebreak
+}
+
+% --- Abstract / Callout Box Environment ---
+\newenvironment{abstractbox}{%
+  \par\addvspace{0.8em}\noindent
+  \begin{tikzpicture}
+    \node[
+      fill=CalloutBg,
+      draw=TealAccent,
+      line width=0.8pt,
+      rounded corners=6pt,
+      inner xsep=8pt,
+      inner ysep=8pt,
+      minimum width=\textwidth,
+      text width=\dimexpr\textwidth-16pt\relax,
+      align=center,
+      execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}
+    ] \bgroup\itshape\color{PrimaryBlue}%
+}{%
+    \egroup;
+  \end{tikzpicture}%
+  \par\addvspace{0.8em}
+}
+
+% --- Custom Caption Styling ---
+\DeclareCaptionFormat{lunacaption}{%
+  \centerline{\small\itshape\color{TealAccent}#1#2#3}%
+}
+\captionsetup[figure]{format=lunacaption, labelsep=period}
+\captionsetup[table]{format=lunacaption, labelsep=period, position=top}
+
+% --- Document Info ---
+\title{\textbf{LUNA (Listening, Understanding, Nurturing Assistant)}\\
+\large Platform Pendamping Kesehatan Mental Berbasis Multi-Agent Artificial Intelligence dengan Personalized Mental Health Support, Automatic Diary, dan Early Mental Crisis Detection bagi Generasi Z}
+\author{Tim Luna AI}
+\date{2026}
+
+\begin{document}
+
+% --- Cover Page ---
+\begin{titlepage}
+\thispagestyle{empty}
+\AddToShipoutPictureBG*{\includegraphics[width=\paperwidth,height=\paperheight]{images/pristine_background_canvas.png}}
+
+\begin{tikzpicture}[remember picture, overlay]
+  % --- Logos in Header ---
+  % Top Left: POLINEMA Logo
+  \node[anchor=north west, inner sep=0pt] at ($(current page.north west) + (2.0cm, -1.8cm)$) {
+    \includegraphics[height=1.8cm, keepaspectratio]{images/logo_polinema.png}
+  };
+  
+  % Top Right: HOLOGY 9.0 White Logo
+  \node[anchor=north east, inner sep=0pt] at ($(current page.north east) + (-2.0cm, -1.8cm)$) {
+    \includegraphics[height=1.8cm, keepaspectratio]{images/logo-hology-white.png}
+  };
+
+  % --- Category Tagline ---
+  \node[anchor=north, align=center] at ($(current page.north) + (0cm, -4.0cm)$) {
+    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{PrimaryBlue}\small PROPOSAL SOFTWARE DEVELOPMENT \hspace{4pt}$\bullet$\hspace{4pt} HOLOGY 9.0}
+  };
+
+  % --- Main Title: LUNA ---
+  \node[anchor=north, align=center] at ($(current page.north) + (0cm, -7.0cm)$) {
+    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{PrimaryBlue}\fontsize{42pt}{48pt}\selectfont LUNA}\\[8pt]
+    {\fontfamily{phv}\selectfont\sffamily\bfseries\itshape\color{TealAccent}\fontsize{14pt}{18pt}\selectfont (Listening, Understanding, Nurturing Assistant)}
+  };
+
+  % --- Subtitle / Description ---
+  \node[anchor=north, align=center, text width=16.0cm, execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}] at ($(current page.north) + (0cm, -10.2cm)$) {
+    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{PrimaryBlue}\fontsize{11.5pt}{17.5pt}\selectfont Platform Pendamping Kesehatan Mental Berbasis \textit{Multi-Agent Artificial Intelligence} dengan \textit{Personalized Mental Health Support}, \textit{Automatic Diary}, dan \textit{Early Mental Crisis Detection} bagi Generasi Z}
+  };
+
+  % --- Team & University Info at Bottom ---
+  \node[anchor=south, align=center] at ($(current page.south) + (0cm, 2.5cm)$) {
+    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{PrimaryBlue}\fontsize{14pt}{18pt}\selectfont TIM LUNA AI}\\[5pt]
+    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{TealAccent}\fontsize{12pt}{16pt}\selectfont POLITEKNIK NEGERI MALANG}\\[4pt]
+    {\fontfamily{phv}\selectfont\sffamily\color{PrimaryBlue!80}\fontsize{11pt}{14pt}\selectfont 2026}
+  };
+\end{tikzpicture}
+
+\null
+\end{titlepage}
+
+\newpage
+
+% --- Main Sections Import ---
+\input{sections/01_title_abstract.tex}
+\input{sections/02_latar_belakang.tex}
+\input{sections/03_tujuan_manfaat.tex}
+\input{sections/04_fitur_aplikasi.tex}
+\input{sections/05_metode_pengembangan.tex}
+\input{sections/06_analisis_desain.tex}
+\input{sections/07_arsitektur_sistem.tex}
+\input{sections/08_mockup.tex}
+\input{sections/09_rencana_implementasi.tex}
+\input{sections/11_daftar_pustaka.tex}
+\input{sections/10_lampiran.tex}
+
+\end{document}

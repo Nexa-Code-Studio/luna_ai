@@ -1,0 +1,40 @@
+% === IV. Batasan Perangkat Lunak ===
+\secbox{IV.}{Batasan Perangkat Lunak}
+
+Pengembangan perangkat lunak LUNA dibatasi pada ketentuan-ketentuan yang disajikan pada Tabel 1.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.35}
+\renewcommand{\tabularxcolumn}[1]{m{#1}}
+\arrayrulecolor{TableBorderColor}
+\caption{Batasan Perangkat Lunak}
+\vspace{0.3em}
+\small
+\begin{tabularx}{\textwidth}{| c | >{\bfseries}l | X |}
+\hline
+\rowcolor{TableHeaderPurple}
+\color{white}\bfseries No & \color{white}\bfseries Aspek Batasan & \color{white}\bfseries Deskripsi Batasan \\
+\hline
+1 & Cakupan Pengguna & Ditujukan bagi Generasi Z sebagai pendamping psikologis awal (\textit{digital first-aid}), bukan untuk penanganan gangguan jiwa berat atau kondisi krisis akut. \\
+\hline
+\rowcolor{TableAltRowBg}
+2 & Fungsi Utama & Mendukung \textit{Personalized Support}, \textit{Automatic Diary}, \textit{Long-term Memory}, \textit{Emotion Analysis}, \textit{Crisis Detection}, \textit{Therapy Recommendation}, dan \textit{Voice Conversation}. \\
+\hline
+3 & Platform & Tersedia pada aplikasi mobile. \\
+\hline
+\rowcolor{TableAltRowBg}
+4 & Teknologi & Menggunakan Multi-Agent AI, DeepSeek LLM, RAG, Long-term Memory, Speech-to-Text, dan Text-to-Speech. \\
+\hline
+5 & Kemampuan AI & Berfungsi sebagai pendamping digital dan tidak memberikan diagnosis medis maupun menggantikan psikolog atau psikiater. \\
+\hline
+\rowcolor{TableAltRowBg}
+6 & Data \& Penyimpanan & Data percakapan dienkripsi dan dianonimkan, sedangkan basis pengetahuan RAG berasal dari literatur psikologi terverifikasi. \\
+\hline
+7 & Deteksi Krisis & Mendeteksi risiko krisis melalui analisis teks dan emosi, kemudian mengarahkan pengguna ke hotline atau layanan profesional jika diperlukan. \\
+\hline
+\rowcolor{TableAltRowBg}
+8 & Etika \& Operasional & Menerapkan AI Safety Guardrails untuk menolak respons berbahaya; performa fitur suara bergantung pada perangkat dan kualitas masukan pengguna. \\
+\hline
+\end{tabularx}
+\end{table}
