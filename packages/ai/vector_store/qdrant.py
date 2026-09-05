@@ -20,14 +20,25 @@ class QdrantVectorStore(BaseVectorStore):
         return True
 
     async def upsert(self, collection_name: str, documents: list[VectorDocument]) -> bool:
-        points = [
-            PointStruct(
-                id=doc.id,
-                vector=doc.vector,
-                payload=doc.payload,
+        import uuid
+        points = []
+        for idx, doc in enumerate(documents, 1):
+            point_id = doc.id
+            if isinstance(point_id, str) and not point_id.isdigit():
+                try:
+                    uuid.UUID(point_id)
+                except ValueError:
+                    point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, point_id))
+            elif isinstance(point_id, str) and point_id.isdigit():
+                point_id = int(point_id)
+
+            points.append(
+                PointStruct(
+                    id=point_id,
+                    vector=doc.vector,
+                    payload=doc.payload,
+                )
             )
-            for doc in documents
-        ]
         await self.client.upsert(collection_name=collection_name, points=points)
         return True
 
@@ -37,16 +48,40 @@ class QdrantVectorStore(BaseVectorStore):
         query_vector: list[float],
         limit: int = 5,
     ) -> list[VectorDocument]:
-        search_result = await self.client.search(
-            collection_name=collection_name,
-            query_vector=query_vector,
-            limit=limit,
-        )
-        return [
-            VectorDocument(
-                id=str(hit.id),
-                vector=[],
-                payload=hit.payload or {},
-            )
-            for hit in search_result
-        ]
+        try:
+            if hasattr(self.client, "query_points"):
+                res = await self.client.query_points(
+                    collection_name=collection_name,
+                    query=query_vector,
+                    limit=limit,
+                )
+                hits = res.points
+            else:
+                hits = await self.client.search(
+                    collection_name=collection_name,
+                    query_vector=query_vector,
+                    limit=limit,
+                )
+            return [
+                VectorDocument(
+                    id=str(hit.id),
+                    vector=[],
+                    payload=hit.payload or {},
+                )
+                for hit in hits
+            ]
+        except Exception:
+            import httpx
+            async with httpx.AsyncClient() as http_client:
+                search_url = f"{self.url.rstrip('/')}/collections/{collection_name}/points/search"
+                resp = await http_client.post(search_url, json={"vector": query_vector, "limit": limit, "with_payload": True})
+                resp.raise_for_status()
+                data = resp.json().get("result", [])
+                return [
+                    VectorDocument(
+                        id=str(item.get("id")),
+                        vector=[],
+                        payload=item.get("payload") or {},
+                    )
+                    for item in data
+                ]
