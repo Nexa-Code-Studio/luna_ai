@@ -18,6 +18,7 @@ Model berhasil mengenali dan mengklasifikasikan emosi ke dalam 9 kategori label 
 ## 🎵 Hasil Analisis per File Audio
 
 ### 1. `1.wav`
+- **Transkripsi Teks (STT)**: *"Kan aku udah bilang berkali-kali, tapi kamu masih melakukan hal yang sama."*
 - **Emosi Utama**: `surprised` (Terkejut)
 - **Tingkat Kepercayaan (Confidence)**: `98.30%` (`0.9830`)
 - **Latensi Inferensi**: `3,984.21 ms`
@@ -35,6 +36,7 @@ Model berhasil mengenali dan mengklasifikasikan emosi ke dalam 9 kategori label 
 ---
 
 ### 2. `2.wav`
+- **Transkripsi Teks (STT)**: *"Aku sebenarnya takut banget kalau sesuatu yang buruk tuh bakal terjadi..."*
 - **Emosi Utama**: `sad` (Sedih)
 - **Tingkat Kepercayaan (Confidence)**: `93.23%` (`0.9323`)
 - **Latensi Inferensi**: `2,117.45 ms`
@@ -51,6 +53,7 @@ Model berhasil mengenali dan mengklasifikasikan emosi ke dalam 9 kategori label 
 ---
 
 ### 3. `3.wav`
+- **Transkripsi Teks (STT)**: *"Hari ini aku pergi ke kampus dan mengikuti kegiatan seperti biasa."*
 - **Emosi Utama**: `neutral` (Netral)
 - **Tingkat Kepercayaan (Confidence)**: `76.21%` (`0.7621`)
 - **Latensi Inferensi**: `1,639.60 ms`
@@ -68,6 +71,7 @@ Model berhasil mengenali dan mengklasifikasikan emosi ke dalam 9 kategori label 
 ---
 
 ### 4. `4.wav`
+- **Transkripsi Teks (STT)**: *"Aku akhir-akhir ini rasanya capek dan sedih terus."*
 - **Emosi Utama**: `sad` (Sedih)
 - **Tingkat Kepercayaan (Confidence)**: `99.99%` (`0.99997`)
 - **Latensi Inferensi**: `2,418.26 ms`
@@ -82,6 +86,7 @@ Model berhasil mengenali dan mengklasifikasikan emosi ke dalam 9 kategori label 
 ---
 
 ### 5. `5.wav`
+- **Transkripsi Teks (STT)**: *"Wah, akhirnya selesai juga! Aku senang banget hari ini!"*
 - **Emosi Utama**: `surprised` (Terkejut)
 - **Tingkat Kepercayaan (Confidence)**: `100.00%` (`1.0000`)
 - **Latensi Inferensi**: `1,453.18 ms`
