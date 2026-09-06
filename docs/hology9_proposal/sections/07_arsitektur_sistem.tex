@@ -25,24 +25,27 @@ Backend Service (FastAPI) & REST API, WebSocket, dan orkestrasi Multi-Agent AI \
 Artificial Intelligence (DeepSeek LLM) & Menghasilkan respons percakapan yang natural dan kontekstual \\
 \hline
 \rowcolor{TableAltRowBg}
-Speech-to-Text (OpenAI STT) & Mengubah suara menjadi teks \\
+Speech Emotion Recognition (FunASR) & Mengekstraksi kondisi afektif dan emosi suara secara akustik \\
 \hline
-Text-to-Speech (OpenAI TTS) & Menghasilkan respons suara yang natural \\
-\hline
-\rowcolor{TableAltRowBg}
-AI Architecture (Multi-Agent AI) & Mengelola kolaborasi antar agen AI \\
-\hline
-Knowledge Retrieval (RAG) & Mengambil referensi kesehatan mental yang relevan \\
+Speech-to-Text (OpenAI STT) & Mengubah suara pengguna menjadi teks transkripsi \\
 \hline
 \rowcolor{TableAltRowBg}
-Vector Database (Qdrant) & Penyimpanan embedding dan pencarian semantik \\
+Text-to-Speech (OpenAI TTS) & Menghasilkan respons suara sintesis yang natural \\
 \hline
-Database (PostgreSQL) & Penyimpanan data pengguna, diary, dan riwayat percakapan \\
+Safety Policy Engine (SafetyGate) & Menentukan izin eksekusi (\textit{ResponseMode} \& \textit{LLMMode}) serta mengisolasi RAG \\
 \hline
 \rowcolor{TableAltRowBg}
-Cache (Redis) & Penyimpanan sesi dan cache percakapan \\
+Embedding Engine (FastEmbed) & Menghasilkan representasi vektor 384-dimensi untuk pencarian semantik \\
 \hline
-Long-term Memory (Memory Worker) & Menyimpan preferensi dan konteks pengguna \\
+Vector Database (Qdrant) & Penyimpanan embedding dan pencarian semantik RAG \\
+\hline
+\rowcolor{TableAltRowBg}
+Database (PostgreSQL) & Penyimpanan data pengguna, diary, asesmen, dan riwayat percakapan \\
+\hline
+Cache \& Task Queue (Redis \& ARQ) & Penyimpanan sesi dan antrean pemrosesan tugas latar belakang \\
+\hline
+\rowcolor{TableAltRowBg}
+Long-term Memory (Memory Worker) & Menyimpan preferensi dan konteks pengguna jangka panjang \\
 \hline
 \end{tabularx}
 \end{table}
@@ -52,8 +55,8 @@ Alur penggunaan LUNA menjelaskan proses interaksi end-to-end antara pengguna dan
 \begin{enumerate}[leftmargin=*,label=\arabic*.]
     \item \textbf{Autentikasi \& Onboarding}: Pengguna melakukan registrasi/login dan menyetujui etika layanan serta \textit{medical disclaimer}.
     \item \textbf{Dashboard \& Mood Monitoring}: Pengguna mencatat emosi harian (\textit{mood tracker}) dan memantau perkembangan tren kondisi emosional.
-    \item \textbf{Konseling Interaktif (Teks \& Suara)}: Pengguna berinteraksi dalam sesi percakapan real-time dengan agen AI berbasis CBT.
-    \item \textbf{Sintesis Jurnal \& Safety Gates}: Sistem backend secara otomatis merangkum jurnal harian, memantau tingkat risiko emosional, serta memicu intervensi darurat jika terdeteksi situasi krisis (\textit{High Risk}).
+    \item \textbf{Konseling Interaktif (Teks \& Suara)}: Pengguna berinteraksi dalam sesi percakapan real-time dengan agen AI berbasis CBT, didukung analisis emosi suara (\textit{FunASR emotion2vec+}).
+    \item \textbf{Sintesis Jurnal \& Safety Priority Gate}: Sistem backend merangkum diari secara otomatis dan mengevaluasi status keselamatan melalui \textit{SafetyGate}. Jika terdeteksi risiko tinggi atau kritis (\textit{High / Critical Risk} berbasis WHO EASE), sistem mengaktifkan protokol krisis: mengisolasi pencarian RAG umum (\textit{Strict RAG Isolation}), menonaktifkan generasi bebas LLM (\textit{LLMMode: None}), serta menampilkan modul bantuan darurat dan kontak profesional/hotline.
 \end{enumerate}
 
 Rangkaian alur penggunaan sistem tersebut disajikan pada Gambar 5.
