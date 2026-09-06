@@ -33,22 +33,33 @@ Desain solusi LUNA disusun untuk menggambarkan konsep, arsitektur, dan mekanisme
     \caption{Gambaran Konsep LUNA}
 \end{figure}
 
-\subsubsecstyle{2. Kerangka Evaluasi Risiko \& Integrasi DASS-21}
-Dalam mengevaluasi kondisi emosional pengguna, LUNA mengintegrasikan instrumen psikometris \textbf{DASS-21 (\textit{Depression Anxiety Stress Scale 21})} yang divalidasi oleh pakar psikologi. DASS-21 mengevaluasi tiga subskala emosional utama:
-\begin{enumerate}[leftmargin=*,label=\arabic*.]
-    \item \textbf{Subskala Depresi}: Mengukur tingkat keputusasaan, devaluasi diri, dan hilangnya minat (7 butir pertanyaan).
-    \item \textbf{Subskala Kecemasan (\textit{Anxiety})}: Mengukur respons gairah otonom, efek fisiologis, dan kecemasan situasional (7 butir pertanyaan).
-    \item \textbf{Subskala Stres}: Mengukur ketegangan persisten, iritabilitas, dan kesulitan bersantai (7 butir pertanyaan).
+\subsubsecstyle{2. Kerangka Evaluasi Risiko, Integrasi DASS-21, \& Protokol Triase WHO EASE}
+Dalam mengevaluasi kondisi psikologis pengguna secara aman dan terukur, LUNA menerapkan arsitektur klasifikasi ganda (\textit{Dual-Axis Classification}) yang memisahkan antara tingkat keparahan distres emosional umum dengan tingkat risiko keselamatan darurat:
+
+\begin{enumerate}[leftmargin=*,label=\alph*.]
+    \item \textbf{Aksis 1: Pengukuran Keparahan Distres Emosional (DASS-21)}:\\
+    LUNA mengintegrasikan instrumen psikometris \textbf{DASS-21 (\textit{Depression Anxiety Stress Scale 21})} yang divalidasi pada populasi dewasa muda Indonesia (Lovibond \& Lovibond, 1995; Muttaqin, 2021; Damanik, 2011). DASS-21 mengevaluasi tiga dimensi emosional:
+    \begin{itemize}[leftmargin=*]
+        \item \textbf{Subskala Depresi}: Mengukur keputusasaan, devaluasi diri, dan hilangnya minat (7 butir pertanyaan).
+        \item \textbf{Subskala Kecemasan (\textit{Anxiety})}: Mengukur gairah otonom, ketegangan otot rangka, dan efek fisiologis ketakutan (7 butir pertanyaan).
+        \item \textbf{Subskala Stres}: Mengukur ketegangan persisten, iritabilitas, dan kesulitan relaksasi (7 butir pertanyaan).
+    \end{itemize}
+    Skor dihitung melalui perkalian dua dari jumlah skor butir ($\mathrm{Skor} = \mathrm{Total\ Subskala} \times 2$) untuk mengkategorikan distres ke dalam tingkat \textit{Normal}, \textit{Mild} (Ringan), \textit{Moderate} (Sedang), hingga \textit{Severe / Extremely Severe} (Berat).
+
+    \item \textbf{Aksis 2: Triase Risiko Keselamatan Deterministik Berbasis Protokol WHO EASE}:\\
+    Untuk mendeteksi potensi bahaya iminen seperti ideasi bunuh diri dan tindakan menyakiti diri sendiri (\textit{self-harm}), LUNA menerapkan mesin keputusan deterministik (\textit{deterministic triage engine}) yang diadaptasi dari protokol triase krisis \textbf{WHO EASE (\textit{Early Adolescent Skills for Emotions})} (World Health Organization, 2021a) dan panduan pencegahan bunuh diri \textbf{WHO LIVE LIFE} (World Health Organization, 2021b). Berbeda dengan penilaian skor akumulatif, protokol WHO EASE menerapkan pohon keputusan (\textit{decision tree}) terstruktur dua langkah:
+    \begin{itemize}[leftmargin=*]
+        \item \textbf{Langkah 1 (Ideasi Pasif)}: Mendeteksi apakah pengguna menunjukkan keinginan menghilang, lelah hidup, atau berharap tidur tanpa bangun kembali.
+        \item \textbf{Langkah 2 (Niat / Rencana Aktif)}: Mendeteksi adanya rencana konkret, persiapan sarana, atau niat eksplisit untuk mengakhiri hidup saat ini.
+    \end{itemize}
+    Tingkat risiko keselamatan dipetakan ke dalam lima level deterministik: \textit{None}, \textit{Low}, \textit{Medium}, \textit{High} (rujukan krisis), dan \textit{Critical} (intervensi darurat langsung). Prinsip pemisahan ini memastikan bahwa pengguna dengan depresi berat pada Aksis 1 tidak secara serampangan dilabeli berisiko bunuh diri jika tidak terdapat sinyal keselamatan aktif, sehingga intervensi yang diberikan tetap proporsional.
+
+    \item \textbf{Pemodelan Sinyal Risiko (\textit{RiskSignal Parser})}:\\
+    Sistem mengekstrak sinyal percakapan menjadi objek terstruktur \textit{RiskSignal} yang mengevaluasi polaritas (\textit{positive, negated, reported-other, hypothetical, figurative}) dan konteks temporal (\textit{current, recent, historical}). Pendekatan ini mencegah alarm palsu (\textit{false alarm}) dari ungkapan bahasa gaul atau kiasan (misalnya \textit{"mati gue dikerjain tugas"}) serta memahami pernyataan negasi (seperti \textit{"aku sedih tapi nggak mau bunuh diri"}).
+
+    \item \textbf{Ekstraksi Gejala dan Bukti Somatis-Kognitif (\textit{SymptomService})}:\\
+    LUNA mengidentifikasi 20 taksonomi gejala non-klinis yang dikelompokkan ke dalam empat domain (Somatis, Kognitif, Emosional, dan Perilaku) beserta durasi keluhan (\textit{recent, 1--2 weeks, $\ge$1 month}). Informasi ini menjadi masukan bagi modul rekomendasi strategi koping mandiri berbasis bukti klinis, seperti teknik \textit{Grounding} dan \textit{Slow Breathing} yang merujuk pada panduan manajemen stres WHO (World Health Organization, 2020).
 \end{enumerate}
-
-Perhitungan skor pada masing-masing subskala dilakukan dengan menjumlahkan nilai butir (skala 0--3) lalu dikalikan 2 ($\mathrm{Skor} = \mathrm{Total\ Subskala} \times 2$). Berdasarkan norma psikometris DASS-21, skor tersebut dikelompokkan ke dalam tiga tingkatan level distres emosional:
-\begin{itemize}[leftmargin=*]
-    \item \textbf{Level 1 (Tingkat Ringan / \textit{Mild})}: Pengguna mengalami distres emosional ringan. LUNA memberikan psikoedukasi, validasi emosi, dan latihan relaksasi mandiri.
-    \item \textbf{Level 2 (Tingkat Sedang / \textit{Moderate})}: Pengguna mengalami distres emosional sedang. LUNA mengaktifkan pendampingan CBT interaktif, penelusuran diari emosional, dan rekomendasi aktivitas terstruktur.
-    \item \textbf{Level 3 (Tingkat Berat / \textit{Severe} -- \textit{Extremely Severe})}: Pengguna mengalami distres emosional tinggi atau indikasi krisis. Sistem \textit{RiskAssessmentService} secara otomatis memicu protokol \textit{Safety Gate} untuk memberikan modul bantuan darurat dan rujukan ke kontak profesional/hotline.
-\end{itemize}
-
-Hasil penilaian DASS-21 diteruskan ke komponen backend \textit{RiskAssessmentService} untuk menentukan strategi pendampingan yang tepat tanpa melakukan diagnosis medis formal.
 
 \clearpage
 \subsubsecstyle{3. Arsitektur sistem}
