@@ -437,11 +437,9 @@ class _AiDiaryScreenState extends State<AiDiaryScreen> {
           .timeout(const Duration(seconds: 6));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        if (data.isNotEmpty) {
-          setState(() {
-            _entries = data.map((e) => Map<String, dynamic>.from(e)).toList();
-          });
-        }
+        setState(() {
+          _entries = data.map((e) => Map<String, dynamic>.from(e)).toList();
+        });
       }
     } catch (_) {
       // Keep existing entries

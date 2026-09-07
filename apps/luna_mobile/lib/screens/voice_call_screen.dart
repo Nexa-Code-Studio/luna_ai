@@ -82,12 +82,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     });
   }
 
-  void _initWebSocketListener() {
+  Future<void> _initWebSocketListener() async {
     if (AppConfig.useMockData) return;
     try {
-      _wsChannel = WebSocketChannel.connect(
-        Uri.parse('${AppConfig.wsUrl}/call/ws/$_sessionId'),
-      );
+      final token = await AppConfig.getToken();
+      final uri = (token != null && token.isNotEmpty)
+          ? Uri.parse('${AppConfig.wsUrl}/call/ws/$_sessionId?token=$token')
+          : Uri.parse('${AppConfig.wsUrl}/call/ws/$_sessionId');
+      _wsChannel = WebSocketChannel.connect(uri);
 
       _wsChannel!.stream.listen(
         (message) {
