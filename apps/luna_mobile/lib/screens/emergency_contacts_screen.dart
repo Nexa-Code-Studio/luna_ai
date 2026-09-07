@@ -16,29 +16,8 @@ class EmergencyContactsScreen extends StatefulWidget {
 }
 
 class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
-  List<Map<String, dynamic>> _contacts = [
-    {
-      'id': '1',
-      'name': 'Budi Utami',
-      'relation': 'Ibu Kandung',
-      'phone': '+62 812-3456-7890',
-      'isPrimary': true,
-    },
-    {
-      'id': '2',
-      'name': 'Dr. Rini Puspita',
-      'relation': 'Psikiater / Konselor',
-      'phone': '+62 857-1122-3344',
-      'isPrimary': false,
-    },
-    {
-      'id': '3',
-      'name': 'Layanan Krisis Kemenkes',
-      'relation': 'Hotline Darurat 24 Jam',
-      'phone': '119',
-      'isPrimary': false,
-    },
-  ];
+  List<Map<String, dynamic>> _contacts = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -47,6 +26,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
   }
 
   Future<void> _loadContacts() async {
+    setState(() => _isLoading = true);
     try {
       final headers = await AppConfig.getAuthHeaders();
       final res = await http
@@ -58,7 +38,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 
       if (res.statusCode == 200 && mounted) {
         final data = jsonDecode(res.body);
-        if (data is List && data.isNotEmpty) {
+        if (data is List) {
           setState(() {
             _contacts = data.map<Map<String, dynamic>>((c) => {
               'id': c['id']?.toString() ?? '',
@@ -71,6 +51,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
         }
       }
     } catch (_) {}
+    finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _saveContactToBackend({
@@ -104,18 +87,36 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 
     try {
       final headers = await AppConfig.getAuthHeaders();
-      await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/users/emergency-contacts'),
-            headers: headers,
-            body: jsonEncode({
-              'name': name,
-              'relationship': relation.isEmpty ? 'Keluarga' : relation,
-              'phone_number': phone,
-              'is_primary': isPrimary,
-            }),
-          )
-          .timeout(const Duration(seconds: 4));
+      if (contactToEdit != null) {
+        // UPDATE existing contact via PUT
+        final contactId = contactToEdit['id']?.toString() ?? '';
+        await http
+            .put(
+              Uri.parse('${AppConfig.baseUrl}/users/emergency-contacts/$contactId'),
+              headers: headers,
+              body: jsonEncode({
+                'name': name,
+                'relationship': relation.isEmpty ? 'Keluarga' : relation,
+                'phone_number': phone,
+                'is_primary': isPrimary,
+              }),
+            )
+            .timeout(const Duration(seconds: 4));
+      } else {
+        // CREATE new contact via POST
+        await http
+            .post(
+              Uri.parse('${AppConfig.baseUrl}/users/emergency-contacts'),
+              headers: headers,
+              body: jsonEncode({
+                'name': name,
+                'relationship': relation.isEmpty ? 'Keluarga' : relation,
+                'phone_number': phone,
+                'is_primary': isPrimary,
+              }),
+            )
+            .timeout(const Duration(seconds: 4));
+      }
       _loadContacts();
     } catch (_) {}
   }
@@ -809,9 +810,14 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 
 
                       // Contacts List Items
-
-                      if (_contacts.isEmpty)
-
+                      if (_isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_contacts.isEmpty)
                         Center(
 
                           child: Padding(
