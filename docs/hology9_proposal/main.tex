@@ -149,44 +149,21 @@
 % --- Cover Page ---
 \begin{titlepage}
 \thispagestyle{empty}
-\AddToShipoutPictureBG*{\includegraphics[width=\paperwidth,height=\paperheight]{images/pristine_background_canvas.png}}
-
 \begin{tikzpicture}[remember picture, overlay]
-  % --- Logos in Header ---
-  % Top Left: POLINEMA Logo
-  \node[anchor=north west, inner sep=0pt] at ($(current page.north west) + (2.0cm, -1.8cm)$) {
-    \includegraphics[height=1.8cm, keepaspectratio]{images/logo_polinema.png}
+  \node[inner sep=0pt, at={(current page.center)}] {
+    \includegraphics[width=\paperwidth,height=\paperheight]{images/cover-fix.png}
   };
   
-  % Top Right: HOLOGY 9.0 White Logo
+  % Top Left: POLINEMA Logo
+  \node[anchor=north west, inner sep=0pt] at ($(current page.north west) + (2.0cm, -1.8cm)$) {
+    \includegraphics[height=1.6cm, keepaspectratio]{images/logo_polinema.png}
+  };
+  
+  % Top Right: HOLOGY 9.0 Logo
   \node[anchor=north east, inner sep=0pt] at ($(current page.north east) + (-2.0cm, -1.8cm)$) {
-    \includegraphics[height=1.8cm, keepaspectratio]{images/logo-hology-white.png}
-  };
-
-  % --- Category Tagline ---
-  \node[anchor=north, align=center] at ($(current page.north) + (0cm, -4.0cm)$) {
-    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{PrimaryBlue}\small PROPOSAL SOFTWARE DEVELOPMENT \hspace{4pt}$\bullet$\hspace{4pt} HOLOGY 9.0}
-  };
-
-  % --- Main Title: LUNA ---
-  \node[anchor=north, align=center] at ($(current page.north) + (0cm, -7.0cm)$) {
-    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{PrimaryBlue}\fontsize{42pt}{48pt}\selectfont LUNA}\\[8pt]
-    {\fontfamily{phv}\selectfont\sffamily\bfseries\itshape\color{TealAccent}\fontsize{14pt}{18pt}\selectfont (Listening, Understanding, Nurturing Assistant)}
-  };
-
-  % --- Subtitle / Description ---
-  \node[anchor=north, align=center, text width=16.0cm, execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}] at ($(current page.north) + (0cm, -10.2cm)$) {
-    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{PrimaryBlue}\fontsize{11.5pt}{17.5pt}\selectfont Platform Pendamping Kesehatan Mental Berbasis \textit{Multi-Agent Artificial Intelligence} dengan \textit{Personalized Mental Health Support}, \textit{Automatic Diary}, dan \textit{Early Mental Crisis Detection} bagi Generasi Z}
-  };
-
-  % --- Team & University Info at Bottom ---
-  \node[anchor=south, align=center] at ($(current page.south) + (0cm, 2.5cm)$) {
-    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{PrimaryBlue}\fontsize{14pt}{18pt}\selectfont TIM LUNA AI}\\[5pt]
-    {\fontfamily{phv}\selectfont\sffamily\bfseries\color{TealAccent}\fontsize{12pt}{16pt}\selectfont POLITEKNIK NEGERI MALANG}\\[4pt]
-    {\fontfamily{phv}\selectfont\sffamily\color{PrimaryBlue!80}\fontsize{11pt}{14pt}\selectfont 2026}
+    \includegraphics[height=1.6cm, keepaspectratio]{images/logo-hology-black.png}
   };
 \end{tikzpicture}
-
 \null
 \end{titlepage}
 
