@@ -1,71 +1,67 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-
 import 'package:google_fonts/google_fonts.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../config/app_config.dart';
 import '../services/vad_audio_service.dart';
-
 import '../theme/app_colors.dart';
-
 import '../widgets/custom_button.dart';
-
 import '../widgets/glass_card.dart';
 
-
-
 class VoiceCallScreen extends StatefulWidget {
-
   const VoiceCallScreen({super.key});
 
-
-
   @override
-
   State<VoiceCallScreen> createState() => _VoiceCallScreenState();
-
 }
 
-
-
 class _VoiceCallScreenState extends State<VoiceCallScreen> {
-
   final VadAudioService _vadService = VadAudioService();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   late StreamSubscription<VadState> _vadStateSubscription;
-
   late StreamSubscription<double> _amplitudeSubscription;
+  StreamSubscription<String>? _transcriptSubscription;
 
   WebSocketChannel? _wsChannel;
-
   VadState _currentVadState = VadState.listening;
-
   double _currentAmplitude = 0.1;
-
   bool _isMuted = false;
-
   int _callDurationSeconds = 0;
-
   Timer? _durationTimer;
-
-
+  String _sessionId = '';
 
   @override
-
   void initState() {
     super.initState();
+    _sessionId = 'session_${DateTime.now().millisecondsSinceEpoch}';
 
     _vadService.startListening();
     _initWebSocketListener();
+
+    _transcriptSubscription = _vadService.transcriptStream.listen((text) {
+      if (text.isNotEmpty) {
+        _wsChannel?.sink.add(jsonEncode({
+          'type': 'user_transcript',
+          'text': text,
+        }));
+      }
+    });
 
     _vadStateSubscription = _vadService.vadStateStream.listen((state) {
       if (mounted) {
         setState(() {
           _currentVadState = state;
         });
+      }
+      if (state == VadState.bargeInInterrupted) {
+        _audioPlayer.stop();
+        _wsChannel?.sink.add(jsonEncode({'type': 'user_interrupted'}));
       }
     });
 
@@ -77,7 +73,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       }
     });
 
-    // Call duration timer
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
@@ -89,19 +84,28 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   void _initWebSocketListener() {
     if (AppConfig.useMockData) return;
-    final sessionId = 'session_${DateTime.now().millisecondsSinceEpoch}';
     try {
       _wsChannel = WebSocketChannel.connect(
-        Uri.parse('${AppConfig.wsUrl}/call/ws/$sessionId'),
+        Uri.parse('${AppConfig.wsUrl}/call/ws/$_sessionId'),
       );
+
       _wsChannel!.stream.listen(
         (message) {
-          if (message is String) {
+          if (message is List<int>) {
+            _vadService.setAiSpeaking();
+            _audioPlayer.play(BytesSource(Uint8List.fromList(message)));
+          } else if (message is String) {
             try {
               final payload = jsonDecode(message) as Map<String, dynamic>;
               final eventType = payload['type'];
-              if (eventType == 'crisis_alert' || eventType == 'emergency_triggered') {
+              if (eventType == 'call_connected') {
+                _wsChannel?.sink.add(jsonEncode({'type': 'start_call'}));
+              } else if (eventType == 'ai_thinking') {
+                _vadService.setAiThinking();
+              } else if (eventType == 'crisis_alert' || eventType == 'emergency_triggered') {
                 _showCrisisAlertModal(payload['hotline'] ?? '119 ext 8');
+              } else if (eventType == 'interrupted_ack') {
+                _audioPlayer.stop();
               }
             } catch (_) {}
           }
@@ -147,23 +151,25 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     );
   }
 
-
-
   @override
-
   void dispose() {
-
     _vadStateSubscription.cancel();
-
     _amplitudeSubscription.cancel();
-
+    _transcriptSubscription?.cancel();
     _durationTimer?.cancel();
 
+    _audioPlayer.stop();
+    _audioPlayer.dispose();
     _vadService.stopListening();
-    _wsChannel?.sink.close();
+    try {
+      _wsChannel?.sink.add(jsonEncode({
+        'type': 'end_call',
+        'duration_seconds': _callDurationSeconds,
+      }));
+      _wsChannel?.sink.close();
+    } catch (_) {}
 
     super.dispose();
-
   }
 
 

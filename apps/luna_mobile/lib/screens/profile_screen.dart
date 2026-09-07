@@ -1,36 +1,103 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
 import '../theme/app_colors.dart';
-
 import '../widgets/custom_button.dart';
-
 import '../widgets/glass_card.dart';
 
-
-
 class ProfileScreen extends StatefulWidget {
-
   const ProfileScreen({super.key});
 
-
-
   @override
-
   State<ProfileScreen> createState() => _ProfileScreenState();
-
 }
 
-
-
 class _ProfileScreenState extends State<ProfileScreen> {
+  String _userName = 'User Luna';
+  String _userEmail = 'user.luna@gmail.com';
+  String _emergencyContactName = 'Budi Utami (Ibu)';
+  String _emergencyContactPhone = '+62 812-3456-7890';
 
-  final String _emergencyContactName = 'Budi Utami (Ibu)';
+  String get _userInitials {
+    final parts = _userName.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+    }
+    return 'LU';
+  }
 
-  final String _emergencyContactPhone = '+62 812-3456-7890';
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
 
+  Future<void> _loadProfileData() async {
+    // 1. Cached profile info
+    final cachedName = await AppConfig.getUserName();
+    final cachedEmail = await AppConfig.getUserEmail();
+    if (mounted && cachedName != null && cachedName.isNotEmpty) {
+      setState(() {
+        _userName = cachedName;
+        if (cachedEmail != null && cachedEmail.isNotEmpty) {
+          _userEmail = cachedEmail;
+        }
+      });
+    }
 
+    // 2. Fetch /auth/me
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      final res = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/auth/me'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200 && mounted) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final name = data['name']?.toString() ?? _userName;
+        final email = data['email']?.toString() ?? _userEmail;
+        setState(() {
+          _userName = name;
+          _userEmail = email;
+        });
+        await AppConfig.setUserInfo(name: name, email: email);
+      }
+    } catch (_) {}
+
+    // 3. Fetch primary emergency contact
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      final res = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/users/emergency-contacts'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200 && mounted) {
+        final data = jsonDecode(res.body);
+        if (data is List && data.isNotEmpty) {
+          final primary = data.firstWhere(
+            (c) => c['isPrimary'] == true,
+            orElse: () => data.first,
+          );
+          setState(() {
+            final rel = primary['relationship'] != null ? ' (${primary['relationship']})' : '';
+            _emergencyContactName = '${primary['name']}$rel';
+            _emergencyContactPhone = primary['phone']?.toString() ?? '';
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   void _showDeleteMemoryConfirmationDialog() {
 
@@ -322,76 +389,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                               ),
 
-                              child: const Center(
-
+                              child: Center(
                                 child: Text(
-
-                                  'SJ',
-
-                                  style: TextStyle(
-
+                                  _userInitials,
+                                  style: const TextStyle(
                                     fontSize: 20,
-
                                     fontWeight: FontWeight.bold,
-
                                     color: Colors.white,
-
                                   ),
-
                                 ),
-
                               ),
-
                             ),
-
                             const SizedBox(width: 16),
-
                             Expanded(
-
                               child: Column(
-
                                 crossAxisAlignment: CrossAxisAlignment.start,
-
                                 children: [
-
                                   Text(
-
-                                    'Sarah Jenkins',
-
+                                    _userName,
                                     maxLines: 1,
-
                                     overflow: TextOverflow.ellipsis,
-
                                     style: GoogleFonts.inter(
-
                                       fontSize: 18,
-
                                       fontWeight: FontWeight.w800,
-
                                       color: AppColors.textPrimary,
-
                                     ),
-
                                   ),
-
                                   const SizedBox(height: 2),
-
                                   Text(
-
-                                    'sarah.jenkins@example.com',
-
+                                    _userEmail,
                                     maxLines: 1,
-
                                     overflow: TextOverflow.ellipsis,
-
                                     style: GoogleFonts.inter(
-
                                       fontSize: 13,
-
                                       color: AppColors.textSecondary,
-
                                     ),
-
                                   ),
 
                                   const SizedBox(height: 6),
@@ -609,14 +641,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 10),
 
                       GlassCard(
-
                         width: double.infinity,
-
                         padding: const EdgeInsets.symmetric(vertical: 4),
-
-                        child: ListTile(
-
-                          leading: Container(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: ListTile(
+                            leading: Container(
 
                             width: 36,
 
@@ -687,33 +717,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
 
                           onTap: () async {
-
                             await Navigator.pushNamed(context, '/emergency_contacts');
-
+                            if (mounted) {
+                              _loadProfileData();
+                            }
                           },
-
                         ),
-
                       ),
-
-                      const SizedBox(height: 36),
-
-
+                    ),
+                    const SizedBox(height: 36),
 
                       // Red Outlined Logout Pill Button
-
                       SizedBox(
-
                         width: double.infinity,
-
                         height: 52,
-
                         child: OutlinedButton.icon(
-
-                          onPressed: () {
-
-                            Navigator.pushReplacementNamed(context, '/login');
-
+                          onPressed: () async {
+                            await AppConfig.clearToken();
+                            if (context.mounted) {
+                              Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                            }
                           },
 
                           style: OutlinedButton.styleFrom(

@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
 import '../theme/app_colors.dart';
-
 import '../widgets/glass_card.dart';
 
 
@@ -416,32 +417,52 @@ class _AiDiaryScreenState extends State<AiDiaryScreen> {
 
 
 
+  late List<Map<String, dynamic>> _entries;
+  bool _isLoading = false;
+
   @override
-
-  void dispose() {
-
-    _searchController.dispose();
-
-    super.dispose();
-
+  void initState() {
+    super.initState();
+    _entries = List.from(_journalEntries);
+    _fetchRemoteDiaries();
   }
 
-
+  Future<void> _fetchRemoteDiaries() async {
+    if (AppConfig.useMockData) return;
+    setState(() => _isLoading = true);
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      final response = await http
+          .get(Uri.parse('${AppConfig.baseUrl}/diaries'), headers: headers)
+          .timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        if (data.isNotEmpty) {
+          setState(() {
+            _entries = data.map((e) => Map<String, dynamic>.from(e)).toList();
+          });
+        }
+      }
+    } catch (_) {
+      // Keep existing entries
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
+  @override
   Widget build(BuildContext context) {
-
     final query = _searchController.text.toLowerCase();
-
-    final filteredList = _journalEntries.where((item) {
-
+    final filteredList = _entries.where((item) {
       final matchesQuery = query.isEmpty ||
-
           item['title'].toString().toLowerCase().contains(query) ||
-
           item['summary'].toString().toLowerCase().contains(query) ||
-
           item['moodTag'].toString().toLowerCase().contains(query);
 
 
@@ -569,10 +590,12 @@ class _AiDiaryScreenState extends State<AiDiaryScreen> {
 
 
               // Scrollable Main Content
-
               Expanded(
-
-                child: SingleChildScrollView(
+                child: RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _fetchRemoteDiaries,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
 
                   padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
 
@@ -770,7 +793,14 @@ class _AiDiaryScreenState extends State<AiDiaryScreen> {
 
                       const SizedBox(height: 20),
 
-
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: LinearProgressIndicator(
+                            color: AppColors.primary,
+                            minHeight: 2.5,
+                          ),
+                        ),
 
                       // Journal History Cards List
 
@@ -1100,8 +1130,8 @@ class _AiDiaryScreenState extends State<AiDiaryScreen> {
 
                   ),
 
+                  ),
                 ),
-
               ),
 
             ],
