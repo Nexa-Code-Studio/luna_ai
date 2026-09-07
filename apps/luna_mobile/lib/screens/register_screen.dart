@@ -73,6 +73,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (token != null) {
           await AppConfig.setToken(token);
         }
+        final userData = data['user'] as Map<String, dynamic>?;
+        await AppConfig.setUserInfo(
+          name: userData?['name']?.toString() ?? name,
+          email: userData?['email']?.toString() ?? email,
+        );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -92,6 +97,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
+      await AppConfig.setUserInfo(name: name, email: email);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

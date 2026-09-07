@@ -7,6 +7,9 @@ class AppConfig {
   static String? _cachedToken;
   static String? _customHost;
 
+  static String? _cachedUserName;
+  static String? _cachedUserEmail;
+
   /// Default port for backend
   static const String defaultPort = '8888';
 
@@ -50,11 +53,40 @@ class AppConfig {
     await prefs.setString('auth_token', token);
   }
 
-  /// Clear token (Logout)
+  /// Get cached user name
+  static Future<String?> getUserName() async {
+    if (_cachedUserName != null) return _cachedUserName;
+    final prefs = await SharedPreferences.getInstance();
+    _cachedUserName = prefs.getString('user_name');
+    return _cachedUserName;
+  }
+
+  /// Get cached user email
+  static Future<String?> getUserEmail() async {
+    if (_cachedUserEmail != null) return _cachedUserEmail;
+    final prefs = await SharedPreferences.getInstance();
+    _cachedUserEmail = prefs.getString('user_email');
+    return _cachedUserEmail;
+  }
+
+  /// Save user profile info
+  static Future<void> setUserInfo({required String name, required String email}) async {
+    _cachedUserName = name;
+    _cachedUserEmail = email;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', name);
+    await prefs.setString('user_email', email);
+  }
+
+  /// Clear token and profile info (Logout)
   static Future<void> clearToken() async {
     _cachedToken = null;
+    _cachedUserName = null;
+    _cachedUserEmail = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
+    await prefs.remove('user_name');
+    await prefs.remove('user_email');
   }
 
   /// Default headers with Authorization if token is available
@@ -67,3 +99,4 @@ class AppConfig {
     };
   }
 }
+

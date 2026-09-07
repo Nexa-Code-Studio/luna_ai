@@ -1,182 +1,170 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
 import '../theme/app_colors.dart';
-
 import '../widgets/glass_card.dart';
 
-
-
-class HomeScreen extends StatelessWidget {
-
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
 
+class _HomeScreenState extends State<HomeScreen> {
+  String _userName = 'Sahabat LUNA';
+  int _completedSessions = 1;
+  final int _targetSessions = 3;
 
   @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
 
+  Future<void> _loadUserData() async {
+    // 1. Load cached user name
+    final cachedName = await AppConfig.getUserName();
+    if (cachedName != null && cachedName.isNotEmpty && mounted) {
+      setState(() => _userName = cachedName);
+    }
+
+    // 2. Fetch fresh profile from /auth/me
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      final res = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/auth/me'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200 && mounted) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final name = data['name']?.toString() ?? _userName;
+        setState(() => _userName = name);
+        await AppConfig.setUserInfo(
+          name: name,
+          email: data['email']?.toString() ?? '',
+        );
+      }
+    } catch (_) {}
+
+    // 3. Fetch today's conversation count from /conversations/today
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      final res = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/conversations/today'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200 && mounted) {
+        final data = jsonDecode(res.body);
+        int count = 0;
+        if (data is Map<String, dynamic>) {
+          count = data['total'] ?? (data['items'] as List?)?.length ?? 0;
+        } else if (data is List) {
+          count = data.length;
+        }
+        if (mounted) {
+          setState(() => _completedSessions = count);
+        }
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
       body: Container(
-
         width: double.infinity,
-
         height: double.infinity,
-
         decoration: const BoxDecoration(
-
           gradient: LinearGradient(
-
             colors: [
-
               Color(0xFFF6F8FF),
-
               Color(0xFFEFF2FE),
-
               Color(0xFFF8F9FE),
-
             ],
-
             begin: Alignment.topCenter,
-
             end: Alignment.bottomCenter,
-
           ),
-
         ),
-
         child: SafeArea(
-
           child: Column(
-
             children: [
-
               // Header Bar with Settings Gear Icon
-
               Padding(
-
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-
                 child: Row(
-
                   children: [
-
                     Image.asset(
-
                       'assets/images/luna_logo.png',
-
                       width: 32,
-
                       height: 32,
-
                       fit: BoxFit.contain,
-
                       errorBuilder: (context, error, stackTrace) {
-
                         return const Icon(
-
                           Icons.nightlight_round,
-
                           size: 28,
-
                           color: AppColors.primary,
-
                         );
-
                       },
-
                     ),
-
                     const SizedBox(width: 8),
-
                     Text(
-
                       'LUNA',
-
                       style: GoogleFonts.inter(
-
                         fontSize: 16,
-
                         fontWeight: FontWeight.w700,
-
                         color: AppColors.primary,
-
                       ),
-
                     ),
-
                     const Spacer(),
-
                     IconButton(
-
                       icon: const Icon(Icons.settings_outlined),
-
                       color: AppColors.primary,
-
-                      onPressed: () {},
-
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/profile');
+                      },
                     ),
-
                   ],
-
                 ),
-
               ),
 
-
-
               // Scrollable Body Content
-
               Expanded(
-
-                child: SingleChildScrollView(
-
-                  padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
-
-                  child: Column(
-
-                    crossAxisAlignment: CrossAxisAlignment.start,
-
-                    children: [
-
-                      // User Greeting Header
-
-                      Text(
-
-                        'Halo, Sarah! 👋',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 24,
-
-                          fontWeight: FontWeight.w800,
-
-                          color: AppColors.textPrimary,
-
+                child: RefreshIndicator(
+                  onRefresh: _loadUserData,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // User Greeting Header
+                        Text(
+                          'Halo, $_userName! 👋',
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Text(
-
-                        'Bagaimana perasaanmu hari ini?',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 14,
-
-                          color: AppColors.textSecondary,
-
+                        const SizedBox(height: 4),
+                        Text(
+                          'Bagaimana perasaanmu hari ini?',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-
-                      ),
-
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
 
 
@@ -293,95 +281,56 @@ class HomeScreen extends StatelessWidget {
                           children: [
 
                             Stack(
-
                               alignment: Alignment.center,
-
                               children: [
-
-                                const SizedBox(
-
+                                SizedBox(
                                   width: 90,
-
                                   height: 90,
-
                                   child: CircularProgressIndicator(
-
-                                    value: 0.75,
-
+                                    value: _targetSessions > 0
+                                        ? (_completedSessions / _targetSessions).clamp(0.0, 1.0)
+                                        : 0.0,
                                     strokeWidth: 8,
-
-                                    backgroundColor: Color(0xFFE0E6F8),
-
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-
+                                    backgroundColor: const Color(0xFFE0E6F8),
+                                    valueColor: const AlwaysStoppedAnimation<Color>(
                                       Color(0xFF489BB8),
-
                                     ),
-
                                   ),
-
                                 ),
-
                                 Column(
-
                                   mainAxisSize: MainAxisSize.min,
-
                                   children: [
-
                                     Text(
-
-                                      '3/4',
-
+                                      '$_completedSessions/$_targetSessions',
                                       style: GoogleFonts.inter(
-
                                         fontSize: 18,
-
                                         fontWeight: FontWeight.w700,
-
                                         color: AppColors.textPrimary,
-
                                       ),
-
                                     ),
-
                                     Text(
-
                                       'TARGET',
-
                                       style: GoogleFonts.inter(
-
                                         fontSize: 9,
-
                                         fontWeight: FontWeight.w700,
-
                                         color: AppColors.textLight,
-
                                       ),
-
                                     ),
-
                                   ],
-
                                 ),
-
                               ],
-
                             ),
-
                             const SizedBox(height: 14),
-
                             Text(
-
-                              'Kamu luar biasa hari ini.',
-
+                              _completedSessions >= _targetSessions
+                                  ? 'Target tercapai! Kamu luar biasa hari ini.'
+                                  : _completedSessions > 0
+                                      ? 'Kemajuan bagus! Jaga ritme emosionalmu.'
+                                      : 'Mulai harimu dengan sesi curhat bersama LUNA.',
                               style: GoogleFonts.inter(
-
                                 fontSize: 13,
-
                                 color: AppColors.textSecondary,
-
                               ),
-
                             ),
 
                           ],
@@ -615,22 +564,15 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 24),
 
                     ],
-
                   ),
-
                 ),
-
               ),
-
-            ],
-
-          ),
-
+            ),
+          ],
         ),
-
       ),
-
-    );
+    ),
+  );
 
   }
 
