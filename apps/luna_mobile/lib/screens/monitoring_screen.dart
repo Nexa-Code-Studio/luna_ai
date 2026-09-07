@@ -38,9 +38,11 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
   Future<void> _fetchRemoteMonitoringData(String period) async {
     if (AppConfig.useMockData) return;
     try {
+      final headers = await AppConfig.getAuthHeaders();
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/analytics/monitoring?period=$period'),
-      );
+        headers: headers,
+      ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         setState(() {
@@ -1411,13 +1413,10 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
       child: GestureDetector(
 
         onTap: () {
-
           setState(() {
-
             _selectedPeriod = id;
-
           });
-
+          _fetchRemoteMonitoringData(id);
         },
 
         child: Container(

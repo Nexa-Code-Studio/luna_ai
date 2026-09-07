@@ -40,22 +40,23 @@ async def _get_default_user(db: AsyncSession) -> User:
 
 
 def _format_diary_entry(d: DiaryEntry) -> dict[str, Any]:
-    events = d.important_events if isinstance(d.important_events, list) else []
+    raw_events = d.important_events if isinstance(d.important_events, list) else []
+    events = raw_events if raw_events else ["Sesi refleksi harian tercatat dalam sistem LUNA."]
     return {
         "id": str(d.id),
-        "title": d.title,
+        "title": d.title or "Refleksi Harian LUNA",
         "date": d.entry_date.strftime("%d %B %Y") if isinstance(d.entry_date, date) else str(d.entry_date),
         "sessionCount": len(events) if events else 1,
         "lastSessionTime": "21:45 PM",
         "moodTag": d.mood_tag or "Netral",
         "moodEmoji": d.mood_emoji or "😌",
-        "summary": d.summary,
+        "summary": d.summary or "Catatan harian perkembangan emosional bersama LUNA.",
         "riskWarning": {
             "detected": True,
             "type": "High Risk / Krisis",
             "title": "PERINGATAN KRISIS EMOSIONAL",
             "level": "RISIKO TINGGI",
-            "message": "Sistem LUNA mendeteksi akumulasi indikasi krisis emosional tinggi dan stres berat pada percakapan Samsul hari ini. Protokol keselamatan aktif untuk rujukan darurat 119 ext 8.",
+            "message": "Sistem LUNA mendeteksi akumulasi indikasi krisis emosional tinggi dan stres berat pada percakapan hari ini. Protokol keselamatan aktif untuk rujukan darurat 119 ext 8.",
         } if ("Darurat" in (d.mood_tag or "") or "Stres" in (d.mood_tag or "") or "Cemas" in (d.mood_tag or "")) else None,
         "aiInsight": d.ai_insight or "Analisis AI menunjukkan kondisi stabil.",
         "importantEvents": events,
@@ -67,6 +68,24 @@ def _format_diary_entry(d: DiaryEntry) -> dict[str, Any]:
                 "time": "21:45 PM",
                 "moodTag": d.mood_tag or "Netral",
                 "moodEmoji": d.mood_emoji or "😌",
+                "emotionsBreakdown": [
+                    {"name": "netral", "label": "Netral", "emoji": "😐", "percent": 0.60, "color": "#A7E6FF"},
+                    {"name": "happy", "label": "Lega & Tenang", "emoji": "😌", "percent": 0.40, "color": "#FFE6A7"},
+                ],
+                "transcripts": [
+                    {
+                        "isUser": True,
+                        "time": "21:45 PM",
+                        "text": d.summary or "Saya merefleksikan kegiatan dan perasaan hari ini.",
+                        "emotionTag": "calm (80%)",
+                        "emotionEmoji": "😌",
+                    },
+                    {
+                        "isUser": False,
+                        "time": "21:46 PM",
+                        "text": d.ai_insight or "Terima kasih telah berbagi ceritamu hari ini. Ingatlah untuk selalu merawat kesehatan mentalmu.",
+                    },
+                ],
             }
         ],
     }
