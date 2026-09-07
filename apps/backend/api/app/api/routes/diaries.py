@@ -3,12 +3,13 @@ from datetime import date
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.security import decode_access_token
 from app.core.tz import get_wib_day_range_utc, get_wib_today, to_wib
 from app.db.session import get_db_session
 from app.models.conversation import Conversation
@@ -26,7 +27,24 @@ class CreateDiaryRequest(BaseModel):
     mood_tag: str | None = None
 
 
-async def _get_default_user(db: AsyncSession) -> User:
+async def _get_current_user(
+    authorization: str | None = Header(None),
+    db: AsyncSession = Depends(get_db_session),
+) -> User:
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ")[1].strip()
+        decoded = decode_access_token(token)
+        if decoded and "sub" in decoded:
+            try:
+                u_uuid = uuid.UUID(decoded["sub"])
+                query_jwt = select(User).where(User.id == u_uuid)
+                res_jwt = await db.execute(query_jwt)
+                user = res_jwt.scalar_one_or_none()
+                if user:
+                    return user
+            except (ValueError, Exception):
+                pass
+
     query = select(User).where(User.email == "user.luna@gmail.com")
     res = await db.execute(query)
     user = res.scalar_one_or_none()
@@ -35,7 +53,7 @@ async def _get_default_user(db: AsyncSession) -> User:
         res_any = await db.execute(query_any)
         user = res_any.scalars().first()
     if not user:
-        raise HTTPException(status_code=404, detail="Default user not found")
+        raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
@@ -95,9 +113,9 @@ def _format_diary_entry(d: DiaryEntry) -> dict[str, Any]:
 async def get_diaries(
     mood: str | None = Query(None),
     search: str | None = Query(None),
+    user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ) -> list[dict[str, Any]]:
-    user = await _get_default_user(db)
     query = select(DiaryEntry).where(DiaryEntry.user_id == user.id).order_by(DiaryEntry.entry_date.desc())
     res = await db.execute(query)
     entries = res.scalars().all()
@@ -123,8 +141,10 @@ async def get_diaries(
 
 
 @router.get("/today")
-async def get_today_diary(db: AsyncSession = Depends(get_db_session)) -> dict[str, Any]:
-    user = await _get_default_user(db)
+async def get_today_diary(
+    user: User = Depends(_get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> dict[str, Any]:
     today = get_wib_today()
     query = select(DiaryEntry).where(DiaryEntry.user_id == user.id, DiaryEntry.entry_date == today)
     res = await db.execute(query)
@@ -207,15 +227,20 @@ async def get_diary_by_id(diary_id: str, db: AsyncSession = Depends(get_db_sessi
 
 
 @router.post("/generate")
-async def generate_today_diary(db: AsyncSession = Depends(get_db_session)) -> dict[str, Any]:
-    user = await _get_default_user(db)
+async def generate_today_diary(
+    user: User = Depends(_get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> dict[str, Any]:
     entry = await DiaryGeneratorService.generate_today_diary(user.id, db)
     return _format_diary_entry(entry)
 
 
 @router.post("")
-async def create_diary(payload: CreateDiaryRequest, db: AsyncSession = Depends(get_db_session)) -> dict[str, Any]:
-    user = await _get_default_user(db)
+async def create_diary(
+    payload: CreateDiaryRequest,
+    user: User = Depends(_get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> dict[str, Any]:
     today = get_wib_today()
     
     query = select(DiaryEntry).where(DiaryEntry.user_id == user.id, DiaryEntry.entry_date == today)
