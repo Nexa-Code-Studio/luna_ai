@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.7.21)  7 SEP 2026 08:17
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.7.21)  7 SEP 2026 14:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**./main.tex
-(main.tex
+**./docs/hology9_proposal/main.tex
+(docs/hology9_proposal/main.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
 (C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/base\article.cls
@@ -759,7 +759,7 @@ File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
 ex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count332
-) (main.aux)
+) (E:\nexaCode\luna_ai\docs\hology9_proposal\main.aux)
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 147.
@@ -846,7 +846,8 @@ Package caption Info: float package is loaded.
 Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
 Package hyperref Info: Link coloring ON on input line 147.
- (main.out) (main.out)
+ (E:\nexaCode\luna_ai\docs\hology9_proposal\main.out)
+(E:\nexaCode\luna_ai\docs\hology9_proposal\main.out)
 \@outlinefile=\write4
 \openout4 = `main.out'.
 
@@ -868,8 +869,10 @@ Package pdftex.def Info: images/logo-hology-black.png  used on input line 164.
 (pdftex.def)             Requested size: 39.4173pt x 45.52458pt.
  [1
 
- <./images/cover-fix.png> <./images/logo_polinema.png> <./images/logo-hology-bl
-ack.png>] (sections/01_title_abstract.tex
+ <E:/nexaCode/luna_ai/docs/hology9_proposal/images/cover-fix.png> <E:/nexaCode/
+luna_ai/docs/hology9_proposal/images/logo_polinema.png> <E:/nexaCode/luna_ai/do
+cs/hology9_proposal/images/logo-hology-black.png>]
+(E:\nexaCode\luna_ai\docs\hology9_proposal\sections/01_title_abstract.tex
 LaTeX Font Info:    Trying to load font information for OT1+ztmcm on input line
  2.
 
@@ -916,8 +919,8 @@ Overfull \hbox (0.79999pt too wide) in paragraph at lines 15--21
 [] 
  []
 
-) (sections/02_latar_belakang.tex
-<images/bab2/fig1_statistik.png, id=20, 1069.9975pt x 507.8975pt>
+) (E:\nexaCode\luna_ai\docs\hology9_proposal\sections/02_latar_belakang.tex
+<images/bab2/fig1_statistik.png, id=19, 1069.9975pt x 507.8975pt>
 File: images/bab2/fig1_statistik.png Graphic file (type png)
 <use images/bab2/fig1_statistik.png>
 Package pdftex.def Info: images/bab2/fig1_statistik.png  used on input line 8.
@@ -927,26 +930,30 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.11 
-      [1{C:/Users/USER/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Use
-rs/USER/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}] [2 <./image
-s/bab2/fig1_statistik.png (PNG copy)>]) (sections/03_tujuan_manfaat.tex
-[3]) (sections/04_fitur_aplikasi.tex) (sections/05_metode_pengembangan.tex
+l.10 \end{figure}
+                  [1{C:/Users/USER/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex
+.map}{C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}]
+[2 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/bab2/fig1_statistik.png (P
+NG copy)>])
+(E:\nexaCode\luna_ai\docs\hology9_proposal\sections/03_tujuan_manfaat.tex
+[3]) (E:\nexaCode\luna_ai\docs\hology9_proposal\sections/04_fitur_aplikasi.tex)
+(E:\nexaCode\luna_ai\docs\hology9_proposal\sections/05_metode_pengembangan.tex
 [4]
-<images/bab5/fig2_agile.png, id=59, 364.36125pt x 297.11pt>
+<images/bab5/fig2_agile.png, id=58, 364.36125pt x 297.11pt>
 File: images/bab5/fig2_agile.png Graphic file (type png)
 <use images/bab5/fig2_agile.png>
 Package pdftex.def Info: images/bab5/fig2_agile.png  used on input line 8.
 (pdftex.def)             Requested size: 227.62206pt x 185.60715pt.
- [5 <./images/bab5/fig2_agile.png (PNG copy)>])
-(sections/06_analisis_desain.tex
+ [5 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/bab5/fig2_agile.png (PNG 
+copy)>])
+(E:\nexaCode\luna_ai\docs\hology9_proposal\sections/06_analisis_desain.tex
 Overfull \hbox (2.07848pt too wide) in paragraph at lines 9--10
 []\OT1/ptm/m/n/12 Menyediakan di-a-log em-pa-tik yang ter-per-so-na-li-sa-si se
 -su-ai pro-fil dan kon-di-si emo-sio-nal peng-
  []
 
 [6]
-<images/bab6/fig3_konsep.png, id=76, 984.67876pt x 344.28625pt>
+<images/bab6/fig3_konsep.png, id=75, 984.67876pt x 344.28625pt>
 File: images/bab6/fig3_konsep.png Graphic file (type png)
 <use images/bab6/fig3_konsep.png>
 Package pdftex.def Info: images/bab6/fig3_konsep.png  used on input line 32.
@@ -956,7 +963,8 @@ LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 4
  (C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-[7 <./images/bab6/fig3_konsep.png (PNG copy)>] [8]
+[7 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/bab6/fig3_konsep.png (PNG 
+copy)>] [8]
 <images/bab6/fig4_arsitektur.png, id=96, 4420.515pt x 3340.48pt>
 File: images/bab6/fig4_arsitektur.png Graphic file (type png)
 <use images/bab6/fig4_arsitektur.png>
@@ -964,24 +972,28 @@ Package pdftex.def Info: images/bab6/fig4_arsitektur.png  used on input line 68
 .
 (pdftex.def)             Requested size: 386.96027pt x 292.37283pt.
 )
-(sections/07_arsitektur_sistem.tex
+(E:\nexaCode\luna_ai\docs\hology9_proposal\sections/07_arsitektur_sistem.tex
 Underfull \hbox (badness 1371) in paragraph at lines 50--50
 []|\OT1/ptm/m/n/10.95 Menghasilkan rep-re-sen-ta-si vek-tor 384-dimensi un-tuk
  []
 
 [9
 
- <./images/bab6/fig4_arsitektur.png>] [10]
+ <E:/nexaCode/luna_ai/docs/hology9_proposal/images/bab6/fig4_arsitektur.png>] [
+10]
 <images/bab7/fig5_flow.png, id=112, 2298.5875pt x 3102.59125pt>
 File: images/bab7/fig5_flow.png Graphic file (type png)
 <use images/bab7/fig5_flow.png>
 Package pdftex.def Info: images/bab7/fig5_flow.png  used on input line 66.
 (pdftex.def)             Requested size: 368.8688pt x 497.92322pt.
-) (sections/08_mockup.tex [11 <./images/bab7/fig5_flow.png (PNG copy)>]) (secti
-ons/09_rencana_implementasi.tex
-[12]) (sections/11_daftar_pustaka.tex [13] [14
+) (E:\nexaCode\luna_ai\docs\hology9_proposal\sections/08_mockup.tex
+[11 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/bab7/fig5_flow.png (PNG c
+opy)>])
+(E:\nexaCode\luna_ai\docs\hology9_proposal\sections/09_rencana_implementasi.tex
+[12]) (E:\nexaCode\luna_ai\docs\hology9_proposal\sections/11_daftar_pustaka.tex
+[13] [14
 
-]) (sections/10_lampiran.tex
+]) (E:\nexaCode\luna_ai\docs\hology9_proposal\sections/10_lampiran.tex
 [15]
 <images/lampiran/fig6_business_process.png, id=176, 998.73125pt x 472.76625pt>
 File: images/lampiran/fig6_business_process.png Graphic file (type png)
@@ -1004,8 +1016,9 @@ Package pdftex.def Info: images/lampiran/fig8_multiagent_architecture.png  used
 (pdftex.def)             Requested size: 418.82375pt x 233.4439pt.
  [16
 
- <./images/lampiran/fig6_business_process.png (PNG copy)> <./images/lampiran/fi
-g7_usecase.png (PNG copy)>]
+ <E:/nexaCode/luna_ai/docs/hology9_proposal/images/lampiran/fig6_business_proce
+ss.png (PNG copy)> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/lampiran/f
+ig7_usecase.png (PNG copy)>]
 <images/prototype/auth_signup.jpeg, id=185, 740.7675pt x 1606.0pt>
 File: images/prototype/auth_signup.jpeg Graphic file (type jpg)
 <use images/prototype/auth_signup.jpeg>
@@ -1018,8 +1031,9 @@ File: images/prototype/auth_signin.jpeg Graphic file (type jpg)
 Package pdftex.def Info: images/prototype/auth_signin.jpeg  used on input line 
 56.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
- [17 <./images/lampiran/fig8_multiagent_architecture.png (PNG copy)> <./images/
-prototype/auth_signup.jpeg>]
+ [17 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/lampiran/fig8_multiagent
+_architecture.png (PNG copy)> <E:/nexaCode/luna_ai/docs/hology9_proposal/images
+/prototype/auth_signup.jpeg>]
 <images/prototype/auth_firstscreen.jpeg, id=193, 740.7675pt x 1606.0pt>
 File: images/prototype/auth_firstscreen.jpeg Graphic file (type jpg)
 <use images/prototype/auth_firstscreen.jpeg>
@@ -1044,8 +1058,10 @@ File: images/prototype/counseling_voice_entry.jpeg Graphic file (type jpg)
 Package pdftex.def Info: images/prototype/counseling_voice_entry.jpeg  used on 
 input line 125.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
- [18 <./images/prototype/auth_signin.jpeg> <./images/prototype/auth_firstscreen
-.jpeg> <./images/prototype/auth_home.jpeg>]
+ [18 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/auth_signin.jp
+eg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/auth_firstscree
+n.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/auth_home.j
+peg>]
 <images/prototype/counseling_in_call.jpeg, id=205, 740.7675pt x 1606.0pt>
 File: images/prototype/counseling_in_call.jpeg Graphic file (type jpg)
 <use images/prototype/counseling_in_call.jpeg>
@@ -1070,9 +1086,11 @@ File: images/prototype/journal_page_2.jpeg Graphic file (type jpg)
 Package pdftex.def Info: images/prototype/journal_page_2.jpeg  used on input li
 ne 201.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
- [19 <./images/prototype/counseling_nav.jpeg> <./images/prototype/counseling_vo
-ice_entry.jpeg> <./images/prototype/counseling_in_call.jpeg> <./images/prototyp
-e/counseling_end_call.jpeg>]
+ [19 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/counseling_nav
+.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/counseling_v
+oice_entry.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/co
+unseling_in_call.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/protot
+ype/counseling_end_call.jpeg>]
 <images/prototype/dashboard_page_1.jpeg, id=215, 740.7675pt x 1606.0pt>
 File: images/prototype/dashboard_page_1.jpeg Graphic file (type jpg)
 <use images/prototype/dashboard_page_1.jpeg>
@@ -1097,24 +1115,31 @@ File: images/prototype/journal_detail_crisis.jpeg Graphic file (type jpg)
 Package pdftex.def Info: images/prototype/journal_detail_crisis.jpeg  used on i
 nput line 277.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
- [20 <./images/prototype/journal_page_1.jpeg> <./images/prototype/journal_page_
-2.jpeg> <./images/prototype/dashboard_page_1.jpeg> <./images/prototype/dashboar
-d_page_2.jpeg>] [21 <./images/prototype/journal_list_crisis.jpeg> <./images/pro
-totype/journal_detail_crisis.jpeg>]
-<images/prototype/crisis_alert_dialog.jpeg, id=230, 740.7675pt x 1606.0pt>
+ [20 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/journal_page_1
+.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/journal_page
+_2.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/dashboard_
+page_1.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/dashbo
+ard_page_2.jpeg>]
+<images/prototype/crisis_alert_dialog.jpeg, id=225, 740.7675pt x 1606.0pt>
 File: images/prototype/crisis_alert_dialog.jpeg Graphic file (type jpg)
 <use images/prototype/crisis_alert_dialog.jpeg>
 Package pdftex.def Info: images/prototype/crisis_alert_dialog.jpeg  used on inp
-ut line 300.
+ut line 299.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/crisis_module_screen.jpeg, id=231, 740.7675pt x 1606.0pt>
+<images/prototype/crisis_module_screen.jpeg, id=226, 740.7675pt x 1606.0pt>
 File: images/prototype/crisis_module_screen.jpeg Graphic file (type jpg)
 <use images/prototype/crisis_module_screen.jpeg>
 Package pdftex.def Info: images/prototype/crisis_module_screen.jpeg  used on in
-put line 316.
+put line 315.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
- [22 <./images/prototype/crisis_alert_dialog.jpeg> <./images/prototype/crisis_m
-odule_screen.jpeg>] [23]
+ [21 <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/journal_list_c
+risis.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototype/journal
+_detail_crisis.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/prototyp
+e/crisis_alert_dialog.jpeg> <E:/nexaCode/luna_ai/docs/hology9_proposal/images/p
+rototype/crisis_module_screen.jpeg>]
+[22
+
+] [23]
 <images/lampiran/fig9_wawancara_psikolog.png, id=263, 1204.5pt x 1606.0pt>
 File: images/lampiran/fig9_wawancara_psikolog.png Graphic file (type png)
 <use images/lampiran/fig9_wawancara_psikolog.png>
@@ -1123,11 +1148,19 @@ nput line 408.
 (pdftex.def)             Requested size: 266.73683pt x 355.65944pt.
  [24
 
- <./images/lampiran/fig9_wawancara_psikolog.png (PNG copy)>] [25
+ <E:/nexaCode/luna_ai/docs/hology9_proposal/images/lampiran/fig9_wawancara_psik
+olog.png (PNG copy)>]
+<images/surat pernyataan.png, id=270, 308.352pt x 436.63126pt>
+File: images/surat pernyataan.png Graphic file (type png)
+<use images/surat pernyataan.png>
+Package pdftex.def Info: images/surat pernyataan.png  used on input line 427.
+(pdftex.def)             Requested size: 400.61703pt x 567.28745pt.
+ [25
 
-]) [26
+ <E:/nexaCode/luna_ai/docs/hology9_proposal/images/surat pernyataan.png>]) [26
 
-] (main.aux)
+]
+(E:\nexaCode\luna_ai\docs\hology9_proposal\main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
@@ -1136,13 +1169,13 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 24574 strings out of 467871
- 464562 string characters out of 5418860
- 866546 words of memory out of 5000000
- 52892 multiletter control sequences out of 15000+600000
+ 24584 strings out of 467871
+ 465600 string characters out of 5418860
+ 867546 words of memory out of 5000000
+ 52900 multiletter control sequences out of 15000+600000
  664530 words of font info for 118 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,13n,94p,1091b,971s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,13n,94p,1113b,1029s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/c
 mitt10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsf
 onts/cm/cmr10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1/publ
@@ -1154,9 +1187,10 @@ ocal/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/USER/AppData/Lo
 cal/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/USER/AppData/Lo
 cal/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/USER/AppData/Loc
 al/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (27 pages, 7992336 bytes).
+Output written on E:\nexaCode\luna_ai\docs\hology9_proposal\main.pdf (27 pages,
+ 8575079 bytes).
 PDF statistics:
- 352 PDF objects out of 1000 (max. 8388607)
- 116 named destinations out of 1000 (max. 500000)
- 153 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 357 PDF objects out of 1000 (max. 8388607)
+ 117 named destinations out of 1000 (max. 500000)
+ 158 words of extra memory for PDF output out of 10000 (max. 10000000)
 
