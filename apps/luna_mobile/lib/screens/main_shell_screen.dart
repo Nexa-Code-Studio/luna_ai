@@ -57,89 +57,56 @@ class _MainShellScreenState extends State<MainShellScreen> {
     return Scaffold(
 
       body: Stack(
-
         children: [
-
-          // Listen to UserScrollNotification to show/hide FloatingNavBar on scroll
-
-          NotificationListener<UserScrollNotification>(
-
-            onNotification: (notification) {
-
-              if (notification.direction == ScrollDirection.reverse && _isNavBarVisible) {
-
-                setState(() {
-
-                  _isNavBarVisible = false;
-
-                });
-
-              } else if (notification.direction == ScrollDirection.forward && !_isNavBarVisible) {
-
-                setState(() {
-
-                  _isNavBarVisible = true;
-
-                });
-
-              }
-
-              return true;
-
-            },
-
-            child: IndexedStack(
-
-              index: _currentIndex,
-
-              children: _pages,
-
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: NotificationListener<UserScrollNotification>(
+                onNotification: (notification) {
+                  if (notification.direction == ScrollDirection.reverse && _isNavBarVisible) {
+                    setState(() {
+                      _isNavBarVisible = false;
+                    });
+                  } else if (notification.direction == ScrollDirection.forward && !_isNavBarVisible) {
+                    setState(() {
+                      _isNavBarVisible = true;
+                    });
+                  }
+                  return true;
+                },
+                child: IndexedStack(
+                  index: _currentIndex,
+                  children: _pages,
+                ),
+              ),
             ),
-
           ),
-
-
 
           // Animated Floating Navigation Bar (Slides down when scrolling down, slides up on scroll up)
-
           Positioned(
-
             left: 0,
-
             right: 0,
-
             bottom: 0,
-
-            child: AnimatedSlide(
-
-              offset: _isNavBarVisible ? Offset.zero : const Offset(0, 2.0),
-
-              duration: const Duration(milliseconds: 250),
-
-              curve: Curves.easeInOut,
-
-              child: FloatingNavBar(
-
-                currentIndex: _currentIndex,
-
-                onTap: (index) {
-
-                  setState(() {
-
-                    _currentIndex = index;
-
-                  });
-
-                },
-
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: AnimatedSlide(
+                  offset: _isNavBarVisible ? Offset.zero : const Offset(0, 2.0),
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: FloatingNavBar(
+                    currentIndex: _currentIndex,
+                    onTap: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                  ),
+                ),
               ),
-
             ),
-
           ),
-
         ],
-
       ),
 
     );
