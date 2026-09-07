@@ -43,6 +43,36 @@ async def get_monitoring_data(period: str = Query("today")) -> dict[str, Any]:
             ],
         }
 
+    if period == "month":
+        return {
+            "periodKey": "month",
+            "periodLabel": "Bulan Ini",
+            "summary": "Tren bulanan menunjukkan peningkatan stabilitas emosional dengan 80% hari berada di rentang normal-positif.",
+            "emotionalCenter": {
+                "status": "Sangat Baik (Konsisten)",
+                "level": 4,
+                "description": "Pola emosi menunjukkan resiliensi yang tinggi menghadapi rutinitas harian.",
+                "textColorHex": "#2E7D32",
+            },
+            "risks": [
+                {
+                    "name": "Stres Akademik / Pekerjaan",
+                    "type": "stress",
+                    "percent": 0.35,
+                    "levelLabel": "Rendah-Sedang (35%)",
+                    "colorHex": "#FB8C00",
+                    "badgeBgHex": "#FFF3E0",
+                }
+            ],
+            "xLabels": ["M1", "M2", "M3", "M4"],
+            "chartData": [
+                [0.2, 0.3, 0.3, 0.1, 0.05, 0.03, 0.02],
+                [0.2, 0.35, 0.3, 0.08, 0.04, 0.02, 0.01],
+                [0.15, 0.45, 0.25, 0.1, 0.03, 0.01, 0.01],
+                [0.1, 0.5, 0.25, 0.1, 0.03, 0.01, 0.01],
+            ],
+        }
+
     # Default 'today' period data
     return {
         "periodKey": "today",
