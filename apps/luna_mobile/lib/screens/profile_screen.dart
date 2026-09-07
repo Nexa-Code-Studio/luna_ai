@@ -641,14 +641,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 10),
 
                       GlassCard(
-
                         width: double.infinity,
-
                         padding: const EdgeInsets.symmetric(vertical: 4),
-
-                        child: ListTile(
-
-                          leading: Container(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: ListTile(
+                            leading: Container(
 
                             width: 36,
 
@@ -726,7 +724,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 36),
+                    ),
+                    const SizedBox(height: 36),
 
                       // Red Outlined Logout Pill Button
                       SizedBox(
