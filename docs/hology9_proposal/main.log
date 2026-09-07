@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.7.21)  7 SEP 2026 13:05
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.7.21)  7 SEP 2026 13:42
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1099,22 +1099,24 @@ nput line 277.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
  [20 <./images/prototype/journal_page_1.jpeg> <./images/prototype/journal_page_
 2.jpeg> <./images/prototype/dashboard_page_1.jpeg> <./images/prototype/dashboar
-d_page_2.jpeg>] [21 <./images/prototype/journal_list_crisis.jpeg> <./images/pro
-totype/journal_detail_crisis.jpeg>]
-<images/prototype/crisis_alert_dialog.jpeg, id=230, 740.7675pt x 1606.0pt>
+d_page_2.jpeg>]
+<images/prototype/crisis_alert_dialog.jpeg, id=225, 740.7675pt x 1606.0pt>
 File: images/prototype/crisis_alert_dialog.jpeg Graphic file (type jpg)
 <use images/prototype/crisis_alert_dialog.jpeg>
 Package pdftex.def Info: images/prototype/crisis_alert_dialog.jpeg  used on inp
-ut line 300.
+ut line 299.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/crisis_module_screen.jpeg, id=231, 740.7675pt x 1606.0pt>
+<images/prototype/crisis_module_screen.jpeg, id=226, 740.7675pt x 1606.0pt>
 File: images/prototype/crisis_module_screen.jpeg Graphic file (type jpg)
 <use images/prototype/crisis_module_screen.jpeg>
 Package pdftex.def Info: images/prototype/crisis_module_screen.jpeg  used on in
-put line 316.
+put line 315.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
- [22 <./images/prototype/crisis_alert_dialog.jpeg> <./images/prototype/crisis_m
-odule_screen.jpeg>] [23]
+ [21 <./images/prototype/journal_list_crisis.jpeg> <./images/prototype/journal_
+detail_crisis.jpeg> <./images/prototype/crisis_alert_dialog.jpeg> <./images/pro
+totype/crisis_module_screen.jpeg>] [22
+
+] [23]
 <images/lampiran/fig9_wawancara_psikolog.png, id=263, 1204.5pt x 1606.0pt>
 File: images/lampiran/fig9_wawancara_psikolog.png Graphic file (type png)
 <use images/lampiran/fig9_wawancara_psikolog.png>
@@ -1146,10 +1148,10 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 24581 strings out of 467871
- 464791 string characters out of 5418860
+ 24582 strings out of 467871
+ 464820 string characters out of 5418860
  866546 words of memory out of 5000000
- 52898 multiletter control sequences out of 15000+600000
+ 52899 multiletter control sequences out of 15000+600000
  664530 words of font info for 118 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  84i,13n,94p,1091b,971s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1164,7 +1166,7 @@ ocal/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/USER/AppData/Lo
 cal/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/USER/AppData/Lo
 cal/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/USER/AppData/Loc
 al/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (27 pages, 8571861 bytes).
+Output written on main.pdf (27 pages, 8571677 bytes).
 PDF statistics:
  357 PDF objects out of 1000 (max. 8388607)
  117 named destinations out of 1000 (max. 500000)
