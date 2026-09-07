@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.7.21)  7 SEP 2026 13:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.7.21)  7 SEP 2026 14:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**./main.tex
-(main.tex
+**./docs/rulebook/main.tex
+(docs/rulebook/main.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
 (C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/base\report.cls
@@ -24,7 +24,7 @@ File: size11.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
 \belowcaptionskip=\skip50
 \bibindent=\dimen148
 )
-(style.sty
+(E:\nexaCode\luna_ai\docs\rulebook\style.sty
 Package: style 2026/09/01 Luna AI Rulebook Styling Package
 
 (C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/base\inputenc.sty
@@ -709,7 +709,7 @@ Package hyperref Info: Option `colorlinks' set `true' on input line 42.
 ex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count331
-) (main.aux)
+) (E:\nexaCode\luna_ai\docs\rulebook\main.aux)
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 4.
@@ -792,38 +792,41 @@ g
 File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
 ))
 Package hyperref Info: Link coloring ON on input line 4.
- (main.out) (main.out)
+ (E:\nexaCode\luna_ai\docs\rulebook\main.out)
+(E:\nexaCode\luna_ai\docs\rulebook\main.out)
 \@outlinefile=\write4
 \openout4 = `main.out'.
 
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: float package is loaded.
 Package caption Info: End \AtBeginDocument code.
-<cover_propo_bg.png, id=94, 2489.3pt x 3522.15875pt>
-File: cover_propo_bg.png Graphic file (type png)
-<use cover_propo_bg.png>
-Package pdftex.def Info: cover_propo_bg.png  used on input line 12.
-(pdftex.def)             Requested size: 597.4822pt x 845.01292pt.
-<logo_polinema.png, id=95, 1497.595pt x 1494.58376pt>
+<cover.png, id=94, 597.23125pt x 845.1575pt>
+File: cover.png Graphic file (type png)
+<use cover.png>
+Package pdftex.def Info: cover.png  used on input line 12.
+(pdftex.def)             Requested size: 597.54874pt x 845.06516pt.
+<logo_polinema.png, id=96, 1497.595pt x 1494.58376pt>
 File: logo_polinema.png Graphic file (type png)
 <use logo_polinema.png>
-Package pdftex.def Info: logo_polinema.png  used on input line 20.
+Package pdftex.def Info: logo_polinema.png  used on input line 17.
 (pdftex.def)             Requested size: 45.61145pt x 45.52458pt.
 <logo-hology-black.png, id=97, 33.86995pt x 39.11978pt>
 File: logo-hology-black.png Graphic file (type png)
 <use logo-hology-black.png>
-Package pdftex.def Info: logo-hology-black.png  used on input line 25.
+Package pdftex.def Info: logo-hology-black.png  used on input line 22.
 (pdftex.def)             Requested size: 39.4173pt x 45.52458pt.
 <luna_logo_square.png, id=98, 376.40625pt x 376.40625pt>
 File: luna_logo_square.png Graphic file (type png)
 <use luna_logo_square.png>
-Package pdftex.def Info: luna_logo_square.png  used on input line 33.
+Package pdftex.def Info: luna_logo_square.png  used on input line 30.
 (pdftex.def)             Requested size: 108.12054pt x 108.12119pt.
  [1
 
-{C:/Users/USER/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <./cover_propo
-_bg.png (PNG copy)> <./logo_polinema.png> <./logo-hology-black.png> <./luna_log
-o_square.png>] (main.toc
+{C:/Users/USER/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <E:/nexaCode/l
+una_ai/docs/rulebook/cover.png> <E:/nexaCode/luna_ai/docs/rulebook/logo_polinem
+a.png> <E:/nexaCode/luna_ai/docs/rulebook/logo-hology-black.png> <E:/nexaCode/l
+una_ai/docs/rulebook/luna_logo_square.png>] (E:\nexaCode\luna_ai\docs\rulebook\
+main.toc
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <10.95> on input line 3.
 LaTeX Font Info:    External font `cmex10' loaded for size
@@ -837,7 +840,7 @@ LaTeX Font Info:    External font `cmex10' loaded for size
  [1
 
 ]
-(chapters/01_introduction.tex
+(E:\nexaCode\luna_ai\docs\rulebook\chapters/01_introduction.tex
 Bab 1.
 
 Overfull \hbox (1.0pt too wide) in paragraph at lines 6--9
@@ -853,93 +856,99 @@ l.26     \item \textbf
                       {Bab 5: Troubleshooting \& FAQ} — Solusi masalah tek...
 [1
 
-]) [2] (chapters/02_user_guide.tex
+]) [2] (E:\nexaCode\luna_ai\docs\rulebook\chapters/02_user_guide.tex
 Bab 2.
-<images/auth_firstscreen.jpeg, id=151, 740.7675pt x 1606.0pt>
+<images/auth_firstscreen.jpeg, id=152, 740.7675pt x 1606.0pt>
 File: images/auth_firstscreen.jpeg Graphic file (type jpg)
 <use images/auth_firstscreen.jpeg>
 Package pdftex.def Info: images/auth_firstscreen.jpeg  used on input line 12.
 (pdftex.def)             Requested size: 118.36096pt x 256.59767pt.
-<images/auth_signin.jpeg, id=152, 740.7675pt x 1606.0pt>
+<images/auth_signin.jpeg, id=153, 740.7675pt x 1606.0pt>
 File: images/auth_signin.jpeg Graphic file (type jpg)
 <use images/auth_signin.jpeg>
 Package pdftex.def Info: images/auth_signin.jpeg  used on input line 14.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/auth_signup.jpeg, id=153, 740.7675pt x 1606.0pt>
+<images/auth_signup.jpeg, id=154, 740.7675pt x 1606.0pt>
 File: images/auth_signup.jpeg Graphic file (type jpg)
 <use images/auth_signup.jpeg>
 Package pdftex.def Info: images/auth_signup.jpeg  used on input line 14.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
 [3
 
- <./images/auth_firstscreen.jpeg>]
-<images/auth_home.jpeg, id=162, 740.7675pt x 1606.0pt>
+ <E:/nexaCode/luna_ai/docs/rulebook/images/auth_firstscreen.jpeg>]
+<images/auth_home.jpeg, id=163, 740.7675pt x 1606.0pt>
 File: images/auth_home.jpeg Graphic file (type jpg)
 <use images/auth_home.jpeg>
 Package pdftex.def Info: images/auth_home.jpeg  used on input line 20.
 (pdftex.def)             Requested size: 118.36096pt x 256.59767pt.
-<images/dashboard_page_1.jpeg, id=163, 740.7675pt x 1606.0pt>
+<images/dashboard_page_1.jpeg, id=164, 740.7675pt x 1606.0pt>
 File: images/dashboard_page_1.jpeg Graphic file (type jpg)
 <use images/dashboard_page_1.jpeg>
 Package pdftex.def Info: images/dashboard_page_1.jpeg  used on input line 22.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/dashboard_page_2.jpeg, id=164, 740.7675pt x 1606.0pt>
+<images/dashboard_page_2.jpeg, id=165, 740.7675pt x 1606.0pt>
 File: images/dashboard_page_2.jpeg Graphic file (type jpg)
 <use images/dashboard_page_2.jpeg>
 Package pdftex.def Info: images/dashboard_page_2.jpeg  used on input line 22.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
- [4 <./images/auth_signin.jpeg> <./images/auth_signup.jpeg> <./images/auth_home
-.jpeg>]
-<images/counseling_nav.jpeg, id=171, 740.7675pt x 1606.0pt>
+ [4 <E:/nexaCode/luna_ai/docs/rulebook/images/auth_signin.jpeg> <E:/nexaCode/lu
+na_ai/docs/rulebook/images/auth_signup.jpeg> <E:/nexaCode/luna_ai/docs/rulebook
+/images/auth_home.jpeg>]
+<images/counseling_nav.jpeg, id=172, 740.7675pt x 1606.0pt>
 File: images/counseling_nav.jpeg Graphic file (type jpg)
 <use images/counseling_nav.jpeg>
 Package pdftex.def Info: images/counseling_nav.jpeg  used on input line 39.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/counseling_voice_entry.jpeg, id=172, 740.7675pt x 1606.0pt>
+<images/counseling_voice_entry.jpeg, id=173, 740.7675pt x 1606.0pt>
 File: images/counseling_voice_entry.jpeg Graphic file (type jpg)
 <use images/counseling_voice_entry.jpeg>
 Package pdftex.def Info: images/counseling_voice_entry.jpeg  used on input line
  39.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/counseling_in_call.jpeg, id=173, 740.7675pt x 1606.0pt>
+<images/counseling_in_call.jpeg, id=174, 740.7675pt x 1606.0pt>
 File: images/counseling_in_call.jpeg Graphic file (type jpg)
 <use images/counseling_in_call.jpeg>
 Package pdftex.def Info: images/counseling_in_call.jpeg  used on input line 41.
 
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/counseling_end_call.jpeg, id=174, 740.7675pt x 1606.0pt>
+<images/counseling_end_call.jpeg, id=175, 740.7675pt x 1606.0pt>
 File: images/counseling_end_call.jpeg Graphic file (type jpg)
 <use images/counseling_end_call.jpeg>
 Package pdftex.def Info: images/counseling_end_call.jpeg  used on input line 41
 .
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
- [5 <./images/dashboard_page_1.jpeg> <./images/dashboard_page_2.jpeg> <./images
-/counseling_nav.jpeg> <./images/counseling_voice_entry.jpeg>]
-<images/journal_list_crisis.jpeg, id=182, 740.7675pt x 1606.0pt>
+ [5 <E:/nexaCode/luna_ai/docs/rulebook/images/dashboard_page_1.jpeg> <E:/nexaCo
+de/luna_ai/docs/rulebook/images/dashboard_page_2.jpeg> <E:/nexaCode/luna_ai/doc
+s/rulebook/images/counseling_nav.jpeg> <E:/nexaCode/luna_ai/docs/rulebook/image
+s/counseling_voice_entry.jpeg>]
+<images/journal_list_crisis.jpeg, id=183, 740.7675pt x 1606.0pt>
 File: images/journal_list_crisis.jpeg Graphic file (type jpg)
 <use images/journal_list_crisis.jpeg>
 Package pdftex.def Info: images/journal_list_crisis.jpeg  used on input line 47
 .
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/journal_detail_crisis.jpeg, id=183, 740.7675pt x 1606.0pt>
+<images/journal_detail_crisis.jpeg, id=184, 740.7675pt x 1606.0pt>
 File: images/journal_detail_crisis.jpeg Graphic file (type jpg)
 <use images/journal_detail_crisis.jpeg>
 Package pdftex.def Info: images/journal_detail_crisis.jpeg  used on input line 
 47.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/journal_voice_detail.jpeg, id=184, 740.7675pt x 1606.0pt>
+<images/journal_voice_detail.jpeg, id=185, 740.7675pt x 1606.0pt>
 File: images/journal_voice_detail.jpeg Graphic file (type jpg)
 <use images/journal_voice_detail.jpeg>
 Package pdftex.def Info: images/journal_voice_detail.jpeg  used on input line 4
 9.
 (pdftex.def)             Requested size: 118.36096pt x 256.59767pt.
- [6 <./images/counseling_in_call.jpeg> <./images/counseling_end_call.jpeg> <./i
-mages/journal_list_crisis.jpeg> <./images/journal_detail_crisis.jpeg>])
-Overfull \hbox (1.76666pt too wide) in paragraph at lines 51--84
+ [6 <E:/nexaCode/luna_ai/docs/rulebook/images/counseling_in_call.jpeg> <E:/nexa
+Code/luna_ai/docs/rulebook/images/counseling_end_call.jpeg> <E:/nexaCode/luna_a
+i/docs/rulebook/images/journal_list_crisis.jpeg> <E:/nexaCode/luna_ai/docs/rule
+book/images/journal_detail_crisis.jpeg>])
+Overfull \hbox (1.76666pt too wide) in paragraph at lines 51--81
 []   
  []
 
-[7 <./images/journal_voice_detail.jpeg>] (chapters/03_counseling_rules.tex
+[7 <E:/nexaCode/luna_ai/docs/rulebook/images/journal_voice_detail.jpeg>]
+(E:\nexaCode\luna_ai\docs\rulebook\chapters/03_counseling_rules.tex
 Bab 3.
 
 Overfull \hbox (1.0pt too wide) in paragraph at lines 6--13
@@ -949,26 +958,27 @@ Overfull \hbox (1.0pt too wide) in paragraph at lines 6--13
 [8
 
 ]
-<images/terms_page_1.jpeg, id=203, 740.7675pt x 1606.0pt>
+<images/terms_page_1.jpeg, id=204, 740.7675pt x 1606.0pt>
 File: images/terms_page_1.jpeg Graphic file (type jpg)
 <use images/terms_page_1.jpeg>
 Package pdftex.def Info: images/terms_page_1.jpeg  used on input line 34.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/terms_page_2.jpeg, id=204, 740.7675pt x 1606.0pt>
+<images/terms_page_2.jpeg, id=205, 740.7675pt x 1606.0pt>
 File: images/terms_page_2.jpeg Graphic file (type jpg)
 <use images/terms_page_2.jpeg>
 Package pdftex.def Info: images/terms_page_2.jpeg  used on input line 34.
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-) [9 <./images/terms_page_1.jpeg> <./images/terms_page_2.jpeg>]
-(chapters/04_safety_protocols.tex
+) [9 <E:/nexaCode/luna_ai/docs/rulebook/images/terms_page_1.jpeg> <E:/nexaCode/
+luna_ai/docs/rulebook/images/terms_page_2.jpeg>]
+(E:\nexaCode\luna_ai\docs\rulebook\chapters/04_safety_protocols.tex
 Bab 4.
-<images/crisis_alert_dialog.jpeg, id=210, 740.7675pt x 1606.0pt>
+<images/crisis_alert_dialog.jpeg, id=211, 740.7675pt x 1606.0pt>
 File: images/crisis_alert_dialog.jpeg Graphic file (type jpg)
 <use images/crisis_alert_dialog.jpeg>
 Package pdftex.def Info: images/crisis_alert_dialog.jpeg  used on input line 37
 .
 (pdftex.def)             Requested size: 54.6288pt x 118.43535pt.
-<images/crisis_module_screen.jpeg, id=211, 740.7675pt x 1606.0pt>
+<images/crisis_module_screen.jpeg, id=212, 740.7675pt x 1606.0pt>
 File: images/crisis_module_screen.jpeg Graphic file (type jpg)
 <use images/crisis_module_screen.jpeg>
 Package pdftex.def Info: images/crisis_module_screen.jpeg  used on input line 3
@@ -977,12 +987,13 @@ Package pdftex.def Info: images/crisis_module_screen.jpeg  used on input line 3
 [10
 
 ])
-Overfull \hbox (1.0pt too wide) in paragraph at lines 39--90
+Overfull \hbox (1.0pt too wide) in paragraph at lines 39--87
 []
  []
 
-[11 <./images/crisis_alert_dialog.jpeg> <./images/crisis_module_screen.jpeg>]
-(chapters/05_troubleshooting.tex
+[11 <E:/nexaCode/luna_ai/docs/rulebook/images/crisis_alert_dialog.jpeg> <E:/nex
+aCode/luna_ai/docs/rulebook/images/crisis_module_screen.jpeg>]
+(E:\nexaCode\luna_ai\docs\rulebook\chapters/05_troubleshooting.tex
 Bab 5.
 
 Underfull \hbox (badness 1496) in paragraph at lines 25--25
@@ -1006,7 +1017,7 @@ Overfull \hbox (7.5472pt too wide) in paragraph at lines 21--32
 
 ) [12
 
-] (main.aux)
+] (E:\nexaCode\luna_ai\docs\rulebook\main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
@@ -1015,13 +1026,13 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: AB813BB00CD6017383C3A1D62BC63B4C;4922.
  ) 
 Here is how much of TeX's memory you used:
- 24438 strings out of 467871
- 471291 string characters out of 5418860
- 889611 words of memory out of 5000000
- 52874 multiletter control sequences out of 15000+600000
+ 24434 strings out of 467871
+ 471575 string characters out of 5418860
+ 890611 words of memory out of 5000000
+ 52869 multiletter control sequences out of 15000+600000
  634093 words of font info for 61 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 99i,13n,108p,475b,866s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 99i,13n,108p,489b,866s stack positions out of 10000i,1000n,20000p,200000b,200000s
  <C:\Users\USER\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\tcrm1
 095.pk><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts
 /cm/cmbx10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1/public/
@@ -1030,9 +1041,10 @@ amsfonts/cm/cmbx12.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1
 s/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/USER/AppData/Local/Programs/MiKT
 eX/fonts/type1/public/amsfonts/cm/cmti10.pfb><C:/Users/USER/AppData/Local/Progr
 ams/MiKTeX/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on main.pdf (14 pages, 2655307 bytes).
+Output written on E:\nexaCode\luna_ai\docs\rulebook\main.pdf (14 pages, 3055351
+ bytes).
 PDF statistics:
- 277 PDF objects out of 1000 (max. 8388607)
+ 278 PDF objects out of 1000 (max. 8388607)
  61 named destinations out of 1000 (max. 500000)
  294 words of extra memory for PDF output out of 10000 (max. 10000000)
 

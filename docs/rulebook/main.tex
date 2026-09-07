@@ -9,19 +9,16 @@
 \begin{titlepage}
     \begin{tikzpicture}[remember picture, overlay]
         \node[at=(current page.center), inner sep=0pt] {
-            \includegraphics[width=\paperwidth, height=\paperheight]{cover_propo_bg.png}
+            \includegraphics[width=\paperwidth, height=\paperheight]{cover.png}
         };
         
-        % Patch/Cover pre-rendered icons #2 and #3 at top left
-        \node[anchor=north west, fill=white!92!LunaBgSoft, minimum width=9cm, minimum height=3.5cm, inner sep=0pt] at ($(current page.north west) + (0cm, 0cm)$) {};
-        
-        % Top Left: POLINEMA Logo (Icon #1)
-        \node[anchor=north west, inner sep=0pt] at ($(current page.north west) + (2.0cm, -1.6cm)$) {
+        % Top Left: POLINEMA Logo
+        \node[anchor=north west, inner sep=0pt] at ($(current page.north west) + (2.0cm, -1.8cm)$) {
             \includegraphics[height=1.6cm, keepaspectratio]{logo_polinema.png}
         };
         
-        % Top Right: HOLOGY 9.0 Logo (Replacing Icon #2 & #3)
-        \node[anchor=north east, inner sep=0pt] at ($(current page.north east) + (-2.0cm, -1.6cm)$) {
+        % Top Right: HOLOGY 9.0 Logo
+        \node[anchor=north east, inner sep=0pt] at ($(current page.north east) + (-2.0cm, -1.8cm)$) {
             \includegraphics[height=1.6cm, keepaspectratio]{logo-hology-black.png}
         };
     \end{tikzpicture}
