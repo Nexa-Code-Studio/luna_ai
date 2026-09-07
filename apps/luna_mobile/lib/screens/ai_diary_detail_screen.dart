@@ -298,98 +298,102 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
     final bool hasRisk = data['riskWarning'] != null && data['riskWarning']['detected'] == true;
 
-    final List<Map<String, dynamic>> sessions = List<Map<String, dynamic>>.from(data['sessions'] ?? []);
+    final List<dynamic> rawEvents = data['importantEvents'] is List ? data['importantEvents'] as List : [];
+    final List<String> importantEvents = rawEvents.isNotEmpty
+        ? rawEvents.map((e) => e.toString()).toList()
+        : ['Sesi refleksi harian tercatat dalam sistem LUNA.'];
 
-
+    final List<Map<String, dynamic>> sessions = (data['sessions'] is List && (data['sessions'] as List).isNotEmpty)
+        ? (data['sessions'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList()
+        : [
+            {
+              'id': 's1',
+              'title': 'Sesi #1: Refleksi Harian',
+              'time': data['lastSessionTime']?.toString() ?? 'Hari ini',
+              'moodTag': data['moodTag']?.toString() ?? 'Netral',
+              'moodEmoji': data['moodEmoji']?.toString() ?? '😌',
+              'emotionsBreakdown': [
+                {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.60, 'color': const Color(0xFFA7E6FF)},
+                {'name': 'happy', 'label': 'Tenang', 'emoji': '😌', 'percent': 0.40, 'color': const Color(0xFFFFE6A7)},
+              ],
+              'transcripts': [
+                {
+                  'isUser': true,
+                  'time': 'Hari ini',
+                  'text': data['summary']?.toString() ?? 'Sesi refleksi emosional bersama LUNA.',
+                  'emotionTag': 'Refleksi',
+                  'emotionEmoji': '😌',
+                },
+                {
+                  'isUser': false,
+                  'time': 'Hari ini',
+                  'text': data['aiInsight']?.toString() ?? 'LUNA siap mendampingi setiap langkah pemulihanmu.',
+                }
+              ]
+            }
+          ];
 
     // Compute active 7-emotion breakdown list based on selected session
-
     List<Map<String, dynamic>> activeEmotions = [];
-
     if (_selectedSessionId == 'all') {
-
       activeEmotions = [
-
         {'name': 'fear', 'label': 'Takut / Gelisah', 'emoji': '😨', 'percent': 0.45, 'color': const Color(0xFF6C63FF)},
-
         {'name': 'sadness', 'label': 'Sedih / Haru', 'emoji': '😔', 'percent': 0.25, 'color': const Color(0xFF8B93FF)},
-
         {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.15, 'color': const Color(0xFFA7E6FF)},
-
         {'name': 'happy', 'label': 'Bahagia', 'emoji': '😃', 'percent': 0.10, 'color': const Color(0xFFFFE6A7)},
-
         {'name': 'surprise', 'label': 'Terkejut', 'emoji': '😲', 'percent': 0.03, 'color': const Color(0xFFC3B8FF)},
-
         {'name': 'anger', 'label': 'Marah', 'emoji': '😡', 'percent': 0.01, 'color': const Color(0xFFFFB6C1)},
-
         {'name': 'disgusted', 'label': 'Jijik / Muak', 'emoji': '🤢', 'percent': 0.01, 'color': const Color(0xFFB8C2FC)},
-
       ];
-
     } else {
-
       final selectedSessData = sessions.firstWhere(
-
         (s) => s['id'] == _selectedSessionId,
-
         orElse: () => sessions.first,
-
       );
-
-      activeEmotions = List<Map<String, dynamic>>.from(selectedSessData['emotionsBreakdown']);
-
+      if (selectedSessData['emotionsBreakdown'] is List && (selectedSessData['emotionsBreakdown'] as List).isNotEmpty) {
+        activeEmotions = (selectedSessData['emotionsBreakdown'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      } else {
+        activeEmotions = [
+          {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.60, 'color': const Color(0xFFA7E6FF)},
+          {'name': 'happy', 'label': 'Lega & Tenang', 'emoji': '😌', 'percent': 0.40, 'color': const Color(0xFFFFE6A7)},
+        ];
+      }
     }
 
-
-
     // Compute active transcripts list based on selected session
-
     List<Map<String, dynamic>> activeTranscripts = [];
-
     if (_selectedSessionId == 'all') {
-
       for (var s in sessions) {
-
-        final tList = List<Map<String, dynamic>>.from(s['transcripts']);
-
-        for (var t in tList) {
-
-          activeTranscripts.add({
-
-            ...t,
-
-            'sessionTitle': s['title'],
-
-          });
-
+        final rawTrans = s['transcripts'];
+        if (rawTrans is List) {
+          for (var t in rawTrans) {
+            if (t is Map) {
+              activeTranscripts.add({
+                ...Map<String, dynamic>.from(t),
+                'sessionTitle': s['title'] ?? 'Sesi',
+              });
+            }
+          }
         }
-
       }
-
     } else {
-
       final selectedSessData = sessions.firstWhere(
-
         (s) => s['id'] == _selectedSessionId,
-
         orElse: () => sessions.first,
-
       );
-
-      final tList = List<Map<String, dynamic>>.from(selectedSessData['transcripts']);
-
-      for (var t in tList) {
-
-        activeTranscripts.add({
-
-          ...t,
-
-          'sessionTitle': selectedSessData['title'],
-
-        });
-
+      final rawTrans = selectedSessData['transcripts'];
+      if (rawTrans is List) {
+        for (var t in rawTrans) {
+          if (t is Map) {
+            activeTranscripts.add({
+              ...Map<String, dynamic>.from(t),
+              'sessionTitle': selectedSessData['title'] ?? 'Sesi',
+            });
+          }
+        }
       }
-
     }
 
 
@@ -461,87 +465,46 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                         children: [
 
                           Text(
-
-                            data['title'],
-
+                            data['title']?.toString() ?? 'Refleksi Harian LUNA',
                             maxLines: 1,
-
                             overflow: TextOverflow.ellipsis,
-
                             style: GoogleFonts.inter(
-
                               fontSize: 16,
-
                               fontWeight: FontWeight.w800,
-
                               color: AppColors.textPrimary,
-
                             ),
-
                           ),
-
                           Text(
-
-                            '${data['date']} • ${sessions.length} Sesi Suara',
-
+                            '${data['date'] ?? 'Hari ini'} • ${sessions.length} Sesi Suara',
                             maxLines: 1,
-
                             overflow: TextOverflow.ellipsis,
-
                             style: GoogleFonts.inter(
-
                               fontSize: 12,
-
                               color: AppColors.textSecondary,
-
                             ),
-
                           ),
-
                         ],
-
                       ),
-
                     ),
-
                     const SizedBox(width: 8),
-
                     Container(
-
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-
                       decoration: BoxDecoration(
-
                         color: const Color(0xFFEADBFF),
-
                         borderRadius: BorderRadius.circular(999),
-
                       ),
-
                       child: Row(
-
                         mainAxisSize: MainAxisSize.min,
-
                         children: [
-
-                          Text(data['moodEmoji'], style: const TextStyle(fontSize: 14)),
-
+                          Text(data['moodEmoji']?.toString() ?? '😌', style: const TextStyle(fontSize: 14)),
                           const SizedBox(width: 4),
-
                           Text(
-
-                            data['moodTag'],
-
+                            data['moodTag']?.toString() ?? 'Netral',
                             style: GoogleFonts.inter(
-
                               fontSize: 11,
-
                               fontWeight: FontWeight.w600,
-
                               color: AppColors.primary,
-
                             ),
-
                           ),
 
                         ],
@@ -659,67 +622,36 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                       children: [
 
                                         Text(
-
-                                          data['riskWarning']['title'],
-
+                                          data['riskWarning']?['title']?.toString() ?? 'Peringatan Kesehatan Mental',
                                           maxLines: 1,
-
                                           overflow: TextOverflow.ellipsis,
-
                                           style: GoogleFonts.inter(
-
                                             fontSize: 14,
-
                                             fontWeight: FontWeight.w800,
-
                                             color: const Color(0xFFD32F2F),
-
                                           ),
-
                                         ),
-
                                         Text(
-
-                                          'Tingkat: ${data['riskWarning']['level']}',
-
+                                          'Tingkat: ${data['riskWarning']?['level']?.toString() ?? 'Sedang'}',
                                           style: GoogleFonts.inter(
-
                                             fontSize: 12,
-
                                             fontWeight: FontWeight.w600,
-
                                             color: const Color(0xFFE57373),
-
                                           ),
-
                                         ),
-
                                       ],
-
                                     ),
-
                                   ),
-
                                 ],
-
                               ),
-
                               const SizedBox(height: 12),
-
                               Text(
-
-                                data['riskWarning']['message'],
-
+                                data['riskWarning']?['message']?.toString() ?? 'Perhatikan kondisi emosionalmu hari ini.',
                                 style: GoogleFonts.inter(
-
                                   fontSize: 13,
-
                                   color: AppColors.textPrimary,
-
                                   height: 1.4,
-
                                 ),
-
                               ),
 
                               const SizedBox(height: 16),
@@ -858,7 +790,7 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
                                       Text(
 
-                                        '✨ Diperbarui setelah Sesi #${sessions.length} (${data['lastSessionTime']})',
+                                        '✨ Diperbarui setelah Sesi #${sessions.length} (${data['lastSessionTime'] ?? 'Hari ini'})',
 
                                         style: GoogleFonts.inter(
 
@@ -885,9 +817,8 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                             const SizedBox(height: 14),
 
                             Text(
-
-                              data['aiInsight'],
-
+                              data['aiInsight']?.toString() ??
+                                  'Analisis AI menunjukkan kondisi emosional kamu hari ini cukup stabil.',
                               style: GoogleFonts.inter(
 
                                 fontSize: 14,
@@ -980,9 +911,7 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
                             const SizedBox(height: 14),
 
-                            ...List<Widget>.from(
-
-                              (data['importantEvents'] as List).map(
+                            ...importantEvents.map(
 
                                 (item) => Padding(
 
@@ -1036,10 +965,7 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
                                   ),
 
-                                ),
-
                               ),
-
                             ),
 
                           ],
@@ -1123,9 +1049,8 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                             const SizedBox(height: 14),
 
                             Text(
-
-                              data['emotionalReflection'],
-
+                              data['emotionalReflection']?.toString() ??
+                                  'Merasa lebih tenang dan terarah setelah berefleksi bersama LUNA.',
                               style: GoogleFonts.inter(
 
                                 fontSize: 14,
@@ -1232,7 +1157,7 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
                                   showCheckmark: false,
 
-                                  label: Text('${sess['moodEmoji']} ${sess['time']}'),
+                                  label: Text('${sess['moodEmoji'] ?? '✨'} ${sess['time'] ?? 'Sesi'}'),
 
                                   selected: isSel,
 
@@ -1352,90 +1277,49 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
                           children: activeEmotions.map((emo) {
 
-                            final double pct = (emo['percent'] as num).toDouble();
-
+                            final double pct = ((emo['percent'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
                             final int pctInt = (pct * 100).round();
-
+                            final Color emoColor = emo['color'] is Color ? (emo['color'] as Color) : AppColors.primary;
                             return Padding(
-
                               padding: const EdgeInsets.only(bottom: 12.0),
-
                               child: Column(
-
                                 children: [
-
                                   Row(
-
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                                     children: [
-
                                       Row(
-
                                         children: [
-
-                                          Text(emo['emoji'], style: const TextStyle(fontSize: 16)),
-
+                                          Text(emo['emoji']?.toString() ?? '✨', style: const TextStyle(fontSize: 16)),
                                           const SizedBox(width: 8),
-
                                           Text(
-
-                                            emo['label'],
-
+                                            emo['label']?.toString() ?? 'Emosi',
                                             style: GoogleFonts.inter(
-
                                               fontSize: 13,
-
                                               fontWeight: FontWeight.w600,
-
                                               color: AppColors.textPrimary,
-
                                             ),
-
                                           ),
-
                                         ],
-
                                       ),
-
                                       Text(
-
                                         '$pctInt%',
-
                                         style: GoogleFonts.inter(
-
                                           fontSize: 13,
-
                                           fontWeight: FontWeight.w700,
-
                                           color: AppColors.primary,
-
                                         ),
-
                                       ),
-
                                     ],
-
                                   ),
-
                                   const SizedBox(height: 6),
-
                                   ClipRRect(
-
                                     borderRadius: BorderRadius.circular(999),
-
                                     child: LinearProgressIndicator(
-
                                       value: pct,
-
                                       minHeight: 7,
-
                                       backgroundColor: const Color(0xFFE2E4F0),
-
-                                      valueColor: AlwaysStoppedAnimation<Color>(emo['color']),
-
+                                      valueColor: AlwaysStoppedAnimation<Color>(emoColor),
                                     ),
-
                                   ),
 
                                 ],
@@ -1601,63 +1485,34 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                                 ),
 
                                                 child: Text(
-
-                                                  item['emotionTag'],
-
+                                                  item['emotionTag']?.toString() ?? '',
                                                   maxLines: 1,
-
                                                   overflow: TextOverflow.ellipsis,
-
                                                   style: GoogleFonts.inter(
-
                                                     fontSize: 10,
-
                                                     fontWeight: FontWeight.w700,
-
                                                     color: AppColors.primary,
-
                                                   ),
-
                                                 ),
-
                                               ),
-
                                             ),
-
                                             const SizedBox(width: 6),
-
                                           ],
-
                                           Text(
-
-                                            item['time'],
-
+                                            item['time']?.toString() ?? '',
                                             style: GoogleFonts.inter(
-
                                               fontSize: 11,
-
                                               color: AppColors.textLight,
-
                                             ),
-
                                           ),
-
                                         ],
-
                                       ),
-
                                     ),
-
                                   ],
-
                                 ),
-
                                 const SizedBox(height: 8),
-
                                 Text(
-
-                                  item['text'],
-
+                                  item['text']?.toString() ?? '',
                                   style: GoogleFonts.inter(
 
                                     fontSize: 13,

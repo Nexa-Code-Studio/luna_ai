@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter/rendering.dart';
 
 import '../widgets/floating_nav_bar.dart';
-
 import 'ai_diary_screen.dart';
-
 import 'home_screen.dart';
-
 import 'monitoring_screen.dart';
-
 import 'profile_screen.dart';
 
 
@@ -29,24 +24,43 @@ class MainShellScreen extends StatefulWidget {
 
 
 class _MainShellScreenState extends State<MainShellScreen> {
-
   int _currentIndex = 0;
-
   bool _isNavBarVisible = true;
 
+  final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
+  final GlobalKey<AiDiaryScreenState> _diaryKey = GlobalKey<AiDiaryScreenState>();
+  final GlobalKey<MonitoringScreenState> _monitoringKey = GlobalKey<MonitoringScreenState>();
 
+  late final List<Widget> _pages;
 
-  final List<Widget> _pages = const [
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomeScreen(key: _homeKey),
+      AiDiaryScreen(key: _diaryKey),
+      MonitoringScreen(key: _monitoringKey),
+      const ProfileScreen(),
+    ];
+  }
 
-    HomeScreen(),
+  void _onTabTapped(int index) {
+    if (index == _currentIndex) {
+      // Tapping same tab = refresh
+      _triggerRefresh(index);
+    }
+    setState(() => _currentIndex = index);
+    _triggerRefresh(index);
+  }
 
-    AiDiaryScreen(),
-
-    MonitoringScreen(),
-
-    ProfileScreen(),
-
-  ];
+  void _triggerRefresh(int index) {
+    switch (index) {
+      case 0: _homeKey.currentState?.refresh(); break;
+      case 1: _diaryKey.currentState?.refresh(); break;
+      case 2: _monitoringKey.currentState?.refresh(); break;
+      default: break;
+    }
+  }
 
 
 
@@ -96,11 +110,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   curve: Curves.easeInOut,
                   child: FloatingNavBar(
                     currentIndex: _currentIndex,
-                    onTap: (index) {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
+                    onTap: _onTabTapped,
                   ),
                 ),
               ),

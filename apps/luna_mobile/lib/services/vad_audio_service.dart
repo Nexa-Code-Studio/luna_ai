@@ -172,12 +172,15 @@ class VadAudioService {
   }
 
   /// Simulate Speech Pause
-  void triggerSpeechPause() {
+  void triggerSpeechPause([String? text]) {
     if (_currentState != VadState.userSpeaking) return;
     _silenceTimer?.cancel();
     _silenceTimer = Timer(Duration(milliseconds: _silenceDurationMs), () {
       _setState(VadState.aiProcessing);
       _amplitudeController.add(0.0);
+      _transcriptController.add(
+        text ?? 'Halo LUNA, aku ingin bercerita tentang apa yang aku rasakan hari ini.',
+      );
     });
   }
 

@@ -4,12 +4,13 @@ from datetime import UTC, datetime, date, time, timezone
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.security import decode_access_token
 from app.core.tz import get_wib_day_range_utc, get_wib_today, to_wib
 from app.db.session import get_db_session
 from app.models.conversation import Conversation, Message
@@ -27,7 +28,24 @@ class SendMessageRequest(BaseModel):
     modality: str = "text"
 
 
-async def _get_default_user(db: AsyncSession) -> User:
+async def _get_current_user(
+    authorization: str | None = Header(None),
+    db: AsyncSession = Depends(get_db_session),
+) -> User:
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ")[1].strip()
+        decoded = decode_access_token(token)
+        if decoded and "sub" in decoded:
+            try:
+                u_uuid = uuid.UUID(decoded["sub"])
+                query_jwt = select(User).where(User.id == u_uuid)
+                res_jwt = await db.execute(query_jwt)
+                user = res_jwt.scalar_one_or_none()
+                if user:
+                    return user
+            except (ValueError, Exception):
+                pass
+
     query = select(User).where(User.email == "user.luna@gmail.com")
     res = await db.execute(query)
     user = res.scalar_one_or_none()
@@ -36,7 +54,7 @@ async def _get_default_user(db: AsyncSession) -> User:
         res_any = await db.execute(query_any)
         user = res_any.scalars().first()
     if not user:
-        raise HTTPException(status_code=404, detail="Default user not found")
+        raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
@@ -85,8 +103,10 @@ def _format_conversation(c: Conversation) -> dict[str, Any]:
 
 
 @router.get("")
-async def get_conversations(db: AsyncSession = Depends(get_db_session)) -> list[dict[str, Any]]:
-    user = await _get_default_user(db)
+async def get_conversations(
+    user: User = Depends(_get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> list[dict[str, Any]]:
     query = (
         select(Conversation)
         .options(selectinload(Conversation.messages))
@@ -103,10 +123,10 @@ async def get_conversations(db: AsyncSession = Depends(get_db_session)) -> list[
 async def get_today_conversations(
     page: int = Query(1, ge=1, description="Page number for pagination"),
     limit: int = Query(10, ge=1, le=100, description="Items per page"),
+    user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Retrieve today's voice call sessions with local time formatting and backend pagination."""
-    user = await _get_default_user(db)
     today_wib = get_wib_today()
     start_utc, end_utc = get_wib_day_range_utc(today_wib)
 
@@ -201,10 +221,10 @@ async def get_today_conversations(
 async def get_today_conversation_messages(
     page: int = Query(1, ge=1, description="Page number for pagination"),
     limit: int = Query(10, ge=1, le=100, description="Items per page"),
+    user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Retrieve all messages from today's conversations ordered chronologically (Oldest First) with pagination."""
-    user = await _get_default_user(db)
     today_wib = get_wib_today()
     start_utc, end_utc = get_wib_day_range_utc(today_wib)
 
