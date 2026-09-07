@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppConfig {
@@ -10,13 +11,13 @@ class AppConfig {
   static const String defaultPort = '8888';
 
   /// Get the active host (IP or domain).
+  /// For Web and Desktop, uses localhost:8888.
   /// For Android emulator, uses 10.0.2.2:8888.
-  /// For Windows/Desktop, uses localhost:8888.
   static String get host {
     if (_customHost != null && _customHost!.isNotEmpty) {
       return _customHost!;
     }
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       return '10.0.2.2:$defaultPort';
     }
     return 'localhost:$defaultPort';
