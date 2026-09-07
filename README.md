@@ -225,9 +225,39 @@ flutter run
 
 ---
 
-### 🧪 Metode D: Running Tests & POCs
+### 🔑 Akun Demo (Demo Accounts & Mock Mode)
 
-#### **1. Menjalankan Unit/Integration Tests (Pytest):**
+Untuk keperluan pengujian dan demonstrasi aplikasi:
+
+#### **1. Akun Master Demo (Auto-Seeded di Database):**
+Saat menjalankan script `docker-dev` atau `python scripts/seed.py`, akun demo berikut otomatis tersedia di database:
+- **Email:** `samsul@gmail.com`
+- **Password:** `password123`
+- **User Display Name:** Samsul
+- **Data Pre-seeded:**
+  - **Kontak Darurat Utama:** Ibu (Siti Rahma - 0812-3456-7890) & Dr. Handoko (Psikiater - 0811-9876-5432).
+  - **Riwayat Jurnal Emosional:** Termasuk entri jurnal refleksi krisis darurat (28 Agustus 2026) dan entri stabil (31 Agt & 1 Sep 2026).
+  - **Rekomendasi Mental Health:** Rekomendasi pernapasan 4-7-8, jurnal ekspresif, dan jeda digital.
+
+#### **2. Toggle Offline Mock Mode (Flutter Mobile):**
+Jika ingin menguji antarmuka aplikasi `luna_mobile` secara langsung tanpa menghubungkan ke server backend/database:
+* Buka `apps/luna_mobile/lib/core/config/app_config.dart`.
+* Set variabel `static const bool useMockData = true;`.
+
+---
+
+### 🧪 Metode D: Running Tests & Spesifikasi Lingkungan Pengujian
+
+#### **1. 🖥️ Spesifikasi Lingkungan Pengujian (Test Environment Specs):**
+| Komponen | Spesifikasi Direkomendasikan | Catatan Pengujian |
+| :--- | :--- | :--- |
+| **Sistem Operasi** | Linux (Ubuntu 22.04 LTS / WSL2), macOS 13+, Windows 11 | Lintas platform |
+| **Python Runtime** | **Python 3.11.x** | Menggunakan `pytest 8.x`, `pytest-asyncio` |
+| **Mobile Runtime** | **Flutter SDK 3.22+**, Dart 3.4+ | Tested di HP Android Fisik (API 34 / Android 14) & Emulator |
+| **Database & Cache** | PostgreSQL 16, Redis 7, Qdrant Vector DB 1.9+ | Berjalan via Docker Compose |
+| **AI / Speech Model** | FunASR (`emotion2vec_plus_large`) | Test POC Speech Emotion Recognition |
+
+#### **2. Menjalankan Unit/Integration Tests (Pytest):**
 ```bash
 # Test API
 pytest apps/backend/api/tests
@@ -242,11 +272,11 @@ pytest apps/backend/workers/tests
 pytest packages/ai/tests
 ```
 
-#### **2. Menjalankan POC Speech Emotion Recognition (emotion2vec_plus_large):**
+#### **3. Menjalankan POC Speech Emotion Recognition (emotion2vec_plus_large):**
 ```bash
 python3 tests/test_emotion/test_emotion.py
 ```
-*Hasil pengujian emotion recognition akan otomatis ditulis ke [tests/test_emotion/poc_result.md](file:///home/mashupsoat/Project/luna_ai/tests/test_emotion/poc_result.md).*
+*Hasil pengujian emotion recognition akan otomatis ditulis ke [tests/test_emotion/poc_result.md](file:///e:/nexaCode/luna_ai/tests/test_emotion/poc_result.md).*
 
 ---
 
