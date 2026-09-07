@@ -15,48 +15,8 @@ class RecommendationScreen extends StatefulWidget {
 }
 
 class _RecommendationScreenState extends State<RecommendationScreen> {
-  List<Map<String, dynamic>> _recommendations = [
-    {
-      'id': '1',
-      'title': 'Latihan Pernapasan 4-7-8',
-      'category': 'Mindfulness',
-      'duration': '3 menit',
-      'description': 'Luangkan waktu sejenak untuk menenangkan diri dan melegakan napas.',
-      'icon': Icons.air,
-      'iconBg': const Color(0xFF8B93FF),
-      'isCompleted': false,
-    },
-    {
-      'id': '2',
-      'title': 'Pertanyaan Refleksi Harian',
-      'category': 'Refleksi',
-      'duration': '5 menit',
-      'description': 'Apa satu hal sederhana yang memberimu rasa nyaman hari ini?',
-      'icon': Icons.edit_note,
-      'iconBg': const Color(0xFFC3B8FF),
-      'isCompleted': false,
-    },
-    {
-      'id': '3',
-      'title': 'Perawatan Diri & Afirmasi',
-      'category': 'Self-care',
-      'duration': '10 menit',
-      'description': 'Jalan santai sejenak dan dengarkan instrumen musik menenangkan.',
-      'icon': Icons.directions_walk,
-      'iconBg': const Color(0xFF489BB8),
-      'isCompleted': false,
-    },
-    {
-      'id': '4',
-      'title': 'Latihan Reframing Kognitif',
-      'category': 'CBT',
-      'duration': '7 menit',
-      'description': 'Melihat tantangan hari ini dari sudut pandang yang lebih positif.',
-      'icon': Icons.psychology,
-      'iconBg': const Color(0xFF9EA3C0),
-      'isCompleted': false,
-    },
-  ];
+  List<Map<String, dynamic>> _recommendations = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -66,13 +26,14 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
   Future<void> _fetchRecommendations() async {
     if (AppConfig.useMockData) return;
+    setState(() => _isLoading = true);
     try {
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/recommendations'),
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        if (data.isNotEmpty) {
+        if (mounted) {
           setState(() {
             _recommendations = data.map((item) {
               return {
@@ -90,6 +51,9 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
         }
       }
     } catch (_) {}
+    finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _completeRecommendation(String id) async {
@@ -218,20 +182,54 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                       const SizedBox(height: 24),
 
                       // Dynamic Recommendation Cards
-                      ..._recommendations.map((rec) {
-                        final bool isDone = rec['isCompleted'] == true;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 14.0),
-                          child: _buildRecCard(
-                            icon: rec['icon'] as IconData,
-                            iconBg: isDone ? Colors.grey : (rec['iconBg'] as Color),
-                            title: rec['title'] as String,
-                            subtitle: rec['description'] as String,
-                            isCompleted: isDone,
-                            onTap: () => _completeRecommendation(rec['id'] as String),
+                      if (_isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32),
+                            child: CircularProgressIndicator(),
                           ),
-                        );
-                      }),
+                        )
+                      else if (_recommendations.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.auto_awesome_outlined, size: 48, color: Color(0xFFBDBDBD)),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Belum ada rekomendasi untukmu',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF767684),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Rekomendasi akan muncul setelah kamu berdialog bersama LUNA.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9EA0AB)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        ..._recommendations.map((rec) {
+                          final bool isDone = rec['isCompleted'] == true;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 14.0),
+                            child: _buildRecCard(
+                              icon: rec['icon'] as IconData,
+                              iconBg: isDone ? Colors.grey : (rec['iconBg'] as Color),
+                              title: rec['title'] as String,
+                              subtitle: rec['description'] as String,
+                              isCompleted: isDone,
+                              onTap: () => _completeRecommendation(rec['id'] as String),
+                            ),
+                          );
+                        }),
                       const SizedBox(height: 24),
                     ],
                   ),

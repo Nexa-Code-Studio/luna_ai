@@ -11,10 +11,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   String _userName = 'Sahabat LUNA';
   int _completedSessions = 1;
   final int _targetSessions = 3;
@@ -24,6 +24,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUserData();
   }
+
+  void refresh() => _loadUserData();
 
   Future<void> _loadUserData() async {
     // 1. Load cached user name

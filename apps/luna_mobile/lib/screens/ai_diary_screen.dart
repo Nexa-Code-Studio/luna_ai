@@ -10,20 +10,13 @@ import '../widgets/glass_card.dart';
 
 
 class AiDiaryScreen extends StatefulWidget {
-
   const AiDiaryScreen({super.key});
 
-
-
   @override
-
-  State<AiDiaryScreen> createState() => _AiDiaryScreenState();
-
+  State<AiDiaryScreen> createState() => AiDiaryScreenState();
 }
 
-
-
-class _AiDiaryScreenState extends State<AiDiaryScreen> {
+class AiDiaryScreenState extends State<AiDiaryScreen> {
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -426,6 +419,8 @@ class _AiDiaryScreenState extends State<AiDiaryScreen> {
     _entries = List.from(_journalEntries);
     _fetchRemoteDiaries();
   }
+
+  void refresh() => _fetchRemoteDiaries();
 
   Future<void> _fetchRemoteDiaries() async {
     if (AppConfig.useMockData) return;

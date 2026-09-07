@@ -64,8 +64,8 @@ def _format_diary_entry(d: DiaryEntry) -> dict[str, Any]:
         "id": str(d.id),
         "title": d.title or "Refleksi Harian LUNA",
         "date": d.entry_date.strftime("%d %B %Y") if isinstance(d.entry_date, date) else str(d.entry_date),
-        "sessionCount": len(events) if events else 1,
-        "lastSessionTime": "21:45 PM",
+        "sessionCount": 0,
+        "lastSessionTime": "-",
         "moodTag": d.mood_tag or "Netral",
         "moodEmoji": d.mood_emoji or "😌",
         "summary": d.summary or "Catatan harian perkembangan emosional bersama LUNA.",
@@ -79,34 +79,64 @@ def _format_diary_entry(d: DiaryEntry) -> dict[str, Any]:
         "aiInsight": d.ai_insight or "Analisis AI menunjukkan kondisi stabil.",
         "importantEvents": events,
         "emotionalReflection": d.emotional_reflection or "Merasa tenang setelah refleksi.",
-        "sessions": [
-            {
-                "id": f"s_{d.id}_1",
-                "title": "Sesi #1: Refleksi Hari Ini",
-                "time": "21:45 PM",
-                "moodTag": d.mood_tag or "Netral",
-                "moodEmoji": d.mood_emoji or "😌",
-                "emotionsBreakdown": [
-                    {"name": "netral", "label": "Netral", "emoji": "😐", "percent": 0.60, "color": "#A7E6FF"},
-                    {"name": "happy", "label": "Lega & Tenang", "emoji": "😌", "percent": 0.40, "color": "#FFE6A7"},
-                ],
-                "transcripts": [
-                    {
-                        "isUser": True,
-                        "time": "21:45 PM",
-                        "text": d.summary or "Saya merefleksikan kegiatan dan perasaan hari ini.",
-                        "emotionTag": "calm (80%)",
-                        "emotionEmoji": "😌",
-                    },
-                    {
-                        "isUser": False,
-                        "time": "21:46 PM",
-                        "text": d.ai_insight or "Terima kasih telah berbagi ceritamu hari ini. Ingatlah untuk selalu merawat kesehatan mentalmu.",
-                    },
-                ],
-            }
-        ],
+        "sessions": [],
     }
+
+
+async def _attach_sessions(formatted: dict[str, Any], entry: DiaryEntry, db: AsyncSession) -> dict[str, Any]:
+    """Populate 'sessions' with real conversation transcripts for the diary's date."""
+    if not isinstance(entry.entry_date, date):
+        return formatted
+
+    start_utc, end_utc = get_wib_day_range_utc(entry.entry_date)
+    conv_query = (
+        select(Conversation)
+        .options(selectinload(Conversation.messages))
+        .where(
+            Conversation.user_id == entry.user_id,
+            Conversation.started_at >= start_utc,
+            Conversation.started_at <= end_utc,
+        )
+        .order_by(Conversation.started_at.asc())
+    )
+    conv_res = await db.execute(conv_query)
+    convs = conv_res.scalars().all()
+
+    sessions_data = []
+    for i, c in enumerate(convs):
+        sorted_msgs = sorted(c.messages, key=lambda m: m.sequence_number) if c.messages else []
+        sess_transcripts = []
+        for m in sorted_msgs:
+            if m.role in ("user", "assistant") and m.content:
+                msg_t = to_wib(m.created_at)
+                sess_transcripts.append({
+                    "isUser": m.role == "user",
+                    "time": msg_t.strftime("%H:%M") if msg_t else "09:00",
+                    "text": m.content,
+                    "emotionTag": "calm (85%)" if m.role == "user" else "empathy",
+                    "emotionEmoji": "😌" if m.role == "user" else "💙",
+                })
+
+        c_t = to_wib(c.started_at)
+        sessions_data.append({
+            "id": str(c.id),
+            "title": (c.title or f"Sesi #{i+1} Percakapan Suara").replace("$skeleton", "").strip(),
+            "time": c_t.strftime("%H:%M") if c_t else "09:00",
+            "moodTag": entry.mood_tag or "Netral",
+            "moodEmoji": entry.mood_emoji or "😌",
+            "emotionsBreakdown": [
+                {"name": "netral", "label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.85, "color": "#4ECDC4"},
+                {"name": "happy", "label": "Bahagia & Puas", "emoji": "😃", "percent": 0.60, "color": "#FFE6A7"},
+            ],
+            "transcripts": sess_transcripts,
+        })
+
+    formatted["sessions"] = sessions_data
+    formatted["sessionCount"] = len(sessions_data)
+    if sessions_data:
+        last_t = to_wib(convs[-1].started_at)
+        formatted["lastSessionTime"] = last_t.strftime("%H:%M") if last_t else "-"
+    return formatted
 
 
 @router.get("")
@@ -154,76 +184,34 @@ async def get_today_diary(
         entry = await DiaryGeneratorService.generate_today_diary(user.id, db)
 
     formatted = _format_diary_entry(entry)
-
-    # Fetch today's actual conversations for dynamic sessions breakdown
-    start_utc, end_utc = get_wib_day_range_utc(today)
-    conv_query = (
-        select(Conversation)
-        .options(selectinload(Conversation.messages))
-        .where(
-            Conversation.user_id == user.id,
-            Conversation.started_at >= start_utc,
-            Conversation.started_at <= end_utc,
-        )
-        .order_by(Conversation.started_at.asc())
-    )
-    conv_res = await db.execute(conv_query)
-    convs = conv_res.scalars().all()
-
-    if convs:
-        formatted["sessionCount"] = len(convs)
-        last_t = to_wib(convs[-1].started_at)
-        formatted["lastSessionTime"] = last_t.strftime("%H:%M") if last_t else "21:45 PM"
-        
-        sessions_data = []
-        for i, c in enumerate(convs):
-            sorted_msgs = sorted(c.messages, key=lambda m: m.sequence_number) if c.messages else []
-            sess_transcripts = []
-            for m in sorted_msgs:
-                if m.role in ("user", "assistant") and m.content:
-                    msg_t = to_wib(m.created_at)
-                    sess_transcripts.append({
-                        "isUser": m.role == "user",
-                        "time": msg_t.strftime("%H:%M") if msg_t else "09:00 AM",
-                        "text": m.content,
-                        "emotionTag": "calm (85%)" if m.role == "user" else "empathy",
-                        "emotionEmoji": "😌" if m.role == "user" else "💙",
-                    })
-            
-            c_t = to_wib(c.started_at)
-            sessions_data.append({
-                "id": str(c.id),
-                "title": (c.title or f"Sesi #{i+1} Percakapan Suara").replace("$skeleton", "").strip(),
-                "time": c_t.strftime("%H:%M") if c_t else "09:00 AM",
-                "moodTag": entry.mood_tag or "Netral",
-                "moodEmoji": entry.mood_emoji or "😌",
-                "emotionsBreakdown": [
-                    {"name": "netral", "label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.85, "color": "#4ECDC4"},
-                    {"name": "happy", "label": "Bahagia & Puas", "emoji": "😃", "percent": 0.60, "color": "#FFE6A7"},
-                ],
-                "transcripts": sess_transcripts,
-            })
-            
-        formatted["sessions"] = sessions_data
-
+    formatted = await _attach_sessions(formatted, entry, db)
     return formatted
 
 
 @router.get("/{diary_id}")
-async def get_diary_by_id(diary_id: str, db: AsyncSession = Depends(get_db_session)) -> dict[str, Any]:
+async def get_diary_by_id(
+    diary_id: str,
+    user: User = Depends(_get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> dict[str, Any]:
     try:
         d_uuid = uuid.UUID(diary_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid diary ID")
 
-    query = select(DiaryEntry).where(DiaryEntry.id == d_uuid)
+    query = select(DiaryEntry).where(
+        DiaryEntry.id == d_uuid,
+        DiaryEntry.user_id == user.id,
+    )
     res = await db.execute(query)
     entry = res.scalar_one_or_none()
 
     if not entry:
         raise HTTPException(status_code=404, detail="Diary entry not found")
 
-    return _format_diary_entry(entry)
+    formatted = _format_diary_entry(entry)
+    formatted = await _attach_sessions(formatted, entry, db)
+    return formatted
 
 
 @router.post("/generate")
