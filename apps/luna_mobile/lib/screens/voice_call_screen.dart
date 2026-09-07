@@ -56,12 +56,35 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
 
   void initState() {
-
     super.initState();
 
     _vadService.startListening();
     _initWebSocketListener();
 
+    _vadStateSubscription = _vadService.vadStateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _currentVadState = state;
+        });
+      }
+    });
+
+    _amplitudeSubscription = _vadService.audioAmplitudeStream.listen((amp) {
+      if (mounted) {
+        setState(() {
+          _currentAmplitude = amp;
+        });
+      }
+    });
+
+    // Call duration timer
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _callDurationSeconds++;
+        });
+      }
+    });
   }
 
   void _initWebSocketListener() {
@@ -96,8 +119,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
             SizedBox(width: 8),
             Text('Protokol Krisis Aktif', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -122,58 +145,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         ],
       ),
     );
-  }
-
-
-
-    _vadStateSubscription = _vadService.vadStateStream.listen((state) {
-
-      if (mounted) {
-
-        setState(() {
-
-          _currentVadState = state;
-
-        });
-
-      }
-
-    });
-
-
-
-    _amplitudeSubscription = _vadService.audioAmplitudeStream.listen((amp) {
-
-      if (mounted) {
-
-        setState(() {
-
-          _currentAmplitude = amp;
-
-        });
-
-      }
-
-    });
-
-
-
-    // Call duration timer
-
-    _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-
-      if (mounted) {
-
-        setState(() {
-
-          _callDurationSeconds++;
-
-        });
-
-      }
-
-    });
-
   }
 
 
