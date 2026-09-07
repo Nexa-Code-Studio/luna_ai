@@ -63,6 +63,11 @@ class _LoginScreenState extends State<LoginScreen> {
         if (token != null) {
           await AppConfig.setToken(token);
         }
+        final userData = data['user'] as Map<String, dynamic>?;
+        await AppConfig.setUserInfo(
+          name: userData?['name']?.toString() ?? email.split('@').first,
+          email: userData?['email']?.toString() ?? email,
+        );
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/home');
       } else {
@@ -76,6 +81,11 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
+      await AppConfig.setUserInfo(
+        name: email.split('@').first,
+        email: email,
+      );
       if (!mounted) return;
       // If network unreachable, allow fallback with warning
       ScaffoldMessenger.of(context).showSnackBar(

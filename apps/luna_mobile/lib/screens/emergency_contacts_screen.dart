@@ -1,76 +1,146 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
 import '../theme/app_colors.dart';
-
 import '../widgets/custom_button.dart';
-
 import '../widgets/glass_card.dart';
 
-
-
 class EmergencyContactsScreen extends StatefulWidget {
-
   const EmergencyContactsScreen({super.key});
 
-
-
   @override
-
   State<EmergencyContactsScreen> createState() => _EmergencyContactsScreenState();
-
 }
 
-
-
 class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
-
-  final List<Map<String, dynamic>> _contacts = [
-
+  List<Map<String, dynamic>> _contacts = [
     {
-
       'id': '1',
-
       'name': 'Budi Utami',
-
       'relation': 'Ibu Kandung',
-
       'phone': '+62 812-3456-7890',
-
       'isPrimary': true,
-
     },
-
     {
-
       'id': '2',
-
       'name': 'Dr. Rini Puspita',
-
       'relation': 'Psikiater / Konselor',
-
       'phone': '+62 857-1122-3344',
-
       'isPrimary': false,
-
     },
-
     {
-
       'id': '3',
-
       'name': 'Layanan Krisis Kemenkes',
-
       'relation': 'Hotline Darurat 24 Jam',
-
       'phone': '119',
-
       'isPrimary': false,
-
     },
-
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
+
+  Future<void> _loadContacts() async {
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      final res = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/users/emergency-contacts'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200 && mounted) {
+        final data = jsonDecode(res.body);
+        if (data is List && data.isNotEmpty) {
+          setState(() {
+            _contacts = data.map<Map<String, dynamic>>((c) => {
+              'id': c['id']?.toString() ?? '',
+              'name': c['name']?.toString() ?? '',
+              'relation': (c['relationship'] ?? c['relation'])?.toString() ?? 'Kontak Darurat',
+              'phone': (c['phone'] ?? c['phone_number'])?.toString() ?? '',
+              'isPrimary': c['isPrimary'] == true || c['is_primary'] == true,
+            }).toList();
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveContactToBackend({
+    required String name,
+    required String relation,
+    required String phone,
+    required bool isPrimary,
+    Map<String, dynamic>? contactToEdit,
+  }) async {
+    setState(() {
+      if (isPrimary) {
+        for (var c in _contacts) {
+          c['isPrimary'] = false;
+        }
+      }
+      if (contactToEdit != null) {
+        contactToEdit['name'] = name;
+        contactToEdit['relation'] = relation;
+        contactToEdit['phone'] = phone;
+        contactToEdit['isPrimary'] = isPrimary;
+      } else {
+        _contacts.add({
+          'id': DateTime.now().millisecondsSinceEpoch.toString(),
+          'name': name,
+          'relation': relation.isEmpty ? 'Kontak Darurat' : relation,
+          'phone': phone,
+          'isPrimary': isPrimary || _contacts.isEmpty,
+        });
+      }
+    });
+
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/users/emergency-contacts'),
+            headers: headers,
+            body: jsonEncode({
+              'name': name,
+              'relationship': relation.isEmpty ? 'Keluarga' : relation,
+              'phone_number': phone,
+              'is_primary': isPrimary,
+            }),
+          )
+          .timeout(const Duration(seconds: 4));
+      _loadContacts();
+    } catch (_) {}
+  }
+
+  Future<void> _deleteContactFromBackend(Map<String, dynamic> contact) async {
+    final contactId = contact['id']?.toString();
+    setState(() {
+      _contacts.removeWhere((c) => c['id'] == contact['id']);
+      if (contact['isPrimary'] == true && _contacts.isNotEmpty) {
+        _contacts.first['isPrimary'] = true;
+      }
+    });
+
+    if (contactId != null && contactId.length > 5) {
+      try {
+        final headers = await AppConfig.getAuthHeaders();
+        await http
+            .delete(
+              Uri.parse('${AppConfig.baseUrl}/users/emergency-contacts/$contactId'),
+              headers: headers,
+            )
+            .timeout(const Duration(seconds: 4));
+      } catch (_) {}
+    }
+  }
 
 
 
@@ -397,55 +467,15 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 
 
                     if (name.isNotEmpty && phone.isNotEmpty) {
-
-                      setState(() {
-
-                        if (isPrimary) {
-
-                          for (var c in _contacts) {
-
-                            c['isPrimary'] = false;
-
-                          }
-
-                        }
-
-
-
-                        if (isEditing) {
-
-                          contactToEdit['name'] = name;
-
-                          contactToEdit['relation'] = relation;
-
-                          contactToEdit['phone'] = phone;
-
-                          contactToEdit['isPrimary'] = isPrimary;
-
-                        } else {
-
-                          _contacts.add({
-
-                            'id': DateTime.now().millisecondsSinceEpoch.toString(),
-
-                            'name': name,
-
-                            'relation': relation.isEmpty ? 'Kontak Darurat' : relation,
-
-                            'phone': phone,
-
-                            'isPrimary': isPrimary || _contacts.isEmpty,
-
-                          });
-
-                        }
-
-                      });
-
                       Navigator.pop(context);
-
+                      _saveContactToBackend(
+                        name: name,
+                        relation: relation,
+                        phone: phone,
+                        isPrimary: isPrimary,
+                        contactToEdit: isEditing ? contactToEdit : null,
+                      );
                     }
-
                   },
 
                   child: Text(
@@ -523,31 +553,13 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
               ),
 
               onPressed: () {
-
-                setState(() {
-
-                  _contacts.removeWhere((c) => c['id'] == contact['id']);
-
-                  if (contact['isPrimary'] == true && _contacts.isNotEmpty) {
-
-                    _contacts.first['isPrimary'] = true;
-
-                  }
-
-                });
-
+                _deleteContactFromBackend(contact);
                 Navigator.pop(context);
-
                 ScaffoldMessenger.of(context).showSnackBar(
-
                   SnackBar(
-
                     content: Text('Kontak "${contact['name']}" telah dihapus.'),
-
                   ),
-
                 );
-
               },
 
               child: Text(
