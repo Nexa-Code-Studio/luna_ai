@@ -2,12 +2,14 @@ import asyncio
 from datetime import UTC, date, datetime, timedelta
 import logging
 from typing import Any
+import uuid
 
 from fastapi import WebSocket
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.core.prompt_templates import LUNA_SYSTEM_PROMPT
+from app.core.security import decode_access_token
 from app.core.tz import get_wib_now
 from app.db.session import AsyncSessionLocal
 from app.models.conversation import Conversation, Message
@@ -24,9 +26,10 @@ logger = logging.getLogger(__name__)
 
 
 class CallSession:
-    def __init__(self, session_id: str, websocket: WebSocket) -> None:
+    def __init__(self, session_id: str, websocket: WebSocket, auth_token: str | None = None) -> None:
         self.session_id = session_id
         self.websocket = websocket
+        self.auth_token = auth_token
         self.state: str = "idle"  # idle | listening | user_speaking | ai_thinking | ai_speaking | interrupted
         self.db_conversation_id: Any | None = None
         self.user_id: Any | None = None
@@ -50,8 +53,8 @@ class CallSessionManager:
     def __init__(self) -> None:
         self._active_sessions: dict[str, CallSession] = {}
 
-    def register_session(self, session_id: str, websocket: WebSocket) -> CallSession:
-        session = CallSession(session_id=session_id, websocket=websocket)
+    def register_session(self, session_id: str, websocket: WebSocket, auth_token: str | None = None) -> CallSession:
+        session = CallSession(session_id=session_id, websocket=websocket, auth_token=auth_token)
         self._active_sessions[session_id] = session
         logger.info(f"Registered call session {session_id}")
         return session
@@ -78,9 +81,21 @@ class CallSessionManager:
 
         try:
             async with AsyncSessionLocal() as db:
-                user_query = select(User).where(User.email == "user.luna@gmail.com")
-                res_user = await db.execute(user_query)
-                user = res_user.scalar_one_or_none()
+                user = None
+                if session.auth_token:
+                    decoded = decode_access_token(session.auth_token)
+                    if decoded and "sub" in decoded:
+                        try:
+                            u_uuid = uuid.UUID(decoded["sub"])
+                            res_user = await db.execute(select(User).where(User.id == u_uuid))
+                            user = res_user.scalar_one_or_none()
+                        except Exception:
+                            pass
+
+                if not user:
+                    user_query = select(User).where(User.email == "user.luna@gmail.com")
+                    res_user = await db.execute(user_query)
+                    user = res_user.scalar_one_or_none()
                 if not user:
                     res_any = await db.execute(select(User))
                     user = res_any.scalars().first()

@@ -12,22 +12,15 @@ import '../widgets/glass_card.dart';
 
 
 class MonitoringScreen extends StatefulWidget {
-
   const MonitoringScreen({super.key});
 
-
-
   @override
-
-  State<MonitoringScreen> createState() => _MonitoringScreenState();
-
+  State<MonitoringScreen> createState() => MonitoringScreenState();
 }
 
-
-
-class _MonitoringScreenState extends State<MonitoringScreen> {
-
-  String _selectedPeriod = 'week'; // 'today', 'week', 'month'
+class MonitoringScreenState extends State<MonitoringScreen> {
+  String _selectedPeriod = 'week';
+  final Map<String, bool> _isLoadingPeriod = {};
 
   @override
   void initState() {
@@ -35,12 +28,17 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
     _fetchRemoteMonitoringData(_selectedPeriod);
   }
 
+  void refresh() => _fetchRemoteMonitoringData(_selectedPeriod);
+
   Future<void> _fetchRemoteMonitoringData(String period) async {
     if (AppConfig.useMockData) return;
+    setState(() => _isLoadingPeriod[period] = true);
     try {
+      final headers = await AppConfig.getAuthHeaders();
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/analytics/monitoring?period=$period'),
-      );
+        headers: headers,
+      ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         setState(() {
@@ -70,6 +68,9 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
         });
       }
     } catch (_) {}
+    finally {
+      if (mounted) setState(() => _isLoadingPeriod[period] = false);
+    }
   }
 
 
@@ -353,10 +354,62 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
 
   @override
-
   Widget build(BuildContext context) {
+    final currentData = _periodData[_selectedPeriod];
+    final bool isLoadingCurrent = _isLoadingPeriod[_selectedPeriod] ?? true;
 
-    final currentData = _periodData[_selectedPeriod]!;
+    // Show loading skeleton while fetching
+    if (isLoadingCurrent && currentData == null) {
+      return Scaffold(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFF6F8FF), Color(0xFFEFF2FE), Color(0xFFF8F9FE)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (currentData == null) {
+      return Scaffold(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFF6F8FF), Color(0xFFEFF2FE), Color(0xFFF8F9FE)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.show_chart, size: 52, color: Color(0xFFBDBDBD)),
+                const SizedBox(height: 12),
+                Text(
+                  'Belum ada data tren emosional',
+                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF767684)),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Data akan muncul setelah kamu melakukan sesi suara bersama LUNA.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9EA0AB)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     final emotionalCenter = currentData['emotionalCenter'] as Map<String, dynamic>;
 
@@ -1411,13 +1464,10 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
       child: GestureDetector(
 
         onTap: () {
-
           setState(() {
-
             _selectedPeriod = id;
-
           });
-
+          _fetchRemoteMonitoringData(id);
         },
 
         child: Container(

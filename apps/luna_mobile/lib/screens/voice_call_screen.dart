@@ -82,12 +82,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     });
   }
 
-  void _initWebSocketListener() {
+  Future<void> _initWebSocketListener() async {
     if (AppConfig.useMockData) return;
     try {
-      _wsChannel = WebSocketChannel.connect(
-        Uri.parse('${AppConfig.wsUrl}/call/ws/$_sessionId'),
-      );
+      final token = await AppConfig.getToken();
+      final uri = (token != null && token.isNotEmpty)
+          ? Uri.parse('${AppConfig.wsUrl}/call/ws/$_sessionId?token=$token')
+          : Uri.parse('${AppConfig.wsUrl}/call/ws/$_sessionId');
+      _wsChannel = WebSocketChannel.connect(uri);
 
       _wsChannel!.stream.listen(
         (message) {
@@ -181,12 +183,15 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
 
     return '$minutes:$seconds';
-
   }
 
-
-
   void _showSessionSummaryBottomSheet() {
+    try {
+      _wsChannel?.sink.add(jsonEncode({
+        'type': 'end_call',
+        'duration_seconds': _callDurationSeconds,
+      }));
+    } catch (_) {}
 
     showModalBottomSheet(
 
@@ -712,90 +717,47 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
               const Spacer(),
 
-
-
               // INTERACTIVE SPEECH DEMO CONTROLLER (Tap to speak / pause / barge-in)
-
               Padding(
-
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
-
                 child: Row(
-
                   mainAxisAlignment: MainAxisAlignment.center,
-
                   children: [
-
                     ElevatedButton.icon(
-
                       onPressed: () {
-
                         if (_currentVadState == VadState.userSpeaking) {
-
                           _vadService.triggerSpeechPause();
-
                         } else {
-
                           _vadService.triggerSpeechStart();
-
                         }
-
                       },
-
                       style: ElevatedButton.styleFrom(
-
                         backgroundColor: _currentVadState == VadState.userSpeaking
-
                             ? const Color(0xFFE53935)
-
                             : AppColors.primary,
-
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-
                       ),
-
                       icon: Icon(
-
                         _currentVadState == VadState.userSpeaking
-
                             ? Icons.pause_circle_outline
-
                             : Icons.record_voice_over,
-
                         color: Colors.white,
-
                         size: 18,
-
                       ),
-
                       label: Text(
-
                         _currentVadState == VadState.userSpeaking
-
                             ? 'Selesaikan Bicara (Hening)'
-
                             : 'Mulai Bicara (VAD Trigger)',
-
                         style: GoogleFonts.inter(
-
                           fontSize: 12,
-
                           fontWeight: FontWeight.w700,
-
                           color: Colors.white,
-
                         ),
-
                       ),
-
                     ),
-
                   ],
-
                 ),
-
               ),
 
 
