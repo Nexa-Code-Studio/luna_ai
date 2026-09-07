@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppConfig {
@@ -10,20 +8,16 @@ class AppConfig {
   static String? _cachedUserName;
   static String? _cachedUserEmail;
 
-  /// Default port for backend
-  static const String defaultPort = '8888';
+  /// Production VPS server host
+  static const String defaultServerHost = '172.93.219.133:8888';
 
   /// Get the active host (IP or domain).
-  /// For Web and Desktop, uses localhost:8888.
-  /// For Android emulator, uses 10.0.2.2:8888.
+  /// Points to the live VPS backend server by default.
   static String get host {
     if (_customHost != null && _customHost!.isNotEmpty) {
       return _customHost!;
     }
-    if (!kIsWeb && Platform.isAndroid) {
-      return '10.0.2.2:$defaultPort';
-    }
-    return 'localhost:$defaultPort';
+    return defaultServerHost;
   }
 
   static void setCustomHost(String host) {
