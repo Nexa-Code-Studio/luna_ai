@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.7.21)  6 SEP 2026 15:22
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.7.21)  7 SEP 2026 08:17
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -851,80 +851,49 @@ Package hyperref Info: Link coloring ON on input line 147.
 \openout4 = `main.out'.
 
 \big@size=\dimen308
-<images/logo_polinema.png, id=6, 1497.595pt x 1494.58376pt>
+<images/cover-fix.png, id=6, 597.23125pt x 845.1575pt>
+File: images/cover-fix.png Graphic file (type png)
+<use images/cover-fix.png>
+Package pdftex.def Info: images/cover-fix.png  used on input line 154.
+(pdftex.def)             Requested size: 597.54874pt x 845.06516pt.
+<images/logo_polinema.png, id=8, 1497.595pt x 1494.58376pt>
 File: images/logo_polinema.png Graphic file (type png)
 <use images/logo_polinema.png>
-Package pdftex.def Info: images/logo_polinema.png  used on input line 158.
-(pdftex.def)             Requested size: 51.30145pt x 51.21504pt.
-<images/logo-hology-white.png, id=8, 33.86995pt x 39.11978pt>
-File: images/logo-hology-white.png Graphic file (type png)
-<use images/logo-hology-white.png>
-Package pdftex.def Info: images/logo-hology-white.png  used on input line 163.
-(pdftex.def)             Requested size: 44.34459pt x 51.21504pt.
-LaTeX Font Info:    Trying to load font information for OT1+phv on input line 1
-68.
+Package pdftex.def Info: images/logo_polinema.png  used on input line 159.
+(pdftex.def)             Requested size: 45.61145pt x 45.52458pt.
+<images/logo-hology-black.png, id=9, 33.86995pt x 39.11978pt>
+File: images/logo-hology-black.png Graphic file (type png)
+<use images/logo-hology-black.png>
+Package pdftex.def Info: images/logo-hology-black.png  used on input line 164.
+(pdftex.def)             Requested size: 39.4173pt x 45.52458pt.
+ [1
 
-(C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1phv.fd
-File: ot1phv.fd 2020/03/25 scalable font definitions for OT1/phv.
-)
+ <./images/cover-fix.png> <./images/logo_polinema.png> <./images/logo-hology-bl
+ack.png>] (sections/01_title_abstract.tex
 LaTeX Font Info:    Trying to load font information for OT1+ztmcm on input line
- 168.
+ 2.
 
 (C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
 LaTeX Font Info:    Trying to load font information for OML+ztmcm on input line
- 168.
+ 2.
 
 (C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omlztmcm.fd
 File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
 )
 LaTeX Font Info:    Trying to load font information for OMS+ztmcm on input line
- 168.
+ 2.
 
 (C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omsztmcm.fd
 File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
 )
 LaTeX Font Info:    Trying to load font information for OMX+ztmcm on input line
- 168.
+ 2.
 
 (C:\Users\USER\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omxztmcm.fd
 File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
 )
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10.95> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 168.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 168.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 168.
-
-
-LaTeX Font Warning: Font shape `OT1/cmss/bx/n' in size <42> not available
-(Font)              size <24.88> substituted on input line 173.
-
-
-LaTeX Font Warning: Font shape `OT1/cmss/bx/it' undefined
-(Font)              using `OT1/cmss/bx/n' instead on input line 174.
-
-
-LaTeX Font Warning: Font shape `OT1/cmss/bx/n' in size <11.5> not available
-(Font)              size <12> substituted on input line 179.
-
-
-LaTeX Font Warning: Font shape `OT1/cmss/bx/it' in size <11.5> not available
-(Font)              size <12> substituted on input line 179.
-
-<images/pristine_background_canvas.png, id=9, 2489.3pt x 3522.15875pt>
-File: images/pristine_background_canvas.png Graphic file (type png)
-<use images/pristine_background_canvas.png>
-Package pdftex.def Info: images/pristine_background_canvas.png  used on input l
-ine 191.
-(pdftex.def)             Requested size: 597.4822pt x 845.01292pt.
-[1
-
-{C:/Users/USER/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <./images/pris
-tine_background_canvas.png (PNG copy)> <./images/logo_polinema.png> <./images/l
-ogo-hology-white.png>] (sections/01_title_abstract.tex
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 2.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
@@ -936,13 +905,19 @@ Overfull \hbox (0.79999pt too wide) in paragraph at lines 4--7
 [] 
  []
 
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10.95> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 19.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 19.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 19.
 
 Overfull \hbox (0.79999pt too wide) in paragraph at lines 15--21
 [] 
  []
 
 ) (sections/02_latar_belakang.tex
-<images/bab2/fig1_statistik.png, id=22, 1069.9975pt x 507.8975pt>
+<images/bab2/fig1_statistik.png, id=20, 1069.9975pt x 507.8975pt>
 File: images/bab2/fig1_statistik.png Graphic file (type png)
 <use images/bab2/fig1_statistik.png>
 Package pdftex.def Info: images/bab2/fig1_statistik.png  used on input line 8.
@@ -953,24 +928,25 @@ been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.11 
-      [1{C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.en
-c}] [2 <./images/bab2/fig1_statistik.png (PNG copy)>])
-(sections/03_tujuan_manfaat.tex [3]) (sections/04_fitur_aplikasi.tex)
-(sections/05_metode_pengembangan.tex [4]
-<images/bab5/fig2_agile.png, id=60, 364.36125pt x 297.11pt>
+      [1{C:/Users/USER/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Use
+rs/USER/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}] [2 <./image
+s/bab2/fig1_statistik.png (PNG copy)>]) (sections/03_tujuan_manfaat.tex
+[3]) (sections/04_fitur_aplikasi.tex) (sections/05_metode_pengembangan.tex
+[4]
+<images/bab5/fig2_agile.png, id=59, 364.36125pt x 297.11pt>
 File: images/bab5/fig2_agile.png Graphic file (type png)
 <use images/bab5/fig2_agile.png>
 Package pdftex.def Info: images/bab5/fig2_agile.png  used on input line 8.
 (pdftex.def)             Requested size: 227.62206pt x 185.60715pt.
- [5 <./images/bab5/fig2_agile.png (PNG copy)>]) (sections/06_analisis_desain.te
-x
+ [5 <./images/bab5/fig2_agile.png (PNG copy)>])
+(sections/06_analisis_desain.tex
 Overfull \hbox (2.07848pt too wide) in paragraph at lines 9--10
 []\OT1/ptm/m/n/12 Menyediakan di-a-log em-pa-tik yang ter-per-so-na-li-sa-si se
 -su-ai pro-fil dan kon-di-si emo-sio-nal peng-
  []
 
 [6]
-<images/bab6/fig3_konsep.png, id=77, 984.67876pt x 344.28625pt>
+<images/bab6/fig3_konsep.png, id=76, 984.67876pt x 344.28625pt>
 File: images/bab6/fig3_konsep.png Graphic file (type png)
 <use images/bab6/fig3_konsep.png>
 Package pdftex.def Info: images/bab6/fig3_konsep.png  used on input line 32.
@@ -981,7 +957,7 @@ LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 4
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
 [7 <./images/bab6/fig3_konsep.png (PNG copy)>] [8]
-<images/bab6/fig4_arsitektur.png, id=97, 4420.515pt x 3340.48pt>
+<images/bab6/fig4_arsitektur.png, id=96, 4420.515pt x 3340.48pt>
 File: images/bab6/fig4_arsitektur.png Graphic file (type png)
 <use images/bab6/fig4_arsitektur.png>
 Package pdftex.def Info: images/bab6/fig4_arsitektur.png  used on input line 68
@@ -996,7 +972,7 @@ Underfull \hbox (badness 1371) in paragraph at lines 50--50
 [9
 
  <./images/bab6/fig4_arsitektur.png>] [10]
-<images/bab7/fig5_flow.png, id=113, 2298.5875pt x 3102.59125pt>
+<images/bab7/fig5_flow.png, id=112, 2298.5875pt x 3102.59125pt>
 File: images/bab7/fig5_flow.png Graphic file (type png)
 <use images/bab7/fig5_flow.png>
 Package pdftex.def Info: images/bab7/fig5_flow.png  used on input line 66.
@@ -1007,19 +983,19 @@ ons/09_rencana_implementasi.tex
 
 ]) (sections/10_lampiran.tex
 [15]
-<images/lampiran/fig6_business_process.png, id=177, 998.73125pt x 472.76625pt>
+<images/lampiran/fig6_business_process.png, id=176, 998.73125pt x 472.76625pt>
 File: images/lampiran/fig6_business_process.png Graphic file (type png)
 <use images/lampiran/fig6_business_process.png>
 Package pdftex.def Info: images/lampiran/fig6_business_process.png  used on inp
 ut line 8.
 (pdftex.def)             Requested size: 418.82375pt x 198.25748pt.
-<images/lampiran/fig7_usecase.png, id=178, 824.07875pt x 380.42125pt>
+<images/lampiran/fig7_usecase.png, id=177, 824.07875pt x 380.42125pt>
 File: images/lampiran/fig7_usecase.png Graphic file (type png)
 <use images/lampiran/fig7_usecase.png>
 Package pdftex.def Info: images/lampiran/fig7_usecase.png  used on input line 1
 5.
 (pdftex.def)             Requested size: 400.61703pt x 184.93942pt.
-<images/lampiran/fig8_multiagent_architecture.png, id=179, 918.43124pt x 511.91
+<images/lampiran/fig8_multiagent_architecture.png, id=178, 918.43124pt x 511.91
 25pt>
 File: images/lampiran/fig8_multiagent_architecture.png Graphic file (type png)
 <use images/lampiran/fig8_multiagent_architecture.png>
@@ -1030,13 +1006,13 @@ Package pdftex.def Info: images/lampiran/fig8_multiagent_architecture.png  used
 
  <./images/lampiran/fig6_business_process.png (PNG copy)> <./images/lampiran/fi
 g7_usecase.png (PNG copy)>]
-<images/prototype/auth_signup.jpeg, id=186, 740.7675pt x 1606.0pt>
+<images/prototype/auth_signup.jpeg, id=185, 740.7675pt x 1606.0pt>
 File: images/prototype/auth_signup.jpeg Graphic file (type jpg)
 <use images/prototype/auth_signup.jpeg>
 Package pdftex.def Info: images/prototype/auth_signup.jpeg  used on input line 
 39.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/auth_signin.jpeg, id=187, 740.7675pt x 1606.0pt>
+<images/prototype/auth_signin.jpeg, id=186, 740.7675pt x 1606.0pt>
 File: images/prototype/auth_signin.jpeg Graphic file (type jpg)
 <use images/prototype/auth_signin.jpeg>
 Package pdftex.def Info: images/prototype/auth_signin.jpeg  used on input line 
@@ -1044,25 +1020,25 @@ Package pdftex.def Info: images/prototype/auth_signin.jpeg  used on input line
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
  [17 <./images/lampiran/fig8_multiagent_architecture.png (PNG copy)> <./images/
 prototype/auth_signup.jpeg>]
-<images/prototype/auth_firstscreen.jpeg, id=194, 740.7675pt x 1606.0pt>
+<images/prototype/auth_firstscreen.jpeg, id=193, 740.7675pt x 1606.0pt>
 File: images/prototype/auth_firstscreen.jpeg Graphic file (type jpg)
 <use images/prototype/auth_firstscreen.jpeg>
 Package pdftex.def Info: images/prototype/auth_firstscreen.jpeg  used on input 
 line 73.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/auth_home.jpeg, id=195, 740.7675pt x 1606.0pt>
+<images/prototype/auth_home.jpeg, id=194, 740.7675pt x 1606.0pt>
 File: images/prototype/auth_home.jpeg Graphic file (type jpg)
 <use images/prototype/auth_home.jpeg>
 Package pdftex.def Info: images/prototype/auth_home.jpeg  used on input line 90
 .
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/counseling_nav.jpeg, id=196, 740.7675pt x 1606.0pt>
+<images/prototype/counseling_nav.jpeg, id=195, 740.7675pt x 1606.0pt>
 File: images/prototype/counseling_nav.jpeg Graphic file (type jpg)
 <use images/prototype/counseling_nav.jpeg>
 Package pdftex.def Info: images/prototype/counseling_nav.jpeg  used on input li
 ne 109.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/counseling_voice_entry.jpeg, id=197, 740.7675pt x 1606.0pt>
+<images/prototype/counseling_voice_entry.jpeg, id=196, 740.7675pt x 1606.0pt>
 File: images/prototype/counseling_voice_entry.jpeg Graphic file (type jpg)
 <use images/prototype/counseling_voice_entry.jpeg>
 Package pdftex.def Info: images/prototype/counseling_voice_entry.jpeg  used on 
@@ -1070,25 +1046,25 @@ input line 125.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
  [18 <./images/prototype/auth_signin.jpeg> <./images/prototype/auth_firstscreen
 .jpeg> <./images/prototype/auth_home.jpeg>]
-<images/prototype/counseling_in_call.jpeg, id=206, 740.7675pt x 1606.0pt>
+<images/prototype/counseling_in_call.jpeg, id=205, 740.7675pt x 1606.0pt>
 File: images/prototype/counseling_in_call.jpeg Graphic file (type jpg)
 <use images/prototype/counseling_in_call.jpeg>
 Package pdftex.def Info: images/prototype/counseling_in_call.jpeg  used on inpu
 t line 147.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/counseling_end_call.jpeg, id=207, 740.7675pt x 1606.0pt>
+<images/prototype/counseling_end_call.jpeg, id=206, 740.7675pt x 1606.0pt>
 File: images/prototype/counseling_end_call.jpeg Graphic file (type jpg)
 <use images/prototype/counseling_end_call.jpeg>
 Package pdftex.def Info: images/prototype/counseling_end_call.jpeg  used on inp
 ut line 163.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/journal_page_1.jpeg, id=208, 740.7675pt x 1606.0pt>
+<images/prototype/journal_page_1.jpeg, id=207, 740.7675pt x 1606.0pt>
 File: images/prototype/journal_page_1.jpeg Graphic file (type jpg)
 <use images/prototype/journal_page_1.jpeg>
 Package pdftex.def Info: images/prototype/journal_page_1.jpeg  used on input li
 ne 185.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/journal_page_2.jpeg, id=209, 740.7675pt x 1606.0pt>
+<images/prototype/journal_page_2.jpeg, id=208, 740.7675pt x 1606.0pt>
 File: images/prototype/journal_page_2.jpeg Graphic file (type jpg)
 <use images/prototype/journal_page_2.jpeg>
 Package pdftex.def Info: images/prototype/journal_page_2.jpeg  used on input li
@@ -1097,25 +1073,25 @@ ne 201.
  [19 <./images/prototype/counseling_nav.jpeg> <./images/prototype/counseling_vo
 ice_entry.jpeg> <./images/prototype/counseling_in_call.jpeg> <./images/prototyp
 e/counseling_end_call.jpeg>]
-<images/prototype/dashboard_page_1.jpeg, id=216, 740.7675pt x 1606.0pt>
+<images/prototype/dashboard_page_1.jpeg, id=215, 740.7675pt x 1606.0pt>
 File: images/prototype/dashboard_page_1.jpeg Graphic file (type jpg)
 <use images/prototype/dashboard_page_1.jpeg>
 Package pdftex.def Info: images/prototype/dashboard_page_1.jpeg  used on input 
 line 223.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/dashboard_page_2.jpeg, id=217, 740.7675pt x 1606.0pt>
+<images/prototype/dashboard_page_2.jpeg, id=216, 740.7675pt x 1606.0pt>
 File: images/prototype/dashboard_page_2.jpeg Graphic file (type jpg)
 <use images/prototype/dashboard_page_2.jpeg>
 Package pdftex.def Info: images/prototype/dashboard_page_2.jpeg  used on input 
 line 239.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/journal_list_crisis.jpeg, id=218, 740.7675pt x 1606.0pt>
+<images/prototype/journal_list_crisis.jpeg, id=217, 740.7675pt x 1606.0pt>
 File: images/prototype/journal_list_crisis.jpeg Graphic file (type jpg)
 <use images/prototype/journal_list_crisis.jpeg>
 Package pdftex.def Info: images/prototype/journal_list_crisis.jpeg  used on inp
 ut line 261.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/journal_detail_crisis.jpeg, id=219, 740.7675pt x 1606.0pt>
+<images/prototype/journal_detail_crisis.jpeg, id=218, 740.7675pt x 1606.0pt>
 File: images/prototype/journal_detail_crisis.jpeg Graphic file (type jpg)
 <use images/prototype/journal_detail_crisis.jpeg>
 Package pdftex.def Info: images/prototype/journal_detail_crisis.jpeg  used on i
@@ -1125,13 +1101,13 @@ nput line 277.
 2.jpeg> <./images/prototype/dashboard_page_1.jpeg> <./images/prototype/dashboar
 d_page_2.jpeg>] [21 <./images/prototype/journal_list_crisis.jpeg> <./images/pro
 totype/journal_detail_crisis.jpeg>]
-<images/prototype/crisis_alert_dialog.jpeg, id=231, 740.7675pt x 1606.0pt>
+<images/prototype/crisis_alert_dialog.jpeg, id=230, 740.7675pt x 1606.0pt>
 File: images/prototype/crisis_alert_dialog.jpeg Graphic file (type jpg)
 <use images/prototype/crisis_alert_dialog.jpeg>
 Package pdftex.def Info: images/prototype/crisis_alert_dialog.jpeg  used on inp
 ut line 300.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
-<images/prototype/crisis_module_screen.jpeg, id=232, 740.7675pt x 1606.0pt>
+<images/prototype/crisis_module_screen.jpeg, id=231, 740.7675pt x 1606.0pt>
 File: images/prototype/crisis_module_screen.jpeg Graphic file (type jpg)
 <use images/prototype/crisis_module_screen.jpeg>
 Package pdftex.def Info: images/prototype/crisis_module_screen.jpeg  used on in
@@ -1139,7 +1115,7 @@ put line 316.
 (pdftex.def)             Requested size: 76.11566pt x 165.02606pt.
  [22 <./images/prototype/crisis_alert_dialog.jpeg> <./images/prototype/crisis_m
 odule_screen.jpeg>] [23]
-<images/lampiran/fig9_wawancara_psikolog.png, id=264, 1204.5pt x 1606.0pt>
+<images/lampiran/fig9_wawancara_psikolog.png, id=263, 1204.5pt x 1606.0pt>
 File: images/lampiran/fig9_wawancara_psikolog.png Graphic file (type png)
 <use images/lampiran/fig9_wawancara_psikolog.png>
 Package pdftex.def Info: images/lampiran/fig9_wawancara_psikolog.png  used on i
@@ -1156,41 +1132,31 @@ nput line 408.
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
  ***********
-
-
-LaTeX Font Warning: Size substitutions with differences
-(Font)              up to 17.12pt have occurred.
-
-
-LaTeX Font Warning: Some font shapes were not available, defaults substituted.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 24653 strings out of 467871
- 465860 string characters out of 5418860
+ 24574 strings out of 467871
+ 464562 string characters out of 5418860
  866546 words of memory out of 5000000
- 52964 multiletter control sequences out of 15000+600000
- 666924 words of font info for 125 fonts, out of 8000000 for 9000
+ 52892 multiletter control sequences out of 15000+600000
+ 664530 words of font info for 118 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,13n,94p,1091b,970s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,13n,94p,1091b,971s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/c
 mitt10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsf
 onts/cm/cmr10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/type1/publ
-ic/amsfonts/cm/cmss10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/ty
-pe1/public/amsfonts/cm/cmssbx10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTe
-X/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/USER/AppData/Local/Progra
-ms/MiKTeX/fonts/type1/public/amsfonts/cm/cmtt10.pfb><C:/Users/USER/AppData/Loca
-l/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmtt12.pfb><C:/Users/USER/AppD
-ata/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Us
-ers/USER/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Use
-rs/USER/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Use
-rs/USER/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/User
-s/USER/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (27 pages, 7478268 bytes).
+ic/amsfonts/cm/cmsy10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/fonts/ty
+pe1/public/amsfonts/cm/cmtt10.pfb><C:/Users/USER/AppData/Local/Programs/MiKTeX/
+fonts/type1/public/amsfonts/cm/cmtt12.pfb><C:/Users/USER/AppData/Local/Programs
+/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/USER/AppData/L
+ocal/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/USER/AppData/Lo
+cal/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/USER/AppData/Lo
+cal/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/USER/AppData/Loc
+al/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
+Output written on main.pdf (27 pages, 7992336 bytes).
 PDF statistics:
- 361 PDF objects out of 1000 (max. 8388607)
+ 352 PDF objects out of 1000 (max. 8388607)
  116 named destinations out of 1000 (max. 500000)
  153 words of extra memory for PDF output out of 10000 (max. 10000000)
 
