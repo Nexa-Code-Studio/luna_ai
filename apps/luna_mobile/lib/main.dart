@@ -12,6 +12,7 @@ import 'screens/monitoring_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/recommendation_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/settings_screen.dart';
 import 'screens/splash_onboarding_screen.dart';
 import 'screens/support_emergency_screen.dart';
 import 'screens/voice_call_screen.dart';
@@ -77,6 +78,8 @@ class LunaApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
 
         '/emergency_contacts': (context) => const EmergencyContactsScreen(),
+
+        '/settings': (context) => const SettingsScreen(),
 
       },
     ),

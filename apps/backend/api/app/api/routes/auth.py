@@ -178,21 +178,14 @@ async def get_me(
                 pass
 
     if not user:
-        query_default = select(User).where(User.email == "user.luna@gmail.com")
-        res_default = await db.execute(query_default)
-        user = res_default.scalar_one_or_none()
-
-    if not user:
-        query_any = select(User)
-        res_any = await db.execute(query_any)
-        user = res_any.scalars().first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token akses tidak ditemukan atau pengguna tidak terautentikasi",
+        )
 
     return {
         "id": str(user.id),
-        "name": user.display_name or "User Luna",
+        "name": user.display_name or user.username or "User Luna",
         "email": user.email,
     }
 

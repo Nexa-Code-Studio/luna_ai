@@ -42,389 +42,29 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
 
 
 
-  final List<Map<String, dynamic>> _journalEntries = const [
-
-    {
-
-      'id': '1',
-
-      'title': 'Refleksi Harian & Evaluasi Ujian',
-
-      'date': '24 Oktober 2023',
-
-      'sessionCount': 3,
-
-      'lastSessionTime': '21:45 PM',
-
-      'moodTag': 'Cemas & Stres',
-
-      'moodEmoji': '😰',
-
-      'summary':
-
-          'Kumulatif 3 sesi suara hari ini: Refleksi Pagi (kecemasan akademik), Curhat Sore (istirahat teh), dan Refleksi Malam (evaluasi jadwal). LUNA menyintesis kemajuan emosional harianmu.',
-
-      'riskWarning': {
-
-        'detected': true,
-
-        'type': 'anxiety',
-
-        'title': 'Indikasi Anxiety & Stres Kumulatif Terdeteksi',
-
-        'level': 'Tinggi (68%)',
-
-        'message':
-
-            'LUNA mendeteksi akumulasi kecemasan dan stres pada 3 sesi percakapan hari ini. Jangan ragu mengambil waktu jeda istirahat.',
-
-      },
-
-      'aiInsight':
-
-          'Kumulatif Hari Ini: Meskipun beban akademik memicu akumulasi rasa cemas pada Sesi #1 dan Sesi #3, kamu berhasil menenangkan diri pada Sesi #2 saat istirahat teh.',
-
-      'importantEvents': [
-
-        '[Sesi #1 - 09:15 AM] Sesi belajar pagi & kecemasan ujian tengah semester',
-
-        '[Sesi #2 - 16:30 PM] Minum teh hangat & jeda santai',
-
-        '[Sesi #3 - 21:45 PM] Mengatur ulang target jadwal perkuliahan',
-
-      ],
-
-      'emotionalReflection':
-
-          'Dinamika harian menunjukkan fluktuasi dari kecemasan tinggi di pagi hari, mereda di sore hari, dan kembali reflektif di malam hari.',
-
-      'sessions': [
-
-        {
-
-          'id': 's1',
-
-          'title': 'Sesi #1: Refleksi Pagi & Ujian',
-
-          'time': '09:15 AM',
-
-          'moodTag': 'Takut & Cemas',
-
-          'moodEmoji': '😨',
-
-          'emotionsBreakdown': [
-
-            {'name': 'fear', 'label': 'Takut / Gelisah', 'emoji': '😨', 'percent': 0.65, 'color': Color(0xFF6C63FF)},
-
-            {'name': 'sadness', 'label': 'Sedih / Haru', 'emoji': '😔', 'percent': 0.20, 'color': Color(0xFF8B93FF)},
-
-            {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.15, 'color': Color(0xFFA7E6FF)},
-
-          ],
-
-          'transcripts': [
-
-            {
-
-              'isUser': true,
-
-              'time': '09:15 AM',
-
-              'text': 'Saya sangat cemas dan takut tidak bisa menyelesaikan tugas kuliah ini dengan baik.',
-
-              'emotionTag': 'fear (68%)',
-
-              'emotionEmoji': '😨',
-
-            },
-
-            {
-
-              'isUser': false,
-
-              'time': '09:16 AM',
-
-              'text':
-
-                  'Aku mendengarmu, Sarah. Sangat wajar merasa cemas saat tugas menumpuk. Mari kita uraikan bersama menjadi langkah kecil ya.',
-
-            },
-
-          ],
-
-        },
-
-        {
-
-          'id': 's2',
-
-          'title': 'Sesi #2: Jeda Ketenangan Sore',
-
-          'time': '16:30 PM',
-
-          'moodTag': 'Tenang & Nyaman',
-
-          'moodEmoji': '😌',
-
-          'emotionsBreakdown': [
-
-            {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.50, 'color': Color(0xFFA7E6FF)},
-
-            {'name': 'happy', 'label': 'Bahagia', 'emoji': '😃', 'percent': 0.35, 'color': Color(0xFFFFE6A7)},
-
-            {'name': 'fear', 'label': 'Takut / Gelisah', 'emoji': '😨', 'percent': 0.15, 'color': Color(0xFF6C63FF)},
-
-          ],
-
-          'transcripts': [
-
-            {
-
-              'isUser': true,
-
-              'time': '16:30 PM',
-
-              'text': 'Saya baru saja minum teh dan berjalan santai sebentar. Rasanya sedikit lebih lega.',
-
-              'emotionTag': 'netral (60%)',
-
-              'emotionEmoji': '😐',
-
-            },
-
-            {
-
-              'isUser': false,
-
-              'time': '16:31 PM',
-
-              'text': 'Itu langkah yang luar biasa! Memberikan waktu istirahat pada pikiran sangat penting untuk pemulihan energimu.',
-
-            },
-
-          ],
-
-        },
-
-        {
-
-          'id': 's3',
-
-          'title': 'Sesi #3: Evaluasi Malam & Jadwal',
-
-          'time': '21:45 PM',
-
-          'moodTag': 'Reflektif & Lelah',
-
-          'moodEmoji': '😴',
-
-          'emotionsBreakdown': [
-
-            {'name': 'fear', 'label': 'Takut / Gelisah', 'emoji': '😨', 'percent': 0.40, 'color': Color(0xFF6C63FF)},
-
-            {'name': 'sadness', 'label': 'Sedih / Haru', 'emoji': '😔', 'percent': 0.35, 'color': Color(0xFF8B93FF)},
-
-            {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.25, 'color': Color(0xFFA7E6FF)},
-
-          ],
-
-          'transcripts': [
-
-            {
-
-              'isUser': true,
-
-              'time': '21:45 PM',
-
-              'text': 'Malam ini saya merapikan ulang target besok agar tidak kaget lagi.',
-
-              'emotionTag': 'sadness (55%)',
-
-              'emotionEmoji': '😔',
-
-            },
-
-            {
-
-              'isUser': false,
-
-              'time': '21:46 PM',
-
-              'text': 'Langkah yang sangat bijak. Sekarang matikan gawai dan istirahatlah dengan tenang.',
-
-            },
-
-          ],
-
-        },
-
-      ],
-
-    },
-
-    {
-
-      'id': '2',
-
-      'title': 'Pencapaian Kerja & Kegembiraan',
-
-      'date': '23 Oktober 2023',
-
-      'sessionCount': 2,
-
-      'lastSessionTime': '17:00 PM',
-
-      'moodTag': 'Bahagia & Berenergi',
-
-      'moodEmoji': '😃',
-
-      'summary':
-
-          'Kumulatif 2 sesi suara: Diskusi strategi pagi dan perayaan keberhasilan presentasi tim di sore hari.',
-
-      'riskWarning': {'detected': false},
-
-      'aiInsight':
-
-          'Kumulatif Hari Ini: Energi dan motivasimu berada pada tingkat puncak. Apresiasi keberhasilan timmu!',
-
-      'importantEvents': [
-
-        '[Sesi #1 - 10:00 AM] Persiapan materi presentasi laporan',
-
-        '[Sesi #2 - 17:00 PM] Perayaan sukses presentasi bersama tim',
-
-      ],
-
-      'emotionalReflection':
-
-          'Persiapan matang membuahkan hasil positif yang memberi rasa kepuasan tinggi.',
-
-      'sessions': [
-
-        {
-
-          'id': 's1',
-
-          'title': 'Sesi #1: Persiapan Presentasi',
-
-          'time': '10:00 AM',
-
-          'moodTag': 'Fokus & Antusias',
-
-          'moodEmoji': '😃',
-
-          'emotionsBreakdown': [
-
-            {'name': 'happy', 'label': 'Bahagia', 'emoji': '😃', 'percent': 0.60, 'color': Color(0xFFFFE6A7)},
-
-            {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.40, 'color': Color(0xFFA7E6FF)},
-
-          ],
-
-          'transcripts': [
-
-            {
-
-              'isUser': true,
-
-              'time': '10:00 AM',
-
-              'text': 'Materi presentasi sudah siap 100%, mohon doanya LUNA.',
-
-              'emotionTag': 'happy (70%)',
-
-              'emotionEmoji': '😃',
-
-            },
-
-            {
-
-              'isUser': false,
-
-              'time': '10:01 AM',
-
-              'text': 'Kamu sudah berusaha keras, percaya pada kemampuanmu! Semoga sukses!',
-
-            },
-
-          ],
-
-        },
-
-        {
-
-          'id': 's2',
-
-          'title': 'Sesi #2: Perayaan Sukses Sore',
-
-          'time': '17:00 PM',
-
-          'moodTag': 'Sangat Bahagia',
-
-          'moodEmoji': '🥳',
-
-          'emotionsBreakdown': [
-
-            {'name': 'happy', 'label': 'Bahagia', 'emoji': '😃', 'percent': 0.85, 'color': Color(0xFFFFE6A7)},
-
-            {'name': 'surprise', 'label': 'Terkejut', 'emoji': '😲', 'percent': 0.15, 'color': Color(0xFFC3B8FF)},
-
-          ],
-
-          'transcripts': [
-
-            {
-
-              'isUser': true,
-
-              'time': '17:00 PM',
-
-              'text': 'Presentasinya sukses besar! Klien sangat puas!',
-
-              'emotionTag': 'happy (90%)',
-
-              'emotionEmoji': '😃',
-
-            },
-
-            {
-
-              'isUser': false,
-
-              'time': '17:01 AM',
-
-              'text': 'Luar biasa Sarah! Selamat atas pencapaian gemilang ini!',
-
-            },
-
-          ],
-
-        },
-
-      ],
-
-    },
-
-  ];
-
-
-
   late List<Map<String, dynamic>> _entries;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _entries = List.from(_journalEntries);
+    _entries = [];
     _fetchRemoteDiaries();
   }
 
   void refresh() => _fetchRemoteDiaries();
 
   Future<void> _fetchRemoteDiaries() async {
-    if (AppConfig.useMockData) return;
-    setState(() => _isLoading = true);
+    if (AppConfig.useMockData) {
+      if (mounted) {
+        setState(() {
+          _entries = [];
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+    if (mounted) setState(() => _isLoading = true);
     try {
       final headers = await AppConfig.getAuthHeaders();
       final response = await http
@@ -432,12 +72,14 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
           .timeout(const Duration(seconds: 6));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          _entries = data.map((e) => Map<String, dynamic>.from(e)).toList();
-        });
+        if (mounted) {
+          setState(() {
+            _entries = data.map((e) => Map<String, dynamic>.from(e)).toList();
+          });
+        }
       }
     } catch (_) {
-      // Keep existing entries
+      // Keep existing entries or empty
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -559,18 +201,6 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
                         color: AppColors.primary,
 
                       ),
-
-                    ),
-
-                    const Spacer(),
-
-                    IconButton(
-
-                      icon: const Icon(Icons.settings_outlined),
-
-                      color: AppColors.primary,
-
-                      onPressed: () {},
 
                     ),
 
@@ -798,44 +428,85 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
                       // Journal History Cards List
 
                       if (filteredList.isEmpty)
-
-                        Center(
-
-                          child: Padding(
-
-                            padding: const EdgeInsets.symmetric(vertical: 40.0),
-
-                            child: Column(
-
-                              children: [
-
-                                const Icon(Icons.search_off, size: 48, color: AppColors.textLight),
-
-                                const SizedBox(height: 12),
-
-                                Text(
-
-                                  'Tidak ada jurnal yang sesuai',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 14,
-
-                                    fontWeight: FontWeight.w600,
-
-                                    color: AppColors.textSecondary,
-
+                        if (_entries.isEmpty && !_isLoading)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 48.0, horizontal: 16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryContainer.withValues(alpha: 0.5),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.menu_book_outlined,
+                                      size: 42,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
-
-                                ),
-
-                              ],
-
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Belum Ada Jurnal Refleksi',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Ceritakan harimu atau lakukan panggilan suara dengan LUNA. Setelah sesi selesai, jurnal refleksi emosimu akan otomatis tersintesis dan tersimpan di sini.',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      color: AppColors.textLight,
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/call');
+                                    },
+                                    icon: const Icon(Icons.phone_in_talk, size: 18),
+                                    label: const Text('Mulai Bicara dengan LUNA'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-
-                          ),
-
-                        )
+                          )
+                        else
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 40.0),
+                              child: Column(
+                                children: [
+                                  const Icon(Icons.search_off, size: 48, color: AppColors.textLight),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Tidak ada jurnal yang sesuai',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
 
                       else
 

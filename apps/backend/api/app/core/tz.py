@@ -1,8 +1,11 @@
-from datetime import date, datetime, time, timezone
-from zoneinfo import ZoneInfo
+from datetime import date, datetime, time, timedelta, timezone
 
-# Waktu Indonesia Barat (WIB) is UTC+7
-WIB = ZoneInfo("Asia/Jakarta")
+try:
+    from zoneinfo import ZoneInfo
+    WIB = ZoneInfo("Asia/Jakarta")
+except Exception:
+    WIB = timezone(timedelta(hours=7), name="WIB")
+
 
 
 def get_wib_now() -> datetime:
