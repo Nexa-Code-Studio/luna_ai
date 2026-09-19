@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../config/call_config.dart';
+
 class QueuedAudioChunk {
   final Uint8List bytes;
   final int assistantTurnId;
@@ -29,6 +31,7 @@ class AiAudioPlaybackService {
   int _currentAssistantTurnId = 0;
   bool _isPlaying = false;
   bool _isStreamFinished = false;
+  DateTime? _lastChunkCompletedAt;
 
   final StreamController<int> _playbackCompletedController =
       StreamController<int>.broadcast();
@@ -38,9 +41,18 @@ class AiAudioPlaybackService {
   int get currentAssistantTurnId => _currentAssistantTurnId;
 
   void _initPlayerListeners() {
-    _player.onPlayerComplete.listen((_) {
+    _player.onPlayerComplete.listen((_) async {
       _isPlaying = false;
-      _playNextChunk();
+      _lastChunkCompletedAt = DateTime.now();
+
+      // Tunggu jeda alami antar-kalimat sebelum memainkan chunk berikutnya
+      if (_queue.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: CallConfig.interChunkPauseMs));
+      }
+
+      if (!_cancelledTurnIds.contains(_currentAssistantTurnId)) {
+        _playNextChunk();
+      }
     });
   }
 
@@ -50,6 +62,7 @@ class AiAudioPlaybackService {
       stop();
       _currentAssistantTurnId = assistantTurnId;
       _isStreamFinished = false;
+      _lastChunkCompletedAt = null;
     }
   }
 
@@ -104,6 +117,17 @@ class AiAudioPlaybackService {
       return;
     }
 
+    // Pastikan jeda minimal antar kalimat jika chunk baru tiba terlambat
+    if (_lastChunkCompletedAt != null) {
+      final elapsed = DateTime.now().difference(_lastChunkCompletedAt!).inMilliseconds;
+      if (elapsed < CallConfig.interChunkPauseMs) {
+        await Future.delayed(Duration(milliseconds: CallConfig.interChunkPauseMs - elapsed));
+        if (_cancelledTurnIds.contains(nextChunk.assistantTurnId)) {
+          return;
+        }
+      }
+    }
+
     try {
       _isPlaying = true;
       debugPrint('🔊 [AUDIO PLAYING CHUNK]: Turn ${nextChunk.assistantTurnId}, Seq ${nextChunk.sequence} (${nextChunk.bytes.length} bytes)');
@@ -129,6 +153,7 @@ class AiAudioPlaybackService {
     _queue.clear();
     _isPlaying = false;
     _isStreamFinished = false;
+    _lastChunkCompletedAt = null;
 
     try {
       await _player.stop();

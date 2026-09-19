@@ -3,23 +3,27 @@ import base64
 from datetime import UTC, date, datetime, timedelta
 import json
 import logging
+import re
 import time
 from typing import Any
 import uuid
 
 from fastapi import WebSocket
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.orm import selectinload
 
+from ai.services.dass_extraction_service import DASSExtractionService
 from app.core.call_config import call_config
 from app.core.prompt_templates import LUNA_SYSTEM_PROMPT
 from app.core.security import decode_access_token
-from app.core.tz import get_wib_now
+from app.core.tz import get_wib_now, get_wib_today
 from app.db.session import AsyncSessionLocal
 from app.models.conversation import Conversation, Message
+from app.models.dass import DASSAssessment
 from app.models.diary import DiaryEntry
 from app.models.enums import MessageType
 from app.models.user import User
+from app.services.dass_service import DASSService
 from app.services.diary_generator import DiaryGeneratorService
 from app.services.emotion_analyzer import EmotionAnalyzerService
 from app.services.ml_emotion_detector import MLEmotionDetectorService
@@ -53,6 +57,7 @@ class CallSession:
         self.aggregator = TurnAggregator(call_id=session_id, initial_turn_id=1)
         self.thesis_metrics_log: list[dict[str, Any]] = []
         self.latest_orchestration_turn: OrchestratedTurnResult | None = None
+        self.dass_scores: dict[str, int] | None = None
 
     def cancel_active_ai_task(self) -> None:
         if self._current_ai_task and not self._current_ai_task.done():
@@ -92,10 +97,12 @@ class CallSessionManager:
             session.cancel_active_ai_task()
             session.cancel_endpoint_timer()
 
-            # Launch background sync for Today's Diary ONCE upon session disconnect
+            # Launch background sync for Today's Diary & DASS-21 ONCE upon session disconnect
             if session.conversation_history and len(session.conversation_history) > 1:
                 logger.info(f"🔌 [DISCONNECT DIARY SYNC START] Session {session_id}: Generating today's diary entry via DeepSeek LLM...")
                 asyncio.create_task(self._sync_today_diary(session))
+                logger.info(f"📊 [DISCONNECT DASS SYNC START] Session {session_id}: Extracting today's DASS-21 assessment...")
+                asyncio.create_task(self._sync_today_dass(session))
 
             del self._active_sessions[session_id]
             logger.info(f"Unregistered call session {session_id}")
@@ -152,6 +159,34 @@ class CallSessionManager:
                             session.conversation_history[0].content += (
                                 f"\n\n[Memori Percakapan Terdahulu Pengguna]:\n{memory_summary}"
                             )
+
+                    # Retrieve latest DASS-21 psychometric assessment context
+                    dass_stmt = (
+                        select(DASSAssessment)
+                        .where(DASSAssessment.user_id == user.id)
+                        .order_by(desc(DASSAssessment.assessed_date))
+                        .limit(1)
+                    )
+                    res_dass = await db.execute(dass_stmt)
+                    latest_dass = res_dass.scalars().first()
+                    if latest_dass and (latest_dass.depression_score > 0 or latest_dass.anxiety_score > 0 or latest_dass.stress_score > 0):
+                        session.dass_scores = {
+                            "depression": latest_dass.depression_score,
+                            "anxiety": latest_dass.anxiety_score,
+                            "stress": latest_dass.stress_score,
+                        }
+                        session.conversation_history[0].content += (
+                            f"\n\n[Profil Asesmen Psikologis DASS-21 Terkini Pengguna]:\n"
+                            f"- Tingkat Depresi: {latest_dass.depression_severity} (Skor: {latest_dass.depression_score})\n"
+                            f"- Tingkat Kecemasan: {latest_dass.anxiety_severity} (Skor: {latest_dass.anxiety_score})\n"
+                            f"- Tingkat Stres: {latest_dass.stress_severity} (Skor: {latest_dass.stress_score})\n"
+                            f"Gunakan profil ini sebagai acuan empati dan gaya berbicara (jangan sebut angka skor secara kaku, "
+                            f"melainkan sesuaikan kehangatan dan kepekaanmu terhadap kondisi emosionalnya)."
+                        )
+                        logger.info(
+                            f"📊 [DASS CONTEXT LOADED] Session {session.session_id}: "
+                            f"Depression={latest_dass.depression_severity}, Anxiety={latest_dass.anxiety_severity}, Stress={latest_dass.stress_severity}"
+                        )
 
                     # Always create a NEW distinct Conversation record for this new voice session
                     now_str = get_wib_now().strftime("%d %b %Y %H:%M")
@@ -258,6 +293,42 @@ class CallSessionManager:
                 logger.info(f"📖 [DISCONNECT DIARY SYNC SUCCESS] Session {session.session_id}: Synced cumulative DiaryEntry '{diary_entry.title}' for {diary_entry.entry_date}")
         except Exception as e:
             logger.error(f"⚠️ [SYNC DIARY EXCEPTION] Session {session.session_id}: {e}")
+
+    async def _sync_today_dass(self, session: CallSession) -> None:
+        """Extract and update today's DASS-21 assessment upon disconnecting a voice call session."""
+        if not session.user_id:
+            return
+
+        try:
+            user_texts = [m.content for m in session.conversation_history if m.role == "user" and m.content]
+            if not user_texts:
+                return
+
+            formatted_msgs = []
+            for m in session.conversation_history:
+                if m.role in ("user", "assistant") and m.content and m.content.strip():
+                    formatted_msgs.append(f"{m.role.upper()}: {m.content}")
+
+            transcript = "\n".join(formatted_msgs)
+            extractor = DASSExtractionService()
+            extracted_items = await extractor.extract_from_transcript(transcript)
+
+            async with AsyncSessionLocal() as db:
+                today_wib = get_wib_today()
+                saved_record = await DASSService.save_or_update_extracted(
+                    user_id=session.user_id,
+                    assessed_date=today_wib,
+                    extracted_items=extracted_items,
+                    conversation_id=session.db_conversation_id,
+                    db=db,
+                )
+                logger.info(
+                    f"📊 [DISCONNECT DASS SYNC SUCCESS] Session {session.session_id}: "
+                    f"Synced DASS-21 for {today_wib} (D: {saved_record.depression_score}, "
+                    f"A: {saved_record.anxiety_score}, S: {saved_record.stress_score})"
+                )
+        except Exception as e:
+            logger.error(f"⚠️ [SYNC DASS EXCEPTION] Session {session.session_id}: {e}")
 
     # --------------------------------------------------------------------------
     # Hybrid Half-Duplex WebSocket Event Handlers
@@ -618,10 +689,11 @@ class CallSessionManager:
                     user_content = msg.content
                     break
 
-            # Eksekusi Orkestrasi: Emotion + Symptoms + Risk + SafetyGate + Qdrant RAG
+            # Eksekusi Orkestrasi: Emotion + Symptoms + Risk + SafetyGate + Qdrant RAG + DASS Profiling
             turn = await self.orchestrator.prepare_turn(
                 user_text=user_content or "Halo Luna",
                 conversation_history=session.conversation_history,
+                dass_scores=session.dass_scores,
             )
             session.latest_orchestration_turn = turn
 
@@ -672,21 +744,13 @@ class CallSessionManager:
                 )
                 await self._save_message_to_db(session, "assistant", spoken_text)
 
-            # Sintesis audio TTS utuh dalam satu panggilan setelah teks selesai digenerate keseluruhan
-            total_audio_bytes = 0
-            audio_bytes = None
-            try:
-                logger.info(f"🎙️ [TTS FULL SYNTHESIS START] Session {session.session_id}: '{spoken_text}'")
-                audio_bytes = await tts_provider.synthesize(spoken_text)
-                if audio_bytes:
-                    total_audio_bytes = len(audio_bytes)
-            except Exception as ex:
-                logger.error(f"⚠️ [TTS FULL SYNTHESIS ERROR] Session {session.session_id}: {ex}")
+            # Pecah kalimat agar dibacakan per kalimat secara berurutan dengan jeda alami, bukan langsung dibaca sekaligus tanpa jeda
+            raw_sentences = re.split(r"(?<=[.!?])\s+", spoken_text)
+            sentences = [s.strip() for s in raw_sentences if s.strip()]
+            if not sentences:
+                sentences = [spoken_text]
 
-            if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
-                return
-
-            # Kirim teks transkrip lengkap bersamaan saat audio siap dimainkan
+            # Kirim teks transkrip lengkap terlebih dahulu agar UI langsung siap
             await session.websocket.send_json({
                 "type": "ai.transcript_chunk",
                 "call_id": session.session_id,
@@ -695,21 +759,36 @@ class CallSessionManager:
                 "text": spoken_text,
             })
 
-            # Kirim audio chunk utuh jika ada
-            if audio_bytes:
-                b64_audio = base64.b64encode(audio_bytes).decode("ascii")
-                await session.websocket.send_json({
-                    "type": "ai.audio_chunk",
-                    "call_id": session.session_id,
-                    "assistant_turn_id": task_id,
-                    "sequence": 1,
-                    "audio_base64": b64_audio,
-                })
-                logger.info(f"🔊 [OUTGOING TTS AUDIO COMPLETE] Session {session.session_id}: Sent {total_audio_bytes} bytes")
+            total_audio_bytes = 0
+            for seq, sentence in enumerate(sentences, start=1):
+                if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
+                    logger.info(f"⚡ [TTS INTERRUPTED BEFORE SENTENCE {seq}] Session {session.session_id}")
+                    return
+
+                try:
+                    logger.info(f"🎙️ [TTS SYNTHESIZE SENTENCE {seq}/{len(sentences)}] Session {session.session_id}: '{sentence}'")
+                    chunk_audio = await tts_provider.synthesize(sentence)
+                    if chunk_audio:
+                        total_audio_bytes += len(chunk_audio)
+                        b64_audio = base64.b64encode(chunk_audio).decode("ascii")
+                        await session.websocket.send_json({
+                            "type": "ai.audio_chunk",
+                            "call_id": session.session_id,
+                            "assistant_turn_id": task_id,
+                            "sequence": seq,
+                            "text": sentence,
+                            "audio_base64": b64_audio,
+                        })
+                        logger.info(f"🔊 [OUTGOING TTS AUDIO CHUNK {seq}/{len(sentences)}] Session {session.session_id}: Sent {len(chunk_audio)} bytes")
+                except Exception as ex:
+                    logger.error(f"⚠️ [TTS SYNTHESIS ERROR SENTENCE {seq}] Session {session.session_id}: {ex}")
 
             # Signal speech completion if this task is still active
             if session.current_task_id == task_id and task_id not in session.cancelled_assistant_turn_ids:
-                logger.info(f"✅ [AI SPEECH COMPLETE] Session {session.session_id} (Assistant Turn {task_id}): Sent total {total_audio_bytes} audio bytes.")
+                logger.info(
+                    f"✅ [AI SPEECH COMPLETE] Session {session.session_id} (Assistant Turn {task_id}): "
+                    f"Sent {len(sentences)} sentence chunks, total {total_audio_bytes} audio bytes."
+                )
                 await session.websocket.send_json({
                     "type": "ai.speech_finished",
                     "call_id": session.session_id,

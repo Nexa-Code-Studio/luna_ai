@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,7 +16,27 @@ class MonitoringScreen extends ConsumerStatefulWidget {
   ConsumerState<MonitoringScreen> createState() => MonitoringScreenState();
 }
 
-class MonitoringScreenState extends ConsumerState<MonitoringScreen> {
+class MonitoringScreenState extends ConsumerState<MonitoringScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      refresh();
+    }
+  }
+
   void refresh() {
     ref.invalidate(monitoringDataProvider);
   }
@@ -55,8 +76,10 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen> {
       case 2:
         return const [Color(0xFFFFE0B2), Color(0xFFFFB74D)];
       case 1:
-      default:
         return const [Color(0xFFFFEBEE), Color(0xFFFFCDD2)];
+      case 0:
+      default:
+        return const [Color(0xFFF1F5F9), Color(0xFFE2E8F0)];
     }
   }
 
@@ -110,65 +133,66 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen> {
                         color: AppColors.primary,
                       ),
                     ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.refresh_rounded),
-                      color: AppColors.primary,
-                      tooltip: 'Muat Ulang',
-                      onPressed: () {
-                        ref.invalidate(monitoringDataProvider);
-                      },
-                    ),
                   ],
                 ),
               ),
 
-              // Scrollable Content
+              // Scrollable Content with Pull-to-Refresh
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title & Subtitle
-                      Text(
-                        'Ritem & Tren Emosional',
-                        style: GoogleFonts.inter(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
+                child: RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async {
+                    ref.invalidate(monitoringDataProvider);
+                    try {
+                      await ref.read(monitoringDataProvider.future);
+                    } catch (_) {}
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 100.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title & Subtitle
+                        Text(
+                          'Ritem & Tren Emosional',
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Grafik dinamika 7 emosi dan tingkat risiko kesehatan mentalmu.',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                          height: 1.4,
+                        const SizedBox(height: 4),
+                        Text(
+                          'Grafik dinamika 7 emosi dan tingkat risiko kesehatan mentalmu.',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // PERIOD FILTER CHIPS
-                      Row(
-                        children: [
-                          _buildPeriodChip('today', 'Hari Ini', selectedPeriod),
-                          const SizedBox(width: 8),
-                          _buildPeriodChip('week', 'Minggu Ini', selectedPeriod),
-                          const SizedBox(width: 8),
-                          _buildPeriodChip('month', 'Bulan Ini', selectedPeriod),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
+                        // PERIOD FILTER CHIPS
+                        Row(
+                          children: [
+                            _buildPeriodChip('today', 'Hari Ini', selectedPeriod),
+                            const SizedBox(width: 8),
+                            _buildPeriodChip('week', 'Minggu Ini', selectedPeriod),
+                            const SizedBox(width: 8),
+                            _buildPeriodChip('month', 'Bulan Ini', selectedPeriod),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
 
-                      // ASYNC CONTENT
-                      asyncData.when(
-                        data: (data) => _buildMonitoringContent(context, data),
-                        loading: () => _buildLoadingState(),
-                        error: (error, _) => _buildErrorState(error),
-                      ),
-                    ],
+                        // ASYNC CONTENT
+                        asyncData.when(
+                          data: (data) => _buildMonitoringContent(context, data),
+                          loading: () => _buildLoadingState(),
+                          error: (error, _) => _buildErrorState(error),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -229,67 +253,65 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen> {
         GlassCard(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0F4FB),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.lightbulb_outline,
-                  color: Color(0xFF20667B),
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'RINGKASAN AI',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textLight,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryContainer,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            data.periodLabel,
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      ],
+              // Header: Icon + Title + Period Badge
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      data.summary,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                        height: 1.45,
+                    child: const Icon(
+                      Icons.auto_awesome,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'RINGKASAN AI',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryContainer,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        width: 1,
                       ),
                     ),
-                  ],
+                    child: Text(
+                      data.periodLabel,
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Body content text cleanly below icon and title
+              Text(
+                data.summary,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                  height: 1.55,
                 ),
               ),
             ],
@@ -632,9 +654,7 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-
-        // 5. KARTU RINGKASAN & AKSES LEMBAR DASS-21
+        // 5. KARTU RINGKASAN & AKSES LEMBAR DASS-21 (Hanya muncul jika ada asesmen DASS riil)
         _buildDASSLauncherCard(context, ref.watch(selectedPeriodProvider)),
       ],
     );
@@ -643,138 +663,144 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen> {
   Widget _buildDASSLauncherCard(BuildContext context, String selectedPeriod) {
     final dassState = ref.watch(dassAssessmentNotifierProvider);
 
-    return GlassCard(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0F4FB),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.psychology_outlined,
-                  color: Color(0xFF20667B),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return dassState.assessment.when(
+      data: (assessment) {
+        // Jangan tampilkan kartu jika belum pernah ada asesmen DASS yang dipicu atau diekstraksi
+        final bool hasValidAssessment = assessment.id != null &&
+            assessment.status != 'unassessed' &&
+            assessment.status.isNotEmpty &&
+            (assessment.verifiedByUser || assessment.status == 'auto_extracted');
+
+        if (!hasValidAssessment) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: GlassCard(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          'LEMBAR EVALUASI DASS-21',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textLight,
-                            letterSpacing: 0.8,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F4FB),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.psychology_outlined,
+                        color: Color(0xFF20667B),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'LEMBAR EVALUASI DASS-21',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textLight,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F0FE),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '21 Butir',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F0FE),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '21 Butir',
+                          const SizedBox(height: 3),
+                          Text(
+                            assessment.verifiedByUser
+                                ? 'Skor DASS-21 telah diverifikasi'
+                                : 'Tersintesis otomatis • Ketuk untuk meninjau',
                             style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Deteksi otomatis obrolan & validasi mandiri',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
+                const SizedBox(height: 14),
 
-          // Mini Subscale Summary Pills if loaded
-          dassState.assessment.when(
-            data: (assessment) {
-              return Row(
-                children: [
-                  _buildSubscaleMiniChip('Stres', '${assessment.stressScore}', const Color(0xFFFF7675)),
-                  const SizedBox(width: 8),
-                  _buildSubscaleMiniChip('Kecemasan', '${assessment.anxietyScore}', const Color(0xFF6C63FF)),
-                  const SizedBox(width: 8),
-                  _buildSubscaleMiniChip('Depresi', '${assessment.depressionScore}', const Color(0xFF74B9FF)),
-                ],
-              );
-            },
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                // Mini Subscale Summary Pills
+                Row(
+                  children: [
+                    _buildSubscaleMiniChip('Stres', '${assessment.stressScore}', const Color(0xFFFF7675)),
+                    const SizedBox(width: 8),
+                    _buildSubscaleMiniChip('Kecemasan', '${assessment.anxietyScore}', const Color(0xFF6C63FF)),
+                    const SizedBox(width: 8),
+                    _buildSubscaleMiniChip('Depresi', '${assessment.depressionScore}', const Color(0xFF74B9FF)),
+                  ],
                 ),
-              ),
-            ),
-            error: (_, _) => const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 14),
+                const SizedBox(height: 14),
 
-          // Open Full Assessment Button
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  '/dass_assessment',
-                  arguments: {'period': selectedPeriod},
-                );
-              },
-              icon: const Icon(Icons.assignment_turned_in_outlined, size: 18),
-              label: Text(
-                selectedPeriod == 'today'
-                    ? 'Buka & Koreksi Asesmen Hari Ini'
-                    : 'Buka Lembar Evaluasi Riwayat',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                // Open Full Assessment Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/dass_assessment',
+                        arguments: {'period': selectedPeriod},
+                      );
+                    },
+                    icon: const Icon(Icons.assignment_turned_in_outlined, size: 18),
+                    label: Text(
+                      selectedPeriod == 'today'
+                          ? 'Buka & Tinjau Asesmen Hari Ini'
+                          : 'Buka Lembar Evaluasi Riwayat',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
@@ -888,12 +914,13 @@ class _StackedEmotionChartPainter extends CustomPainter {
 
     final int barCount = chartData.length;
     final double availableWidth = size.width;
-    final double barWidth = (availableWidth / barCount) * 0.45;
-    final double spacing = (availableWidth - (barWidth * barCount)) / (barCount + 1);
+    const double maxBarWidth = 28.0;
+    final double barWidth = min(maxBarWidth, (availableWidth / barCount) * 0.45);
 
     for (int i = 0; i < barCount; i++) {
       final segments = chartData[i];
-      final double barLeft = spacing + i * (barWidth + spacing);
+      final double centerX = (i + 0.5) * (availableWidth / barCount);
+      final double barLeft = centerX - (barWidth / 2);
       double currentBottom = size.height;
 
       final double totalRatio = segments.fold(0.0, (sum, val) => sum + val);

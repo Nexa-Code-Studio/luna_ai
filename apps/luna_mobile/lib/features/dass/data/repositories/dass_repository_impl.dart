@@ -16,4 +16,9 @@ class DASSRepositoryImpl implements DASSRepository {
   Future<DASSAssessmentEntity> updateAssessment(List<Map<String, dynamic>> items) {
     return _dataSource.updateAssessment(items);
   }
+
+  @override
+  Future<DASSAssessmentEntity> extractTodayAssessment() {
+    return _dataSource.extractTodayAssessment();
+  }
 }
