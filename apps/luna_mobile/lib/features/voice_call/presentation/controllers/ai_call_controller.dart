@@ -193,7 +193,10 @@ class AiCallController extends StateNotifier<AiCallViewState> {
       enterThinking();
     } else if (type == 'ai.transcript_chunk' || type == 'ai_transcript_chunk') {
       final text = event['text'] as String? ?? '';
-      state = state.copyWith(aiTranscript: state.aiTranscript + text);
+      // Set full transcript if incoming chunk contains complete response, or append if chunked
+      state = state.copyWith(
+        aiTranscript: text.length >= state.aiTranscript.length ? text : (state.aiTranscript + text),
+      );
     } else if (type == 'ai.speech_finished' || type == 'ai_speech_finished') {
       final turnId = (event['assistant_turn_id'] as num?)?.toInt() ?? state.assistantTurnId;
       _audioPlaybackService.markStreamFinished(turnId);
@@ -275,8 +278,10 @@ class AiCallController extends StateNotifier<AiCallViewState> {
     await Future.delayed(const Duration(milliseconds: CallConfig.playbackToListeningGuardMs));
 
     if (state.callState == CallState.aiSpeaking && !_isDisposed) {
-      // Increment logical user conversation turn
-      state = state.copyWith(userTurnId: state.userTurnId + 1);
+      // Ensure userTurnId advances to at least finishedTurnId + 1 without duplicate double increment
+      if (state.userTurnId <= finishedTurnId) {
+        state = state.copyWith(userTurnId: finishedTurnId + 1);
+      }
       await enterListening();
     }
   }

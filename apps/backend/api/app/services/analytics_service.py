@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.tz import WIB, get_wib_now, get_wib_today, to_wib
 from app.models.conversation import Conversation, Message
+from app.models.dass import DASSAssessment
 from app.models.diary import DiaryEntry
 from app.models.safety import EmotionAnalysis
 
@@ -244,6 +245,20 @@ class AnalyticsService:
                 stress_pct = 0.20
                 anxiety_pct = 0.20
                 depression_pct = 0.10
+
+        # Query today's DASS-21 assessment if available
+        dass_q = select(DASSAssessment).where(
+            DASSAssessment.user_id == user_id,
+            DASSAssessment.assessed_date == today_wib,
+        )
+        dass_res = await db.execute(dass_q)
+        today_dass = dass_res.scalars().first()
+
+        if today_dass and (today_dass.verified_by_user or today_dass.status == "auto_extracted"):
+            # Map measured 0-42 scale into percentage 0.0 - 1.0
+            stress_pct = round(min(1.0, today_dass.stress_score / 42.0), 2)
+            anxiety_pct = round(min(1.0, today_dass.anxiety_score / 42.0), 2)
+            depression_pct = round(min(1.0, today_dass.depression_score / 42.0), 2)
 
         risks = [
             AnalyticsService._format_risk_card("Stres Akademik / Kerja", "stress", stress_pct),

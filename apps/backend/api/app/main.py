@@ -9,6 +9,7 @@ from app.api.routes.analytics import router as analytics_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.call import router as call_router
 from app.api.routes.conversations import router as conversations_router
+from app.api.routes.dass import router as dass_router
 from app.api.routes.diaries import router as diaries_router
 from app.api.routes.health import router as health_router
 from app.api.routes.recommendations import router as recommendations_router
@@ -51,6 +52,7 @@ app.include_router(user_router, prefix="/api/v1")
 app.include_router(diaries_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
 app.include_router(recommendations_router, prefix="/api/v1")
+app.include_router(dass_router, prefix="/api/v1")
 app.include_router(conversations_router, prefix="/api/v1")
 app.include_router(call_router, prefix="/api/v1")
 

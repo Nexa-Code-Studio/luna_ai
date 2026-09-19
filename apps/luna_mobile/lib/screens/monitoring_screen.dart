@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../features/dass/presentation/providers/dass_provider.dart';
 import '../features/monitoring/domain/entities/monitoring_data_entity.dart';
 import '../features/monitoring/presentation/providers/monitoring_provider.dart';
 import '../theme/app_colors.dart';
@@ -631,7 +632,183 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+
+        // 5. KARTU RINGKASAN & AKSES LEMBAR DASS-21
+        _buildDASSLauncherCard(context, ref.watch(selectedPeriodProvider)),
       ],
+    );
+  }
+
+  Widget _buildDASSLauncherCard(BuildContext context, String selectedPeriod) {
+    final dassState = ref.watch(dassAssessmentNotifierProvider);
+
+    return GlassCard(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0F4FB),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.psychology_outlined,
+                  color: Color(0xFF20667B),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'LEMBAR EVALUASI DASS-21',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textLight,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F0FE),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '21 Butir',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Deteksi otomatis obrolan & validasi mandiri',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Mini Subscale Summary Pills if loaded
+          dassState.assessment.when(
+            data: (assessment) {
+              return Row(
+                children: [
+                  _buildSubscaleMiniChip('Stres', '${assessment.stressScore}', const Color(0xFFFF7675)),
+                  const SizedBox(width: 8),
+                  _buildSubscaleMiniChip('Kecemasan', '${assessment.anxietyScore}', const Color(0xFF6C63FF)),
+                  const SizedBox(width: 8),
+                  _buildSubscaleMiniChip('Depresi', '${assessment.depressionScore}', const Color(0xFF74B9FF)),
+                ],
+              );
+            },
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 14),
+
+          // Open Full Assessment Button
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/dass_assessment',
+                  arguments: {'period': selectedPeriod},
+                );
+              },
+              icon: const Icon(Icons.assignment_turned_in_outlined, size: 18),
+              label: Text(
+                selectedPeriod == 'today'
+                    ? 'Buka & Koreksi Asesmen Hari Ini'
+                    : 'Buka Lembar Evaluasi Riwayat',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubscaleMiniChip(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF1E1B4B),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
