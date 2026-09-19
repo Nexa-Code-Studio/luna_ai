@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/ai_conversation_screen.dart';
 import 'screens/ai_diary_detail_screen.dart';
 import 'screens/ai_diary_screen.dart';
+import 'screens/dass_assessment_screen.dart';
 import 'screens/emergency_contacts_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell_screen.dart';
@@ -64,7 +65,11 @@ class LunaApp extends StatelessWidget {
         },
 
         '/monitoring': (context) => const MonitoringScreen(),
-
+        '/dass_assessment': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final initialPeriod = (args?['period'] as String?) ?? 'today';
+          return DASSAssessmentScreen(initialPeriod: initialPeriod);
+        },
         '/recommendation': (context) => const RecommendationScreen(),
 
         '/support': (context) => const SupportEmergencyScreen(),

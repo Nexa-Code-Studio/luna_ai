@@ -28,6 +28,7 @@ from packages.ai.factories.llm_factory import LLMFactory
 from packages.ai.factories.tts_factory import TTSFactory
 from packages.ai.interfaces.llm import LLMMessage
 from packages.ai.orchestration.orchestrator import AIOrchestrator, OrchestratedTurnResult
+from packages.ai.utils.tts_text_normalizer import sanitize_text_for_tts
 
 logger = logging.getLogger(__name__)
 
@@ -300,8 +301,14 @@ class CallSessionManager:
         user_turn_id = payload.get("user_turn_id", session.aggregator.user_turn_id)
         stt_session_id = payload.get("stt_session_id", 1)
 
-        if user_turn_id != session.aggregator.user_turn_id or session.aggregator.is_committed:
+        if session.aggregator.is_committed:
             return
+
+        if user_turn_id != session.aggregator.user_turn_id:
+            logger.info(
+                f"🔄 [TURN AUTO-ALIGN PARTIAL] Session {session.session_id}: Aligning turn {session.aggregator.user_turn_id} -> {user_turn_id}"
+            )
+            session.aggregator.current_turn.user_turn_id = user_turn_id
 
         session.state = "user_speaking"
         session.cancel_endpoint_timer()
@@ -313,9 +320,15 @@ class CallSessionManager:
         user_turn_id = payload.get("user_turn_id", session.aggregator.user_turn_id)
         stt_session_id = payload.get("stt_session_id", 1)
 
-        if user_turn_id != session.aggregator.user_turn_id or session.aggregator.is_committed:
-            logger.warning(f"⚠️ [STT FINAL DISCARDED] Turn {user_turn_id} != active {session.aggregator.user_turn_id}")
+        if session.aggregator.is_committed:
+            logger.warning(f"⚠️ [STT FINAL DISCARDED] Turn already committed: {session.aggregator.user_turn_id}")
             return
+
+        if user_turn_id != session.aggregator.user_turn_id:
+            logger.info(
+                f"🔄 [TURN AUTO-ALIGN FINAL] Session {session.session_id}: Aligning turn {session.aggregator.user_turn_id} -> {user_turn_id}"
+            )
+            session.aggregator.current_turn.user_turn_id = user_turn_id
 
         session.cancel_endpoint_timer()
         session.aggregator.add_final_segment(text, stt_session_id)
@@ -330,8 +343,11 @@ class CallSessionManager:
         user_turn_id = payload.get("user_turn_id", session.aggregator.user_turn_id)
         stt_session_id = payload.get("stt_session_id", 1)
 
-        if user_turn_id != session.aggregator.user_turn_id or session.aggregator.is_committed:
+        if session.aggregator.is_committed:
             return
+
+        if user_turn_id != session.aggregator.user_turn_id:
+            session.aggregator.current_turn.user_turn_id = user_turn_id
 
         session.aggregator.update_stt_status(status, stt_session_id)
         logger.info(f"🎙️ [STT STATUS] Session {session.session_id} | Turn {user_turn_id}: status={status}")
@@ -379,8 +395,14 @@ class CallSessionManager:
 
     async def _handle_force_commit(self, session: CallSession, payload: dict[str, Any]) -> None:
         user_turn_id = payload.get("user_turn_id", session.aggregator.user_turn_id)
-        if user_turn_id != session.aggregator.user_turn_id:
+        if session.aggregator.is_committed:
             return
+
+        if user_turn_id != session.aggregator.user_turn_id:
+            logger.info(
+                f"🔄 [FORCE COMMIT AUTO-ALIGN] Session {session.session_id}: Aligning turn {session.aggregator.user_turn_id} -> {user_turn_id}"
+            )
+            session.aggregator.current_turn.user_turn_id = user_turn_id
 
         logger.info(f"👆 [USER FORCE COMMIT] Session {session.session_id} | Turn {user_turn_id}")
         transcript = session.aggregator.force_commit()
@@ -619,86 +641,71 @@ class CallSessionManager:
                     logger.warning(f"Failed to send crisis event over websocket: {ws_err}")
 
             full_text_list = []
-            sentence_buffer = ""
-            total_audio_bytes = 0
-            chunk_sequence = 0
-
-            async def _synthesize_and_send_chunk(text_chunk: str) -> None:
-                nonlocal total_audio_bytes, chunk_sequence
-                clean_chunk = text_chunk.strip()
-                if not clean_chunk or session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
-                    return
-                try:
-                    logger.info(f"🎙️ [TTS CHUNK SYNTHESIZING] Session {session.session_id}: '{clean_chunk}'")
-                    audio_bytes = await tts_provider.synthesize(clean_chunk)
-                    if session.current_task_id == task_id and task_id not in session.cancelled_assistant_turn_ids and audio_bytes:
-                        total_audio_bytes += len(audio_bytes)
-                        chunk_sequence += 1
-                        b64_audio = base64.b64encode(audio_bytes).decode("ascii")
-
-                        # Send structured JSON audio chunk
-                        await session.websocket.send_json({
-                            "type": "ai.audio_chunk",
-                            "call_id": session.session_id,
-                            "assistant_turn_id": task_id,
-                            "sequence": chunk_sequence,
-                            "audio_base64": b64_audio,
-                        })
-
-                        logger.info(f"🔊 [OUTGOING TTS AUDIO CHUNK] Session {session.session_id}: Sent seq {chunk_sequence} ({len(audio_bytes)} bytes)")
-                except Exception as ex:
-                    logger.error(f"⚠️ [TTS CHUNK SYNTHESIS ERROR] Session {session.session_id}: {ex}")
-
             try:
-                transcript_seq = 0
                 async for token in turn.token_stream:
                     if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
                         logger.info(f"⚡ [LLM STREAM SUPERSEDED] Session {session.session_id} (Assistant Turn {task_id})")
                         break
                     full_text_list.append(token)
-                    sentence_buffer += token
-                    transcript_seq += 1
-
-                    # Send structured transcript chunk
-                    await session.websocket.send_json({
-                        "type": "ai.transcript_chunk",
-                        "call_id": session.session_id,
-                        "assistant_turn_id": task_id,
-                        "sequence": transcript_seq,
-                        "text": token,
-                    })
-
-                    # Check for sentence delimiters for immediate TTS streaming
-                    if any(p in sentence_buffer for p in [".", "!", "?", "\n"]) or ("," in sentence_buffer and len(sentence_buffer) >= 35):
-                        chunk_to_speak = sentence_buffer
-                        sentence_buffer = ""
-                        await _synthesize_and_send_chunk(chunk_to_speak)
-
-                # Trailing text in sentence buffer
-                if sentence_buffer.strip() and session.current_task_id == task_id and task_id not in session.cancelled_assistant_turn_ids:
-                    await _synthesize_and_send_chunk(sentence_buffer)
-                    sentence_buffer = ""
 
             except asyncio.CancelledError:
                 logger.info(f"⚡ [LLM STREAM CANCELLED] Session {session.session_id} (Assistant Turn {task_id})")
                 raise
             except Exception as e:
                 logger.error(f"❌ [LLM STREAM ERROR] Session {session.session_id} (Assistant Turn {task_id}): {e}")
-                fallback_msg = "Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"
-                full_text_list = [fallback_msg]
-                await _synthesize_and_send_chunk(fallback_msg)
+                full_text_list = ["Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"]
 
             if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
                 return
 
-            full_response = "".join(full_text_list).strip()
-            logger.info(f"🧠 [AI GENERATED TEXT COMPLETE] Session {session.session_id} (Assistant Turn {task_id}): '{full_response}'")
+            raw_response = "".join(full_text_list).strip()
+            if not raw_response:
+                raw_response = "Aku di sini mendengarkanmu. Ceritakan apa yang sedang kamu rasakan."
 
-            if full_response and session.current_task_id == task_id:
+            # Bersihkan dan normalkan teks untuk pelafalan suara TTS alami Bahasa Indonesia
+            spoken_text = sanitize_text_for_tts(raw_response)
+            logger.info(f"🧠 [AI GENERATED TEXT COMPLETE] Session {session.session_id} (Assistant Turn {task_id}): '{spoken_text}'")
+
+            if spoken_text and session.current_task_id == task_id:
                 session.conversation_history.append(
-                    LLMMessage(role="assistant", content=full_response)
+                    LLMMessage(role="assistant", content=spoken_text)
                 )
-                await self._save_message_to_db(session, "assistant", full_response)
+                await self._save_message_to_db(session, "assistant", spoken_text)
+
+            # Sintesis audio TTS utuh dalam satu panggilan setelah teks selesai digenerate keseluruhan
+            total_audio_bytes = 0
+            audio_bytes = None
+            try:
+                logger.info(f"🎙️ [TTS FULL SYNTHESIS START] Session {session.session_id}: '{spoken_text}'")
+                audio_bytes = await tts_provider.synthesize(spoken_text)
+                if audio_bytes:
+                    total_audio_bytes = len(audio_bytes)
+            except Exception as ex:
+                logger.error(f"⚠️ [TTS FULL SYNTHESIS ERROR] Session {session.session_id}: {ex}")
+
+            if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
+                return
+
+            # Kirim teks transkrip lengkap bersamaan saat audio siap dimainkan
+            await session.websocket.send_json({
+                "type": "ai.transcript_chunk",
+                "call_id": session.session_id,
+                "assistant_turn_id": task_id,
+                "sequence": 1,
+                "text": spoken_text,
+            })
+
+            # Kirim audio chunk utuh jika ada
+            if audio_bytes:
+                b64_audio = base64.b64encode(audio_bytes).decode("ascii")
+                await session.websocket.send_json({
+                    "type": "ai.audio_chunk",
+                    "call_id": session.session_id,
+                    "assistant_turn_id": task_id,
+                    "sequence": 1,
+                    "audio_base64": b64_audio,
+                })
+                logger.info(f"🔊 [OUTGOING TTS AUDIO COMPLETE] Session {session.session_id}: Sent {total_audio_bytes} bytes")
 
             # Signal speech completion if this task is still active
             if session.current_task_id == task_id and task_id not in session.cancelled_assistant_turn_ids:

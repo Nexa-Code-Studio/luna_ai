@@ -168,3 +168,99 @@ def test_hybrid_websocket_call_sync():
         sync_state = ws.receive_json()
         assert sync_state["type"] == "call.sync_state"
         assert sync_state["active_user_turn_id"] == 1
+
+
+def test_hybrid_websocket_multi_turn_flow():
+    with client.websocket_connect("/api/v1/call/ws/test_hybrid_multi_turn") as ws:
+        ws.receive_json()  # connected
+        ws.send_json({"type": "start_call"})
+        ws.receive_json()  # started
+
+        # --- Turn 1 ---
+        ws.send_json({
+            "type": "stt.final_segment",
+            "call_id": "test_hybrid_multi_turn",
+            "user_turn_id": 1,
+            "stt_session_id": 1,
+            "sequence": 1,
+            "text": "halo apa kabar",
+        })
+        ws.send_json({
+            "type": "user.force_commit",
+            "call_id": "test_hybrid_multi_turn",
+            "user_turn_id": 1,
+        })
+
+        # Drain Turn 1 events until speech finished
+        turn_1_committed = False
+        ai_thinking_1 = False
+        speech_finished_1 = False
+        for _ in range(15):
+            try:
+                data = ws.receive_json()
+                t = data.get("type")
+                if t == "turn.committed" and data.get("user_turn_id") == 1:
+                    turn_1_committed = True
+                elif t == "ai.thinking" and data.get("assistant_turn_id") == 1:
+                    ai_thinking_1 = True
+                elif t == "ai.speech_finished":
+                    speech_finished_1 = True
+                    break
+            except Exception:
+                break
+
+        assert turn_1_committed is True
+        assert ai_thinking_1 is True
+        assert speech_finished_1 is True
+
+        # Client finishes playback and notifies server
+        ws.send_json({
+            "type": "playback.finished",
+            "call_id": "test_hybrid_multi_turn",
+            "assistant_turn_id": 1,
+        })
+
+        # Find call.sync_state
+        sync_state = None
+        for _ in range(5):
+            msg = ws.receive_json()
+            if msg.get("type") == "call.sync_state":
+                sync_state = msg
+                break
+
+        assert sync_state is not None
+        assert sync_state["active_user_turn_id"] == 2
+
+        # --- Turn 2 ---
+        ws.send_json({
+            "type": "stt.final_segment",
+            "call_id": "test_hybrid_multi_turn",
+            "user_turn_id": 2,
+            "stt_session_id": 2,
+            "sequence": 1,
+            "text": "aku merasa cemas hari ini",
+        })
+        ws.send_json({
+            "type": "user.force_commit",
+            "call_id": "test_hybrid_multi_turn",
+            "user_turn_id": 2,
+        })
+
+        # Turn 2 MUST NOT be discarded and must commit successfully
+        turn_2_committed = False
+        ai_thinking_2 = False
+        for _ in range(15):
+            try:
+                data = ws.receive_json()
+                t = data.get("type")
+                if t == "turn.committed" and data.get("user_turn_id") == 2:
+                    turn_2_committed = True
+                elif t == "ai.thinking" and data.get("assistant_turn_id") == 2:
+                    ai_thinking_2 = True
+                    break
+            except Exception:
+                break
+
+        assert turn_2_committed is True
+        assert ai_thinking_2 is True
+

@@ -609,15 +609,11 @@ class HomeScreenState extends State<HomeScreen> {
           icon: Icons.psychology_outlined,
           iconBg: const Color(0xFFE0F4FB),
           iconColor: const Color(0xFF20667B),
-          title: 'Ritem Emosional',
-          subtitle: 'Pantau grafik kesehatan mental',
+          title: 'Asesmen DASS-21',
+          subtitle: 'Evaluasi & koreksi 21 butir emosi',
           badgeText: 'DASS-21',
           onTap: () {
-            if (widget.onNavigateTab != null) {
-              widget.onNavigateTab!(2);
-            } else {
-              Navigator.pushNamed(context, '/monitoring');
-            }
+            Navigator.pushNamed(context, '/dass_assessment');
           },
         ),
       ],

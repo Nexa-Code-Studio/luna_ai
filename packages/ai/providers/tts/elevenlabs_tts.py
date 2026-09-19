@@ -5,6 +5,7 @@ from typing import ClassVar
 
 import httpx
 from packages.ai.interfaces.tts import BaseTTSProvider
+from packages.ai.utils.tts_text_normalizer import sanitize_text_for_tts
 from packages.shared.config import settings
 
 logger = logging.getLogger(__name__)
@@ -65,19 +66,24 @@ class ElevenLabsTTSProvider(BaseTTSProvider):
     async def synthesize(self, text: str, voice_id: str | None = None) -> bytes:
         self._check_daily_reset()
 
+        clean_text = sanitize_text_for_tts(text)
+        if not clean_text or not any(c.isalnum() for c in clean_text):
+            return b""
+
         if not self.keys:
             logger.warning("No ElevenLabs API keys configured. Falling back to EdgeTTSProvider.")
             from packages.ai.providers.tts.edge_tts_provider import EdgeTTSProvider
-            return await EdgeTTSProvider().synthesize(text)
+            return await EdgeTTSProvider().synthesize(clean_text)
 
         voice = voice_id or self.default_voice
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice}"
         payload = {
-            "text": text,
+            "text": clean_text,
             "model_id": self.model_id,
+            "language_code": "id",
             "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.75,
+                "stability": 0.65,
+                "similarity_boost": 0.80,
             },
         }
 
