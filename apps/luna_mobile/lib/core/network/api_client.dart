@@ -21,48 +21,60 @@ class ApiClient {
 
   Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
     try {
-      final uri = Uri.parse('${AppConfig.baseUrl}$path').replace(queryParameters: queryParams);
-      final response = await _client.get(uri, headers: AppConfig.defaultHeaders);
+      final cleanPath = path.startsWith('/') ? path : '/$path';
+      final uri = Uri.parse('${AppConfig.baseUrl}$cleanPath').replace(queryParameters: queryParams);
+      final headers = await AppConfig.getAuthHeaders();
+      final response = await _client.get(uri, headers: headers);
       return _processResponse(response);
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Failed to connect to backend: $e');
     }
   }
 
   Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
     try {
-      final uri = Uri.parse('${AppConfig.baseUrl}$path');
+      final cleanPath = path.startsWith('/') ? path : '/$path';
+      final uri = Uri.parse('${AppConfig.baseUrl}$cleanPath');
+      final headers = await AppConfig.getAuthHeaders();
       final response = await _client.post(
         uri,
-        headers: AppConfig.defaultHeaders,
+        headers: headers,
         body: body != null ? jsonEncode(body) : null,
       );
       return _processResponse(response);
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Failed to send data to backend: $e');
     }
   }
 
   Future<dynamic> put(String path, {Map<String, dynamic>? body}) async {
     try {
-      final uri = Uri.parse('${AppConfig.baseUrl}$path');
+      final cleanPath = path.startsWith('/') ? path : '/$path';
+      final uri = Uri.parse('${AppConfig.baseUrl}$cleanPath');
+      final headers = await AppConfig.getAuthHeaders();
       final response = await _client.put(
         uri,
-        headers: AppConfig.defaultHeaders,
+        headers: headers,
         body: body != null ? jsonEncode(body) : null,
       );
       return _processResponse(response);
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Failed to update data on backend: $e');
     }
   }
 
   Future<dynamic> delete(String path) async {
     try {
-      final uri = Uri.parse('${AppConfig.baseUrl}$path');
-      final response = await _client.delete(uri, headers: AppConfig.defaultHeaders);
+      final cleanPath = path.startsWith('/') ? path : '/$path';
+      final uri = Uri.parse('${AppConfig.baseUrl}$cleanPath');
+      final headers = await AppConfig.getAuthHeaders();
+      final response = await _client.delete(uri, headers: headers);
       return _processResponse(response);
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Failed to delete resource on backend: $e');
     }
   }
