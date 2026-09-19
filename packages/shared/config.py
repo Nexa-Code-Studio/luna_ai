@@ -56,9 +56,20 @@ class BaseConfig(BaseSettings):
     # TTS Settings (elevenlabs | openai | edge_tts | mock)
     TTS_PROVIDER: str = "elevenlabs"
     TTS_API_KEY: str = ""
+    ELEVENLABS_API_KEYS: str = ""
     TTS_VOICE_ID: str = "cgSgspJ2msm6clMCkdW9"  # ElevenLabs Jessica voice ID
     TTS_MODEL: str = "eleven_multilingual_v2"
     EDGE_TTS_VOICE: str = "id-ID-GadisNeural"
+
+    def get_elevenlabs_keys(self) -> list[str]:
+        """Return list of valid ElevenLabs API keys from ELEVENLABS_API_KEYS or fallback to TTS_API_KEY."""
+        if self.ELEVENLABS_API_KEYS:
+            keys = [k.strip() for k in self.ELEVENLABS_API_KEYS.split(",") if k.strip()]
+            if keys:
+                return keys
+        if self.TTS_API_KEY and self.TTS_API_KEY.strip():
+            return [self.TTS_API_KEY.strip()]
+        return []
 
 
 

@@ -1,114 +1,38 @@
 import logging
 from typing import Any
+import uuid
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.session import get_db_session
+from app.models.user import User
+from app.services.analytics_service import AnalyticsService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
+async def _get_default_user(db: AsyncSession) -> User:
+    query = select(User).where(User.email == "user.luna@gmail.com")
+    res = await db.execute(query)
+    user = res.scalar_one_or_none()
+    if not user:
+        query_any = select(User)
+        res_any = await db.execute(query_any)
+        user = res_any.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Default user not found")
+    return user
+
 @router.get("/monitoring")
-async def get_monitoring_data(period: str = Query("today")) -> dict[str, Any]:
-    if period == "week":
-        return {
-            "periodKey": "week",
-            "periodLabel": "Minggu Ini",
-            "summary": "Grafik mingguan menunjukkan penurunan tingkat kecemasan sebesar 15% dibandingkan minggu lalu.",
-            "emotionalCenter": {
-                "status": "Baik & Stabil",
-                "level": 4,
-                "description": "Tingkat kesadaran emosionalmu meningkat signifikan minggu ini.",
-                "textColorHex": "#2E7D32",
-            },
-            "risks": [
-                {
-                    "name": "Stres Akademik",
-                    "type": "stress",
-                    "percent": 0.45,
-                    "levelLabel": "Sedang (45%)",
-                    "colorHex": "#FB8C00",
-                    "badgeBgHex": "#FFF3E0",
-                }
-            ],
-            "xLabels": ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"],
-            "chartData": [
-                [0.3, 0.3, 0.2, 0.1, 0.05, 0.03, 0.02],
-                [0.25, 0.35, 0.25, 0.1, 0.03, 0.01, 0.01],
-                [0.2, 0.4, 0.3, 0.05, 0.03, 0.01, 0.01],
-                [0.4, 0.4, 0.15, 0.03, 0.01, 0.00, 0.01],
-                [0.5, 0.3, 0.15, 0.03, 0.01, 0.00, 0.01],
-                [0.6, 0.3, 0.08, 0.01, 0.00, 0.00, 0.01],
-                [0.55, 0.35, 0.08, 0.01, 0.00, 0.00, 0.01],
-            ],
-        }
+async def get_monitoring_data(
+    period: str = Query("today", description="Period: today | week | month"),
+    db: AsyncSession = Depends(get_db_session),
+) -> dict[str, Any]:
+    """Fetch emotional rhythm, mental health risks, and AI summary for the requested period."""
+    user = await _get_default_user(db)
+    return await AnalyticsService.get_monitoring_data(user.id, period, db)
 
-    if period == "month":
-        return {
-            "periodKey": "month",
-            "periodLabel": "Bulan Ini",
-            "summary": "Tren bulanan menunjukkan peningkatan stabilitas emosional dengan 80% hari berada di rentang normal-positif.",
-            "emotionalCenter": {
-                "status": "Sangat Baik (Konsisten)",
-                "level": 4,
-                "description": "Pola emosi menunjukkan resiliensi yang tinggi menghadapi rutinitas harian.",
-                "textColorHex": "#2E7D32",
-            },
-            "risks": [
-                {
-                    "name": "Stres Akademik / Pekerjaan",
-                    "type": "stress",
-                    "percent": 0.35,
-                    "levelLabel": "Rendah-Sedang (35%)",
-                    "colorHex": "#FB8C00",
-                    "badgeBgHex": "#FFF3E0",
-                }
-            ],
-            "xLabels": ["M1", "M2", "M3", "M4"],
-            "chartData": [
-                [0.2, 0.3, 0.3, 0.1, 0.05, 0.03, 0.02],
-                [0.2, 0.35, 0.3, 0.08, 0.04, 0.02, 0.01],
-                [0.15, 0.45, 0.25, 0.1, 0.03, 0.01, 0.01],
-                [0.1, 0.5, 0.25, 0.1, 0.03, 0.01, 0.01],
-            ],
-        }
-
-    # Default 'today' period data
-    return {
-        "periodKey": "today",
-        "periodLabel": "Hari Ini",
-        "summary": "Evaluasi 3 sesi suara hari ini menunjukkan kecemasan di pagi hari yang mereda di sore hari setelah jeda istirahat.",
-        "emotionalCenter": {
-            "status": "Cukup (Kecenderungan Membaik)",
-            "level": 3,
-            "description": "Keseimbangan emosi mulai pulih di penghujung hari.",
-            "textColorHex": "#F57F17",
-        },
-        "risks": [
-            {
-                "name": "Stres Akademik",
-                "type": "stress",
-                "percent": 0.70,
-                "levelLabel": "Tinggi (70%)",
-                "colorHex": "#D32F2F",
-                "badgeBgHex": "#FFDCDD",
-            },
-            {
-                "name": "Anxiety (Kecemasan)",
-                "type": "anxiety",
-                "percent": 0.65,
-                "levelLabel": "Sedang-Tinggi (65%)",
-                "colorHex": "#E57373",
-                "badgeBgHex": "#FFEBEE",
-            },
-        ],
-        "xLabels": ["06:00", "09:00", "12:00", "15:00", "18:00", "21:00"],
-        "chartData": [
-            [0.1, 0.2, 0.5, 0.1, 0.05, 0.03, 0.02],
-            [0.05, 0.15, 0.60, 0.15, 0.03, 0.01, 0.01],
-            [0.2, 0.4, 0.25, 0.1, 0.03, 0.01, 0.01],
-            [0.35, 0.45, 0.15, 0.03, 0.01, 0.00, 0.01],
-            [0.25, 0.35, 0.30, 0.08, 0.01, 0.00, 0.01],
-            [0.30, 0.40, 0.20, 0.08, 0.01, 0.00, 0.01],
-        ],
-    }

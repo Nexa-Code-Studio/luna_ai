@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import '../services/daily_progress_local_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
 
@@ -15,6 +16,53 @@ class RecommendationScreen extends StatefulWidget {
 }
 
 class _RecommendationScreenState extends State<RecommendationScreen> {
+  static final List<Map<String, dynamic>> _defaultRecommendations = [
+    {
+      'id': '1',
+      'title': 'Latihan Pernapasan 4-7-8',
+      'category': 'Mindfulness',
+      'duration': '3 menit',
+      'description':
+          'Tarik napas dalam 4 detik, tahan 7 detik, lalu hembuskan perlahan 8 detik untuk meredakan ketegangan sistem saraf.',
+      'icon': Icons.air,
+      'iconBg': const Color(0xFFE8F5E9),
+      'isCompleted': false,
+    },
+    {
+      'id': '2',
+      'title': 'Teknik Grounding 5-4-3-2-1',
+      'category': 'CBT',
+      'duration': '5 menit',
+      'description':
+          'Sadarilah 5 hal yang kamu lihat, 4 hal yang kamu sentuh, 3 suara di sekitarmu, 2 aroma, dan 1 rasa untuk kembali ke saat ini.',
+      'icon': Icons.psychology,
+      'iconBg': const Color(0xFFE0F7FA),
+      'isCompleted': false,
+    },
+    {
+      'id': '3',
+      'title': 'Catatan Syukur Harian',
+      'category': 'Refleksi',
+      'duration': '3 menit',
+      'description':
+          'Tuliskan satu hal sederhana yang memberimu kehangatan atau kenyamanan hari ini.',
+      'icon': Icons.edit_note,
+      'iconBg': const Color(0xFFF3E5F5),
+      'isCompleted': false,
+    },
+    {
+      'id': '4',
+      'title': 'Jalan Santai Mindful',
+      'category': 'Aktivitas Fisik',
+      'duration': '10 menit',
+      'description':
+          'Berjalan perlahan sambil memperhatikan sensasi langkah kaki dan udara di kulitmu.',
+      'icon': Icons.directions_walk,
+      'iconBg': const Color(0xFFFFF3E0),
+      'isCompleted': false,
+    },
+  ];
+
   List<Map<String, dynamic>> _recommendations = [];
   bool _isLoading = false;
 
@@ -25,26 +73,42 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
   }
 
   Future<void> _fetchRecommendations() async {
-    if (AppConfig.useMockData) return;
+    final localProgress = await DailyProgressLocalService.loadTodayProgress();
+    if (AppConfig.useMockData) {
+      setState(() {
+        _recommendations = _defaultRecommendations.map((r) {
+          final copy = Map<String, dynamic>.from(r);
+          final rId = copy['id']?.toString() ?? '';
+          copy['isCompleted'] = localProgress.isActivityCompleted(rId);
+          return copy;
+        }).toList();
+      });
+      return;
+    }
     setState(() => _isLoading = true);
     try {
+      final headers = await AppConfig.getAuthHeaders();
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/recommendations'),
+        headers: headers,
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         if (mounted) {
           setState(() {
             _recommendations = data.map((item) {
+              final actId = item['id']?.toString() ?? '';
+              final isDone = item['isCompleted'] == true ||
+                  localProgress.isActivityCompleted(actId);
               return {
-                'id': item['id'] ?? '',
+                'id': actId,
                 'title': item['title'] ?? 'Rekomendasi',
                 'category': item['category'] ?? 'Self-care',
                 'duration': item['duration'] ?? '5 menit',
                 'description': item['description'] ?? '',
                 'icon': _getIconForCategory(item['category']),
                 'iconBg': _getBgForCategory(item['category']),
-                'isCompleted': item['isCompleted'] ?? false,
+                'isCompleted': isDone,
               };
             }).toList();
           });
@@ -64,10 +128,14 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
       }
     });
 
+    await DailyProgressLocalService.recordActivityCompletion(id, true);
+
     if (AppConfig.useMockData) return;
     try {
+      final headers = await AppConfig.getAuthHeaders();
       await http.post(
         Uri.parse('${AppConfig.baseUrl}/recommendations/$id/complete'),
+        headers: headers,
       );
     } catch (_) {}
   }
