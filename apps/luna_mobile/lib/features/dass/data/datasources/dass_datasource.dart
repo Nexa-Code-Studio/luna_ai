@@ -4,6 +4,7 @@ import '../models/dass_assessment_model.dart';
 abstract class DASSDataSource {
   Future<DASSAssessmentModel> getTodayAssessment();
   Future<DASSAssessmentModel> updateAssessment(List<Map<String, dynamic>> items);
+  Future<DASSAssessmentModel> extractTodayAssessment();
 }
 
 class RemoteDASSDataSource implements DASSDataSource {
@@ -23,6 +24,12 @@ class RemoteDASSDataSource implements DASSDataSource {
       '/dass/today',
       body: {'items': items},
     );
+    return DASSAssessmentModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  @override
+  Future<DASSAssessmentModel> extractTodayAssessment() async {
+    final response = await _apiClient.post('/dass/extract-today');
     return DASSAssessmentModel.fromJson(response as Map<String, dynamic>);
   }
 }
@@ -132,6 +139,11 @@ class MockDASSDataSource implements DASSDataSource {
       items: updatedItems,
     );
 
+    return _mockData;
+  }
+
+  @override
+  Future<DASSAssessmentModel> extractTodayAssessment() async {
     return _mockData;
   }
 }
