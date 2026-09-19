@@ -27,7 +27,6 @@ async def _get_default_user(db: AsyncSession) -> User:
         raise HTTPException(status_code=404, detail="Default user not found")
     return user
 
-
 @router.get("/monitoring")
 async def get_monitoring_data(
     period: str = Query("today", description="Period: today | week | month"),
@@ -36,3 +35,4 @@ async def get_monitoring_data(
     """Fetch emotional rhythm, mental health risks, and AI summary for the requested period."""
     user = await _get_default_user(db)
     return await AnalyticsService.get_monitoring_data(user.id, period, db)
+

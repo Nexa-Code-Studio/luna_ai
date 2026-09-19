@@ -25,8 +25,11 @@ class VoiceCallWsClient {
     final wsBase = AppConfig.wsUrl.endsWith('/')
         ? AppConfig.wsUrl.substring(0, AppConfig.wsUrl.length - 1)
         : AppConfig.wsUrl;
-    // Connect to canonical call websocket endpoint
-    final uri = Uri.parse('$wsBase/call/ws/$sessionId');
+    final token = await AppConfig.getToken();
+    final uriStr = (token != null && token.isNotEmpty)
+        ? '$wsBase/call/ws/$sessionId?token=$token'
+        : '$wsBase/call/ws/$sessionId';
+    final uri = Uri.parse(uriStr);
     debugPrint('🔌 [WS CLIENT] Connecting: $uri');
 
     try {
