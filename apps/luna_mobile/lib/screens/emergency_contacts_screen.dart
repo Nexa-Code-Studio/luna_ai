@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
@@ -18,6 +19,17 @@ class EmergencyContactsScreen extends StatefulWidget {
 class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
   List<Map<String, dynamic>> _contacts = [];
   bool _isLoading = false;
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label ($text) berhasil disalin ke clipboard'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -146,353 +158,312 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 
 
   void _showContactFormDialog({Map<String, dynamic>? contactToEdit}) {
-
     final isEditing = contactToEdit != null;
-
-    final nameController = TextEditingController(text: isEditing ? contactToEdit['name'] : '');
-
+    final nameController =
+        TextEditingController(text: isEditing ? contactToEdit['name'] : '');
     final relationController =
-
         TextEditingController(text: isEditing ? contactToEdit['relation'] : '');
-
-    final phoneController = TextEditingController(text: isEditing ? contactToEdit['phone'] : '');
-
+    final phoneController =
+        TextEditingController(text: isEditing ? contactToEdit['phone'] : '');
     bool isPrimary = isEditing ? (contactToEdit['isPrimary'] ?? false) : false;
 
-
-
     showDialog(
-
       context: context,
-
       builder: (context) {
-
         return StatefulBuilder(
-
           builder: (context, setDialogState) {
-
-            return AlertDialog(
-
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-
-              title: Row(
-
-                children: [
-
-                  Container(
-
-                    padding: const EdgeInsets.all(8),
-
-                    decoration: BoxDecoration(
-
-                      color: const Color(0xFFFFDCDD),
-
-                      borderRadius: BorderRadius.circular(12),
-
-                    ),
-
-                    child: const Icon(
-
-                      Icons.contact_phone_outlined,
-
-                      color: Color(0xFFD32F2F),
-
-                      size: 20,
-
-                    ),
-
-                  ),
-
-                  const SizedBox(width: 10),
-
-                  Text(
-
-                    isEditing ? 'Edit Kontak Darurat' : 'Tambah Kontak Baru',
-
-                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
-
-                  ),
-
-                ],
-
+            return Dialog(
+              backgroundColor: Colors.white,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
               ),
-
-              content: SingleChildScrollView(
-
-                child: Column(
-
-                  mainAxisSize: MainAxisSize.min,
-
-                  crossAxisAlignment: CrossAxisAlignment.start,
-
-                  children: [
-
-                    Text(
-
-                      'NAMA KONTAK',
-
-                      style: GoogleFonts.inter(
-
-                        fontSize: 10,
-
-                        fontWeight: FontWeight.w700,
-
-                        color: AppColors.textLight,
-
-                      ),
-
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    TextField(
-
-                      controller: nameController,
-
-                      style: GoogleFonts.inter(fontSize: 14),
-
-                      decoration: InputDecoration(
-
-                        hintText: 'Masukkan nama...',
-
-                        filled: true,
-
-                        fillColor: const Color(0xFFF4F6FB),
-
-                        border: OutlineInputBorder(
-
-                          borderRadius: BorderRadius.circular(12),
-
-                          borderSide: BorderSide.none,
-
-                        ),
-
-                        contentPadding:
-
-                            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-
-                      ),
-
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-
-                      'HUBUNGAN / PERAN',
-
-                      style: GoogleFonts.inter(
-
-                        fontSize: 10,
-
-                        fontWeight: FontWeight.w700,
-
-                        color: AppColors.textLight,
-
-                      ),
-
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    TextField(
-
-                      controller: relationController,
-
-                      style: GoogleFonts.inter(fontSize: 14),
-
-                      decoration: InputDecoration(
-
-                        hintText: 'Ibu / Dokter / Sahabat...',
-
-                        filled: true,
-
-                        fillColor: const Color(0xFFF4F6FB),
-
-                        border: OutlineInputBorder(
-
-                          borderRadius: BorderRadius.circular(12),
-
-                          borderSide: BorderSide.none,
-
-                        ),
-
-                        contentPadding:
-
-                            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-
-                      ),
-
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-
-                      'NOMOR TELEPON / WHATSAPP',
-
-                      style: GoogleFonts.inter(
-
-                        fontSize: 10,
-
-                        fontWeight: FontWeight.w700,
-
-                        color: AppColors.textLight,
-
-                      ),
-
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    TextField(
-
-                      controller: phoneController,
-
-                      keyboardType: TextInputType.phone,
-
-                      style: GoogleFonts.inter(fontSize: 14),
-
-                      decoration: InputDecoration(
-
-                        hintText: '+62 812-xxxx...',
-
-                        filled: true,
-
-                        fillColor: const Color(0xFFF4F6FB),
-
-                        border: OutlineInputBorder(
-
-                          borderRadius: BorderRadius.circular(12),
-
-                          borderSide: BorderSide.none,
-
-                        ),
-
-                        contentPadding:
-
-                            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-
-                      ),
-
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Row(
-
-                      children: [
-
-                        Expanded(
-
-                          child: Text(
-
-                            'Jadikan Kontak Utama',
-
-                            style: GoogleFonts.inter(
-
-                              fontSize: 13,
-
-                              fontWeight: FontWeight.w600,
-
-                              color: AppColors.textPrimary,
-
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header Row
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: isEditing
+                                  ? AppColors.primary.withValues(alpha: 0.12)
+                                  : const Color(0xFFFFDCDD),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-
+                            child: Icon(
+                              isEditing
+                                  ? Icons.edit_note_rounded
+                                  : Icons.person_add_alt_1_rounded,
+                              color: isEditing
+                                  ? AppColors.primary
+                                  : const Color(0xFFD32F2F),
+                              size: 22,
+                            ),
                           ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isEditing
+                                      ? 'Edit Kontak Darurat'
+                                      : 'Tambah Kontak Baru',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Orang terpercaya untuk situasi darurat',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              size: 20,
+                              color: AppColors.textLight,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      const SizedBox(height: 16),
 
+                      // Input 1: Nama Lengkap
+                      _buildFormFieldLabel(
+                        icon: Icons.badge_outlined,
+                        label: 'NAMA LENGKAP',
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: nameController,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
                         ),
-
-                        Switch(
-
-                          value: isPrimary,
-
-                          activeThumbColor: AppColors.primary,
-
-                          onChanged: (val) {
-
-                            setDialogState(() {
-
-                              isPrimary = val;
-
-                            });
-
-                          },
-
+                        decoration: _buildInputDecoration(
+                          hint: 'Masukkan nama kontak...',
+                          prefixIcon: Icons.person_outline_rounded,
                         ),
+                      ),
+                      const SizedBox(height: 14),
 
-                      ],
+                      // Input 2: Hubungan / Peran
+                      _buildFormFieldLabel(
+                        icon: Icons.favorite_outline_rounded,
+                        label: 'HUBUNGAN / PERAN',
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: relationController,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                        decoration: _buildInputDecoration(
+                          hint: 'Contoh: Ibu, Pasangan, Dokter...',
+                          prefixIcon: Icons.family_restroom_rounded,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
 
-                    ),
+                      // Input 3: Nomor Telepon
+                      _buildFormFieldLabel(
+                        icon: Icons.phone_outlined,
+                        label: 'NOMOR TELEPON / WHATSAPP',
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                        decoration: _buildInputDecoration(
+                          hint: 'Contoh: 0812-3456-7890',
+                          prefixIcon: Icons.phone_iphone_rounded,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
-                  ],
+                      // Switch: Kontak Utama
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isPrimary
+                              ? const Color(0xFFF0FDF4)
+                              : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isPrimary
+                                ? const Color(0xFF86EFAC).withValues(alpha: 0.6)
+                                : const Color(0xFFE2E8F0),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: isPrimary
+                                    ? const Color(0xFFD1FAE5)
+                                    : const Color(0xFFF1F5F9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.star_rounded,
+                                size: 18,
+                                color: isPrimary
+                                    ? const Color(0xFF047857)
+                                    : AppColors.textLight,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Jadikan Kontak Utama',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Prioritas panggilan darurat pertama',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch.adaptive(
+                              value: isPrimary,
+                              activeThumbColor: const Color(0xFF10B981),
+                              activeTrackColor: const Color(0xFFD1FAE5),
+                              onChanged: (val) {
+                                setDialogState(() {
+                                  isPrimary = val;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
 
+                      // Action Buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.textSecondary,
+                                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                'Batal',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                              ),
+                              icon: Icon(
+                                isEditing
+                                    ? Icons.check_rounded
+                                    : Icons.add_rounded,
+                                size: 18,
+                              ),
+                              label: Text(
+                                isEditing ? 'Simpan Perubahan' : 'Tambah Kontak',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              onPressed: () {
+                                final name = nameController.text.trim();
+                                final relation = relationController.text.trim();
+                                final phone = phoneController.text.trim();
+
+                                if (name.isEmpty || phone.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Nama dan nomor telepon wajib diisi'),
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                Navigator.pop(context);
+                                _saveContactToBackend(
+                                  name: name,
+                                  relation: relation,
+                                  phone: phone,
+                                  isPrimary: isPrimary,
+                                  contactToEdit: isEditing ? contactToEdit : null,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-
               ),
-
-              actions: [
-
-                TextButton(
-
-                  onPressed: () => Navigator.pop(context),
-
-                  child: Text(
-
-                    'Batal',
-
-                    style: GoogleFonts.inter(color: AppColors.textSecondary),
-
-                  ),
-
-                ),
-
-                ElevatedButton(
-
-                  style: ElevatedButton.styleFrom(
-
-                    backgroundColor: AppColors.primary,
-
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-
-                  ),
-
-                  onPressed: () {
-
-                    final name = nameController.text.trim();
-
-                    final relation = relationController.text.trim();
-
-                    final phone = phoneController.text.trim();
-
-
-
-                    if (name.isNotEmpty && phone.isNotEmpty) {
-                      Navigator.pop(context);
-                      _saveContactToBackend(
-                        name: name,
-                        relation: relation,
-                        phone: phone,
-                        isPrimary: isPrimary,
-                        contactToEdit: isEditing ? contactToEdit : null,
-                      );
-                    }
-                  },
-
-                  child: Text(
-
-                    isEditing ? 'Simpan' : 'Tambah',
-
-                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
-
-                  ),
-
-                ),
-
-              ],
-
             );
-
           },
 
         );
@@ -503,7 +474,52 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 
   }
 
+  Widget _buildFormFieldLabel({required IconData icon, required String label}) {
+    return Row(
+      children: [
+        Icon(icon, size: 13, color: AppColors.textLight),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textLight,
+            letterSpacing: 0.8,
+          ),
+        ),
+      ],
+    );
+  }
 
+  InputDecoration _buildInputDecoration({
+    required String hint,
+    required IconData prefixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.inter(
+        fontSize: 13,
+        color: AppColors.textLight,
+      ),
+      prefixIcon: Icon(prefixIcon, size: 18, color: AppColors.textSecondary),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+    );
+  }
 
   void _confirmDeleteContact(Map<String, dynamic> contact) {
 
@@ -1056,17 +1072,29 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 
                                           onPressed: () {
 
+                                            _copyToClipboard(
+
+                                              contact['phone'] ?? '',
+
+                                              'Nomor ${contact['name']}',
+
+                                            );
+
                                             ScaffoldMessenger.of(context).showSnackBar(
 
                                               SnackBar(
 
                                                 content: Text(
 
-                                                  'Uji panggilan darurat ke ${contact['name']} (${contact['phone']})...',
+                                                  'Uji panggilan ke ${contact['name']} (${contact['phone']}). Nomor disalin ke clipboard.',
 
                                                 ),
 
                                                 backgroundColor: const Color(0xFFD32F2F),
+
+                                                behavior: SnackBarBehavior.floating,
+
+                                                duration: const Duration(seconds: 3),
 
                                               ),
 
@@ -1118,7 +1146,81 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 
                         ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
+
+                      // Official Emergency & Counseling Hotlines Section
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE4DCFF),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.support_agent,
+                              size: 16,
+                              color: Color(0xFF6C5CE7),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'HOTLINE KRISIS & KONSELING RESMI (24 JAM)',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textLight,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      _buildOfficialHotlineCard(
+                        title: 'Layanan SEJIWA (Kemenkes & BNPB)',
+                        desc: 'Konseling psikologis gratis dari pemerintah RI',
+                        number: '119',
+                        displayNumber: '119 (Ekstensi 8)',
+                        icon: Icons.local_hospital_outlined,
+                        accentColor: const Color(0xFF6C5CE7),
+                        badgeBg: const Color(0xFFF3F0FF),
+                      ),
+                      const SizedBox(height: 10),
+
+                      _buildOfficialHotlineCard(
+                        title: 'LISA - Sahabat Jiwa',
+                        desc: 'Hotline pencegahan krisis & WhatsApp 24 Jam',
+                        number: '08113855472',
+                        displayNumber: '0811-3855-472',
+                        icon: Icons.phone_in_talk_outlined,
+                        accentColor: const Color(0xFF00CEC9),
+                        badgeBg: const Color(0xFFD7F3FF),
+                      ),
+                      const SizedBox(height: 10),
+
+                      _buildOfficialHotlineCard(
+                        title: 'Nomor Darurat Nasional Terpadu',
+                        desc: 'Panggilan darurat nasional bebas pulsa (Polisi/Damkar/Medis)',
+                        number: '112',
+                        displayNumber: '112',
+                        icon: Icons.emergency_outlined,
+                        accentColor: const Color(0xFFD32F2F),
+                        badgeBg: const Color(0xFFFFDCDD),
+                      ),
+                      const SizedBox(height: 10),
+
+                      _buildOfficialHotlineCard(
+                        title: 'Halo Kemenkes',
+                        desc: 'Informasi fasilitas kesehatan & layanan rujukan',
+                        number: '1500567',
+                        displayNumber: '1500-567',
+                        icon: Icons.info_outline,
+                        accentColor: const Color(0xFF0984E3),
+                        badgeBg: const Color(0xFFDFE6E9),
+                      ),
+
+                      const SizedBox(height: 80),
 
                     ],
 
@@ -1135,30 +1237,82 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
         ),
 
       ),
-
       // Single Efficient Floating Action Button (FAB)
-
       floatingActionButton: FloatingActionButton.extended(
-
         onPressed: () => _showContactFormDialog(),
-
         backgroundColor: AppColors.primary,
-
         icon: const Icon(Icons.add, color: Colors.white),
-
         label: Text(
-
           'Tambah Kontak',
-
           style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
-
         ),
-
       ),
-
     );
-
   }
 
+  Widget _buildOfficialHotlineCard({
+    required String title,
+    required String desc,
+    required String number,
+    required String displayNumber,
+    required IconData icon,
+    required Color accentColor,
+    required Color badgeBg,
+  }) {
+    return GlassCard(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: badgeBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: accentColor, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  desc,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  displayNumber,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: accentColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy, size: 18, color: AppColors.textSecondary),
+            tooltip: 'Salin nomor',
+            onPressed: () => _copyToClipboard(number, title),
+          ),
+        ],
+      ),
+    );
+  }
 }
-
