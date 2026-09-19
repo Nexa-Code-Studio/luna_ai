@@ -37,6 +37,8 @@ class AppColors {
 
   static const Color glassShadow = Color(0x145358CB); // 8% periwinkle shadow
 
+  static const Color divider = Color(0x0E5358CB); // Soft gentle divider (5.5% periwinkle)
+
 
   static const Color success = Color(0xFF4CAF50);
 
