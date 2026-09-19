@@ -45,6 +45,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
   late int _currentIndex;
   bool _isNavBarVisible = true;
   late final PageController _pageController;
+
+  final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
+  final GlobalKey<AiDiaryScreenState> _diaryKey = GlobalKey<AiDiaryScreenState>();
+  final GlobalKey<MonitoringScreenState> _monitoringKey = GlobalKey<MonitoringScreenState>();
+
   late final List<Widget> _pages;
 
   @override
@@ -55,14 +60,15 @@ class _MainShellScreenState extends State<MainShellScreen> {
     _pages = [
       _KeepAliveWrapper(
         child: HomeScreen(
-          onNavigateTab: _switchTab,
+          key: _homeKey,
+          onNavigateTab: _onTabTapped,
         ),
       ),
-      const _KeepAliveWrapper(
-        child: AiDiaryScreen(),
+      _KeepAliveWrapper(
+        child: AiDiaryScreen(key: _diaryKey),
       ),
-      const _KeepAliveWrapper(
-        child: MonitoringScreen(),
+      _KeepAliveWrapper(
+        child: MonitoringScreen(key: _monitoringKey),
       ),
       const _KeepAliveWrapper(
         child: ProfileScreen(),
@@ -70,8 +76,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
     ];
   }
 
-  void _switchTab(int index) {
-    if (_currentIndex == index) return;
+  void _onTabTapped(int index) {
+    if (index == _currentIndex) {
+      // Tapping same tab = refresh
+      _triggerRefresh(index);
+      return;
+    }
 
     setState(() {
       _currentIndex = index;
@@ -83,6 +93,24 @@ class _MainShellScreenState extends State<MainShellScreen> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
     );
+
+    _triggerRefresh(index);
+  }
+
+  void _triggerRefresh(int index) {
+    switch (index) {
+      case 0:
+        _homeKey.currentState?.refresh();
+        break;
+      case 1:
+        _diaryKey.currentState?.refresh();
+        break;
+      case 2:
+        _monitoringKey.currentState?.refresh();
+        break;
+      default:
+        break;
+    }
   }
 
   @override
@@ -137,7 +165,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   curve: Curves.easeInOut,
                   child: FloatingNavBar(
                     currentIndex: _currentIndex,
-                    onTap: _switchTab,
+                    onTap: _onTabTapped,
                   ),
                 ),
               ),

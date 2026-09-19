@@ -11,10 +11,14 @@ class MonitoringScreen extends ConsumerStatefulWidget {
   const MonitoringScreen({super.key});
 
   @override
-  ConsumerState<MonitoringScreen> createState() => _MonitoringScreenState();
+  ConsumerState<MonitoringScreen> createState() => MonitoringScreenState();
 }
 
-class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
+class MonitoringScreenState extends ConsumerState<MonitoringScreen> {
+  void refresh() {
+    ref.invalidate(monitoringDataProvider);
+  }
+
   // 7 Emotion parameters color mapping matching backend & design system
   final List<Map<String, dynamic>> _emotionLegend = const [
     {'key': 'happy', 'name': 'Bahagia & Senang', 'emoji': '😃', 'color': Color(0xFFFFB800)},

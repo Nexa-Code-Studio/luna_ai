@@ -17,10 +17,10 @@ class HomeScreen extends StatefulWidget {
   });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   String _userName = 'Sahabat LUNA';
   int _todayConversationsCount = 0;
   bool _hasTodayDiary = false;
@@ -105,6 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     _loadHomeScreenData();
   }
+
+  void refresh() => _loadHomeScreenData();
 
   Future<void> _loadHomeScreenData() async {
     // 1. Load cached user info first for instant display
