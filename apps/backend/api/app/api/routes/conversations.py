@@ -16,6 +16,7 @@ from app.models.conversation import Conversation, Message
 from app.models.diary import DiaryEntry
 from app.models.enums import ConversationStatus, MessageType
 from app.models.user import User
+from app.services.ml_emotion_detector import MLEmotionDetectorService
 
 logger = logging.getLogger(__name__)
 
@@ -307,6 +308,14 @@ async def send_message(
     db.add(user_msg)
     await db.commit()
     await db.refresh(user_msg)
+
+    if payload.content and payload.content.strip():
+        try:
+            analysis_result = await MLEmotionDetectorService.predict_message_emotion(payload.content)
+            await MLEmotionDetectorService.save_emotion_to_db(user_msg.id, analysis_result, db)
+            logger.info(f"🧠 [CHAT EMOTION PERSISTED]: Saved emotion for message {user_msg.id}")
+        except Exception as emo_err:
+            logger.warning(f"⚠️ [CHAT EMOTION EXCEPTION]: Failed to save emotion analysis: {emo_err}")
 
     return {
         "id": str(user_msg.id),

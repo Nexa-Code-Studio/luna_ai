@@ -50,28 +50,13 @@ async def websocket_call_endpoint(
                     payload = json.loads(message["text"])
                     event_type = payload.get("type")
 
-                    if event_type == "start_call":
-                        logger.info(f"🚀 [CALL SESSION STARTED] Session {session_id}")
-                        await websocket.send_json({"type": "call_started", "session_id": session_id})
-
-                    elif event_type == "user_transcript":
-                        user_text = payload.get("text", "")
-                        logger.info(f"💬 [INCOMING USER SPEECH] Session {session_id}: '{user_text}'")
-                        await call_session_manager.handle_user_transcript(session, user_text)
-
-                    elif event_type == "user_interrupted":
-                        logger.info(f"⚡ [USER INTERRUPTED AI] Session {session_id}")
-                        session.cancel_active_ai_task()
-                        await websocket.send_json({"type": "interrupted_ack"})
-
-                    elif event_type == "end_call":
+                    if event_type == "end_call":
                         duration_sec = payload.get("duration_seconds")
                         logger.info(f"🛑 [CALL ENDED BY USER] Session {session_id}, Duration: {duration_sec}s")
                         await call_session_manager.update_session_end(session_id, duration_seconds=duration_sec)
                         break
 
-                    elif event_type == "ping":
-                        await websocket.send_json({"type": "pong"})
+                    await call_session_manager.handle_event(session, payload)
 
                 except json.JSONDecodeError:
                     logger.warning(f"⚠️ [INVALID JSON] Session {session_id}: Received malformed JSON")

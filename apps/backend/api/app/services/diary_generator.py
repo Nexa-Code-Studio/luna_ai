@@ -68,8 +68,14 @@ class DiaryGeneratorService:
                 '  "title": "<Judul Jurnal Utama 4-8 Kata Bahasa Indonesia, contoh: Refleksi Harian & Evaluasi Ujian>",\n'
                 '  "summary": "<Ringkasan kumulatif emosi & poin utama percakapan 2-3 kalimat>",\n'
                 '  "content": "<Narasi detail kejadian dan refleksi emosional sepanjang hari>",\n'
-                '  "mood_tag": "<Tag mood dominan misal: Tenang & Nyaman 🌿 atau Cemas & Stres 😟 atau Bahagia & Puas 😃>",\n'
-                '  "mood_emoji": "<Emoji 1 karakter misal: 🌿 atau 😟 atau 😃>",\n'
+                '  "mood_tag": "<PILIH TEPAT SATU DARI 7 MOOD TAG RESMI: Bahagia & Senang 😃 | Netral & Tenang 😌 | Cemas & Takut 😰 | Sedih 😢 | Terkejut 😲 | Marah 😡 | Jijik 🤢>",\n'
+                '  "mood_emoji": "<Emoji 1 karakter sesuai mood_tag: 😃 | 😌 | 😰 | 😢 | 😲 | 😡 | 🤢>",\n'
+                '  "emotional_level": <integer 1 sampai 5, skala: 1=Sangat Buruk, 2=Buruk, 3=Cukup, 4=Baik, 5=Sangat Baik>,\n'
+                '  "mental_health_scores": {\n'
+                '    "stress": <float 0.00 sampai 1.00 estimasi tingkat stres>,\n'
+                '    "anxiety": <float 0.00 sampai 1.00 estimasi tingkat kecemasan>,\n'
+                '    "depression": <float 0.00 sampai 1.00 estimasi tingkat depresi>\n'
+                '  },\n'
                 '  "ai_insight": "<1-2 kalimat wawasan evaluasi psikologis AI terhadap kondisi emosional pengguna>",\n'
                 '  "emotional_reflection": "<1-2 kalimat refleksi positif & rekomendasi penenangan diri>",\n'
                 '  "important_events": ["<[HH:MM] Peristiwa/masalah penting 1>", "<[HH:MM] Peristiwa 2>"]\n'
@@ -111,8 +117,14 @@ class DiaryGeneratorService:
         title = data.get("title") or f"Jurnal Refleksi - {entry_date.strftime('%d %b %Y')}"
         summary = data.get("summary") or "Kumulatif percakapan suara & teks hari ini."
         content = data.get("content") or summary
-        mood_tag = data.get("mood_tag") or "Tenang & Nyaman 🌿"
-        mood_emoji = data.get("mood_emoji") or "🌿"
+        mood_tag = data.get("mood_tag") or "Netral & Tenang 😌"
+        mood_emoji = data.get("mood_emoji") or "😌"
+        emotional_level = int(data.get("emotional_level", 4)) if data.get("emotional_level") is not None else 4
+        mental_health_scores = data.get("mental_health_scores") or {
+            "stress": 0.45,
+            "anxiety": 0.35,
+            "depression": 0.15,
+        }
         ai_insight = data.get("ai_insight") or "Kondisi emosional pengguna terpantau stabil."
         emotional_reflection = data.get("emotional_reflection") or "Pengguna merasa lebih tenang setelah berdialog bersama LUNA."
         important_events = data.get("important_events") or [f"[{get_wib_now().strftime('%H:%M')}] Sesi Percakapan LUNA"]
@@ -131,6 +143,8 @@ class DiaryGeneratorService:
                 content=content,
                 mood_tag=mood_tag,
                 mood_emoji=mood_emoji,
+                emotional_level=emotional_level,
+                mental_health_scores=mental_health_scores,
                 ai_insight=ai_insight,
                 emotional_reflection=emotional_reflection,
                 important_events=important_events,
@@ -142,6 +156,8 @@ class DiaryGeneratorService:
             diary.content = content
             diary.mood_tag = mood_tag
             diary.mood_emoji = mood_emoji
+            diary.emotional_level = emotional_level
+            diary.mental_health_scores = mental_health_scores
             diary.ai_insight = ai_insight
             diary.emotional_reflection = emotional_reflection
             diary.important_events = important_events
@@ -156,8 +172,14 @@ class DiaryGeneratorService:
             "title": f"Refleksi Harian - {entry_date.strftime('%d %b %Y')}",
             "summary": "Sesi percakapan hari ini berjalan dengan baik dan memberikan ketenangan emosional.",
             "content": "Pengguna telah berinteraksi dengan LUNA AI untuk merefleksikan perasaan dan aktivitas hari ini.",
-            "mood_tag": "Tenang & Nyaman 🌿",
-            "mood_emoji": "🌿",
+            "mood_tag": "Netral & Tenang 😌",
+            "mood_emoji": "😌",
+            "emotional_level": 4,
+            "mental_health_scores": {
+                "stress": 0.40,
+                "anxiety": 0.30,
+                "depression": 0.15,
+            },
             "ai_insight": "Pengguna merasa didengarkan dan mulai merasa lebih rileks selama percakapan.",
             "emotional_reflection": "Refleksi emosi menunjukkan respon positif terhadap konseling LUNA.",
             "important_events": [f"[{get_wib_now().strftime('%H:%M')}] Sesi Panggilan Suara & Chat LUNA"],

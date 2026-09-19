@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import Date, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,6 +23,8 @@ class DiaryEntry(BaseModel):
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     mood_tag: Mapped[str | None] = mapped_column(String(50), nullable=True)
     mood_emoji: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    emotional_level: Mapped[int | None] = mapped_column(Integer, nullable=True, default=3)
+    mental_health_scores: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     ai_insight: Mapped[str | None] = mapped_column(Text, nullable=True)
     emotional_reflection: Mapped[str | None] = mapped_column(Text, nullable=True)
     important_events: Mapped[dict | list | None] = mapped_column(JSONB, nullable=True)

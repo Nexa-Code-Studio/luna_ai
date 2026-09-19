@@ -12,8 +12,16 @@ enum VadState {
   bargeInInterrupted,
 }
 
-/// Service for handling Voice Activity Detection (VAD), Real Microphone STT,
-/// Decibel Amplitude Streams, Silence Detection, and Barge-In Interruption.
+/// [DEPRECATED in Hybrid Half-Duplex Mode]
+///
+/// NOTE: In the Hybrid Half-Duplex architecture, authoritative turn detection,
+/// silence endpointing, and phrase completion are handled by the backend
+/// (TurnAggregator & TurnDetectionService).
+///
+/// Frontend microphone capture is exclusively handled by [SpeechRecognitionService],
+/// which prevents microphone contention on Android OS. Simulated VAD timers and
+/// client-side silence end-of-turn detectors are disabled in favor of adaptive
+/// server endpointing.
 class VadAudioService {
   static final VadAudioService _instance = VadAudioService._internal();
   factory VadAudioService() => _instance;

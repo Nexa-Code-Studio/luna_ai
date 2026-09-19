@@ -1,56 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'screens/ai_conversation_screen.dart';
-
 import 'screens/ai_diary_detail_screen.dart';
-
 import 'screens/ai_diary_screen.dart';
-
 import 'screens/emergency_contacts_screen.dart';
-
 import 'screens/login_screen.dart';
-
 import 'screens/main_shell_screen.dart';
-
 import 'screens/monitoring_screen.dart';
-
 import 'screens/profile_screen.dart';
-
 import 'screens/recommendation_screen.dart';
-
 import 'screens/register_screen.dart';
-
 import 'screens/splash_onboarding_screen.dart';
-
 import 'screens/support_emergency_screen.dart';
-
 import 'screens/voice_call_screen.dart';
-
 import 'theme/app_theme.dart';
 
-
-
 void main() {
-
-  runApp(const LunaApp());
-
+  runApp(const ProviderScope(child: LunaApp()));
 }
 
-
-
 class LunaApp extends StatelessWidget {
-
   const LunaApp({super.key});
 
-
-
   @override
-
   Widget build(BuildContext context) {
-
-    return MaterialApp(
-
-      title: 'LUNA AI - Mental Health Companion',
+    return ProviderScope(
+      child: MaterialApp(
+        title: 'LUNA AI - Mental Health Companion',
 
       debugShowCheckedModeBanner: false,
 
@@ -66,7 +43,11 @@ class LunaApp extends StatelessWidget {
 
         '/register': (context) => const RegisterScreen(),
 
-        '/home': (context) => const MainShellScreen(),
+        '/home': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final initialIndex = (args?['initialIndex'] as int?) ?? 0;
+          return MainShellScreen(initialIndex: initialIndex);
+        },
 
         '/chat': (context) => const AiConversationScreen(),
 
@@ -93,10 +74,9 @@ class LunaApp extends StatelessWidget {
         '/emergency_contacts': (context) => const EmergencyContactsScreen(),
 
       },
-
-    );
-
-  }
+    ),
+  );
+}
 
 }
 
