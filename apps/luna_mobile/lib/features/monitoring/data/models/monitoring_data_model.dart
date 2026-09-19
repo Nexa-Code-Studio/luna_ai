@@ -41,10 +41,10 @@ class EmotionalCenterModel extends EmotionalCenterEntity {
     required super.textColorHex,
   });
 
-  factory EmotionalCenterModel.fromJson(Map<String, dynamic> json) {
+  factory EmotionalCenterModel.fromJson(Map<dynamic, dynamic> json) {
     return EmotionalCenterModel(
       status: json['status']?.toString() ?? '',
-      level: json['level'] ?? 3,
+      level: (json['level'] as num?)?.toInt() ?? 3,
       description: json['description']?.toString() ?? '',
       textColorHex: json['textColorHex']?.toString() ?? json['text_color_hex']?.toString() ?? '#F57F17',
     );
@@ -71,17 +71,23 @@ class MonitoringDataModel extends MonitoringDataEntity {
     required super.chartData,
   });
 
-  factory MonitoringDataModel.fromJson(Map<String, dynamic> json) {
+  factory MonitoringDataModel.fromJson(Map<dynamic, dynamic> json) {
     final rawRisks = json['risks'] as List? ?? [];
     final rawXLabels = (json['xLabels'] ?? json['x_labels']) as List? ?? [];
     final rawChartData = (json['chartData'] ?? json['chart_data']) as List? ?? [];
+
+    final rawCenter = json['emotionalCenter'] ?? json['emotional_center'];
+    final centerMap = rawCenter is Map ? rawCenter : const {};
 
     return MonitoringDataModel(
       periodKey: json['periodKey']?.toString() ?? json['period_key']?.toString() ?? 'today',
       periodLabel: json['periodLabel']?.toString() ?? json['period_label']?.toString() ?? 'Hari Ini',
       summary: json['summary']?.toString() ?? '',
-      emotionalCenter: EmotionalCenterModel.fromJson(json['emotionalCenter'] ?? json['emotional_center'] ?? {}),
-      risks: rawRisks.map((r) => RiskIndicatorModel.fromJson(r)).toList(),
+      emotionalCenter: EmotionalCenterModel.fromJson(centerMap),
+      risks: rawRisks
+          .whereType<Map>()
+          .map((r) => RiskIndicatorModel.fromJson(Map<String, dynamic>.from(r)))
+          .toList(),
       xLabels: rawXLabels.map((x) => x.toString()).toList(),
       chartData: rawChartData
           .map((row) => (row as List? ?? []).map((val) => (val as num).toDouble()).toList())

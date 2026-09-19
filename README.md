@@ -192,30 +192,37 @@ Aplikasi Flutter `luna_mobile` dapat dijalankan di **Perangkat Fisik (HP Android
 
 #### **2. Menjalankan Aplikasi Flutter (Mode Lokal vs Production):**
 
-Secara default, jika dijalankan dengan `flutter run`, aplikasi akan terhubung ke domain production (`luna.nexacode.dev`). Untuk menghubungkannya ke **server backend lokal laptop**:
+Secara default, jika dijalankan dengan `flutter run`, aplikasi akan terhubung ke server production (`172.93.219.133:8888`). Untuk menghubungkannya ke **server backend lokal laptop**:
 
-##### **A. Android Emulator / iOS Simulator / Web (Local Backend):**
-Jalankan perintah dengan flag `--dart-define=USE_LOCAL_API=true`:
-```bash
-cd apps/luna_mobile
-flutter run --dart-define=USE_LOCAL_API=true
-```
-> ℹ️ **Otomatisasi Target Host:**
-> - **Android Emulator**: Otomatis menggunakan `http://10.0.2.2:8888/api/v1` dan `ws://10.0.2.2:8888` (karena `10.0.2.2` adalah gateway localhost laptop untuk emulator Android).
-> - **iOS Simulator / Web / Desktop**: Menggunakan `http://localhost:8888/api/v1` dan `ws://localhost:8888`.
-
-##### **B. Perangkat Fisik Android (Physical Device via USB):**
-1. Lakukan reverse port ADB agar HP dapat mengakses server laptop via kabel USB:
+##### **A. Perangkat Fisik Android (Physical Device via USB) & Desktop / Web:**
+1. Lakukan reverse port ADB agar port di dalam HP meneruskan request ke laptop via kabel USB:
    ```bash
    adb reverse tcp:8888 tcp:8888
    ```
-2. Jalankan Flutter dengan flag local:
+2. Jalankan Flutter dengan flag `USE_LOCAL_API`:
    ```bash
    cd apps/luna_mobile
    flutter run --dart-define=USE_LOCAL_API=true
    ```
+   > ℹ️ **Host yang Digunakan:** `http://127.0.0.1:8888/api/v1` (terhubung langsung ke backend laptop via USB ADB reverse loopback).
 
-##### **C. Menjalankan Mode Default (Production Cloud Server):**
+##### **B. Android Emulator (Virtual Device):**
+Jika menggunakan Android Emulator standar (tanpa menjalankan `adb reverse`), tambahkan flag `IS_EMULATOR=true`:
+```bash
+cd apps/luna_mobile
+flutter run --dart-define=USE_LOCAL_API=true --dart-define=IS_EMULATOR=true
+```
+> ℹ️ **Host yang Digunakan:** `http://10.0.2.2:8888/api/v1` (karena `10.0.2.2` adalah gateway router virtual emulator untuk mengakses localhost host laptop).
+
+##### **C. Koneksi Wi-Fi LAN / IP Custom (Tanpa Kabel USB):**
+Jika HP fisik dan laptop berada dalam satu jaringan Wi-Fi yang sama:
+```bash
+cd apps/luna_mobile
+flutter run --dart-define=LOCAL_HOST=192.168.1.50:8888
+```
+*(Ganti `192.168.1.50` dengan IP lokal laptop Anda).*
+
+##### **D. Menjalankan Mode Default (Production Cloud Server):**
 ```bash
 cd apps/luna_mobile
 flutter run
@@ -230,12 +237,22 @@ Tambahkan konfigurasi berikut ke `.vscode/launch.json` di root workspace agar da
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Luna Mobile (Local Backend)",
+      "name": "Luna Mobile (HP Fisik USB - Local)",
       "request": "launch",
       "type": "dart",
       "program": "apps/luna_mobile/lib/main.dart",
       "args": [
         "--dart-define=USE_LOCAL_API=true"
+      ]
+    },
+    {
+      "name": "Luna Mobile (Android Emulator - Local)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/luna_mobile/lib/main.dart",
+      "args": [
+        "--dart-define=USE_LOCAL_API=true",
+        "--dart-define=IS_EMULATOR=true"
       ]
     },
     {

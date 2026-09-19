@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppConfig {
-  static const bool useMockData = false;
-  static String? _cachedToken;
+  static bool useMockData = false;
+  static String? authToken;
   static String? _cachedRefreshToken;
   static String? _customHost;
 
@@ -17,11 +17,30 @@ class AppConfig {
     defaultValue: bool.fromEnvironment('LOCAL', defaultValue: false),
   );
 
+  /// Compile-time emulator flag: --dart-define=IS_EMULATOR=true or --dart-define=USE_EMULATOR=true
+  /// When true, Android Emulator uses 10.0.2.2:8888 instead of 127.0.0.1:8888.
+  static const bool isEmulator = bool.fromEnvironment(
+    'IS_EMULATOR',
+    defaultValue: bool.fromEnvironment(
+      'USE_EMULATOR',
+      defaultValue: bool.fromEnvironment('EMULATOR', defaultValue: false),
+    ),
+  );
+
+  /// Optional compile-time custom host: --dart-define=LOCAL_HOST=192.168.1.100:8888
+  static const String customLocalHost = String.fromEnvironment(
+    'LOCAL_HOST',
+    defaultValue: String.fromEnvironment('HOST', defaultValue: ''),
+  );
+
   /// Production VPS server host
   static const String defaultServerHost = '172.93.219.133:8888';
 
-  /// Local development host (127.0.0.1:8888 with adb reverse for USB device)
+  /// Local development host (127.0.0.1:8888 with adb reverse for USB device, web, desktop)
   static const String localServerHost = '127.0.0.1:8888';
+
+  /// Android emulator host (10.0.2.2:8888)
+  static const String emulatorServerHost = '10.0.2.2:8888';
 
   /// Get the active host (IP or domain).
   /// Respects --dart-define=USE_LOCAL_API=true when running locally.
@@ -29,7 +48,13 @@ class AppConfig {
     if (_customHost != null && _customHost!.isNotEmpty) {
       return _customHost!;
     }
+    if (customLocalHost.isNotEmpty) {
+      return customLocalHost;
+    }
     if (useLocalApi) {
+      if (isEmulator) {
+        return emulatorServerHost;
+      }
       return localServerHost;
     }
     return defaultServerHost;
@@ -49,15 +74,15 @@ class AppConfig {
 
   /// Get current JWT access token
   static Future<String?> getToken() async {
-    if (_cachedToken != null) return _cachedToken;
+    if (authToken != null) return authToken;
     final prefs = await SharedPreferences.getInstance();
-    _cachedToken = prefs.getString('auth_token');
-    return _cachedToken;
+    authToken = prefs.getString('auth_token');
+    return authToken;
   }
 
   /// Save JWT access token
   static Future<void> setToken(String token) async {
-    _cachedToken = token;
+    authToken = token;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
   }
@@ -82,7 +107,7 @@ class AppConfig {
     required String accessToken,
     required String refreshToken,
   }) async {
-    _cachedToken = accessToken;
+    authToken = accessToken;
     _cachedRefreshToken = refreshToken;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', accessToken);
@@ -154,7 +179,7 @@ class AppConfig {
 
   /// Clear token and profile info (Logout)
   static Future<void> clearToken() async {
-    _cachedToken = null;
+    authToken = null;
     _cachedRefreshToken = null;
     _cachedUserName = null;
     _cachedUserEmail = null;
@@ -164,6 +189,14 @@ class AppConfig {
     await prefs.remove('user_name');
     await prefs.remove('user_email');
   }
+
+  /// Synchronous default headers
+  static Map<String, String> get defaultHeaders => {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        if (authToken != null && authToken!.isNotEmpty)
+          'Authorization': 'Bearer $authToken',
+      };
 
   /// Default headers with Authorization if token is available
   static Future<Map<String, String>> getAuthHeaders() async {
