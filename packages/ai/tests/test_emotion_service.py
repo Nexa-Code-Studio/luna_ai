@@ -10,8 +10,8 @@ from shared.domain_types import EmotionDetectionResult
 
 
 
-SAMPLE_AUDIO_1 = str(Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "1.wav")
-SAMPLE_AUDIO_2 = str(Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "2.wav")
+SAMPLE_AUDIO_1 = str(Path(__file__).resolve().parent.parent.parent.parent / "tests" / "test_emotion" / "1.wav")
+SAMPLE_AUDIO_2 = str(Path(__file__).resolve().parent.parent.parent.parent / "tests" / "test_emotion" / "2.wav")
 
 
 def test_emotion_service_predict_correctness_and_reuse():
