@@ -40,6 +40,7 @@ from app.models.rag import (
     Source,
     Symptom,
 )
+from app.models.coping_activity import CopingActivity, UserActivityCompletion
 from app.models.recommendation import RecommendationItem
 from app.models.safety import EmotionAnalysis, SafetyAnalysis, SafetyEvent
 from app.models.user import EmergencyContact, User, UserDevice
@@ -53,6 +54,8 @@ __all__ = [
     "AIWorkerRun",
     "AIWorkerType",
     "BaseModel",
+    "CopingActivity",
+    "UserActivityCompletion",
     "Condition",
     "ConditionStatus",
     "ConditionSymptom",

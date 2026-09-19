@@ -1059,59 +1059,36 @@ class _AiDiaryScreenState extends State<AiDiaryScreen> {
                                   const SizedBox(height: 12),
 
                                   Row(
-
                                     children: [
-
-                                      Container(
-
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-
-                                        decoration: BoxDecoration(
-
-                                          color: const Color(0xFFEADBFF),
-
-                                          borderRadius: BorderRadius.circular(999),
-
-                                        ),
-
-                                        child: Text(
-
-                                          item['moodTag'],
-
-                                          style: GoogleFonts.inter(
-
-                                            fontSize: 11,
-
-                                            fontWeight: FontWeight.w600,
-
-                                            color: AppColors.primary,
-
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEADBFF),
+                                            borderRadius: BorderRadius.circular(999),
                                           ),
-
+                                          child: Text(
+                                            item['moodTag'],
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
                                         ),
-
                                       ),
-
-                                      const Spacer(),
-
+                                      const SizedBox(width: 8),
                                       Text(
-
                                         'Lihat Detail Sesi →',
-
                                         style: GoogleFonts.inter(
-
                                           fontSize: 12,
-
                                           fontWeight: FontWeight.w700,
-
                                           color: AppColors.primary,
-
                                         ),
-
                                       ),
-
                                     ],
-
                                   ),
 
                                 ],

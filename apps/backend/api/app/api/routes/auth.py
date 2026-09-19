@@ -7,7 +7,12 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import create_access_token, decode_access_token
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_access_token,
+    decode_refresh_token,
+)
 from app.db.session import get_db_session
 from app.models.user import User
 
@@ -25,6 +30,10 @@ class RegisterRequest(BaseModel):
     name: str
     email: EmailStr
     password: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
 
 
 @router.post("/login")
@@ -46,10 +55,12 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db_session
         )
 
     display_name = user.display_name or user.username or "User Luna"
-    token = create_access_token(user_id=str(user.id), email=user.email, name=display_name)
+    access_token = create_access_token(user_id=str(user.id), email=user.email, name=display_name)
+    refresh_token = create_refresh_token(user_id=str(user.id), email=user.email)
 
     return {
-        "access_token": token,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "user": {
             "id": str(user.id),
@@ -83,14 +94,60 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db_s
     await db.commit()
     await db.refresh(user)
 
-    token = create_access_token(user_id=str(user.id), email=user.email, name=user.display_name or payload.name)
+    display_name = user.display_name or payload.name
+    access_token = create_access_token(user_id=str(user.id), email=user.email, name=display_name)
+    refresh_token = create_refresh_token(user_id=str(user.id), email=user.email)
 
     return {
-        "access_token": token,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "user": {
             "id": str(user.id),
-            "name": user.display_name or payload.name,
+            "name": display_name,
+            "email": user.email,
+        },
+    }
+
+
+@router.post("/refresh")
+async def refresh_token(payload: RefreshRequest, db: AsyncSession = Depends(get_db_session)) -> dict[str, Any]:
+    decoded = decode_refresh_token(payload.refresh_token)
+    if not decoded or "sub" not in decoded:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token tidak valid atau telah kedaluwarsa",
+        )
+
+    try:
+        u_uuid = uuid.UUID(decoded["sub"])
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Format user ID token tidak valid",
+        )
+
+    query = select(User).where(User.id == u_uuid)
+    res = await db.execute(query)
+    user = res.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User tidak ditemukan atau tidak aktif",
+        )
+
+    display_name = user.display_name or user.username or "User Luna"
+    new_access_token = create_access_token(user_id=str(user.id), email=user.email, name=display_name)
+    new_refresh_token = create_refresh_token(user_id=str(user.id), email=user.email)
+
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer",
+        "user": {
+            "id": str(user.id),
+            "name": display_name,
             "email": user.email,
         },
     }
@@ -106,7 +163,12 @@ async def get_me(
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split("Bearer ")[1].strip()
         decoded = decode_access_token(token)
-        if decoded and "sub" in decoded:
+        if not decoded:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token akses tidak valid atau telah kedaluwarsa",
+            )
+        if "sub" in decoded:
             try:
                 u_uuid = uuid.UUID(decoded["sub"])
                 query_jwt = select(User).where(User.id == u_uuid)

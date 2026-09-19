@@ -190,32 +190,65 @@ Aplikasi Flutter `luna_mobile` dapat dijalankan di **Perangkat Fisik (HP Android
   ```
   *(Pastikan perangkat muncul di daftar dengan status `device`)*
 
-#### **2. Reverse Port ADB (Wajib untuk HP Fisik & Emulator):**
-Agar HP Android atau Emulator dapat mengakses server backend FastAPI lokal (`http://localhost:8888`) secara langsung melalui jaringan USB/loopback:
+#### **2. Menjalankan Aplikasi Flutter (Mode Lokal vs Production):**
+
+Secara default, jika dijalankan dengan `flutter run`, aplikasi akan terhubung ke domain production (`luna.nexacode.dev`). Untuk menghubungkannya ke **server backend lokal laptop**:
+
+##### **A. Android Emulator / iOS Simulator / Web (Local Backend):**
+Jalankan perintah dengan flag `--dart-define=USE_LOCAL_API=true`:
 ```bash
-# Mengarahkan port 8888 HP ke port 8888 PC (FastAPI Backend)
-adb reverse tcp:8888 tcp:8888
-
-# (Opsional) Forwarding port FastMCP jika dibutuhkan
-adb reverse tcp:8889 tcp:8889
-```
-
-> 💡 **Penjelasan `adb reverse`:** Perintah ini membuat port `localhost:8888` di dalam HP Android meneruskan semua request-nya langsung ke `localhost:8888` di PC/Laptop kamu. Jalankan perintah ini setiap kali kamu menghubungkan ulang kabel USB HP.
-
-#### **3. Menjalankan Aplikasi Flutter:**
-```bash
-# 1. Masuk ke direktori luna_mobile
 cd apps/luna_mobile
+flutter run --dart-define=USE_LOCAL_API=true
+```
+> ℹ️ **Otomatisasi Target Host:**
+> - **Android Emulator**: Otomatis menggunakan `http://10.0.2.2:8888/api/v1` dan `ws://10.0.2.2:8888` (karena `10.0.2.2` adalah gateway localhost laptop untuk emulator Android).
+> - **iOS Simulator / Web / Desktop**: Menggunakan `http://localhost:8888/api/v1` dan `ws://localhost:8888`.
 
-# 2. Ambil dependensi package
-flutter pub get
+##### **B. Perangkat Fisik Android (Physical Device via USB):**
+1. Lakukan reverse port ADB agar HP dapat mengakses server laptop via kabel USB:
+   ```bash
+   adb reverse tcp:8888 tcp:8888
+   ```
+2. Jalankan Flutter dengan flag local:
+   ```bash
+   cd apps/luna_mobile
+   flutter run --dart-define=USE_LOCAL_API=true
+   ```
 
-# 3. (Opsional) Bersihkan build cache jika ada kendala
-flutter clean && flutter pub get
-
-# 4. Jalankan aplikasi ke HP Android / Device
+##### **C. Menjalankan Mode Default (Production Cloud Server):**
+```bash
+cd apps/luna_mobile
 flutter run
 ```
+
+---
+
+#### **3. Konfigurasi VS Code (Debug / Run Langsung):**
+Tambahkan konfigurasi berikut ke `.vscode/launch.json` di root workspace agar dapat langsung menekan `F5` / Run:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Luna Mobile (Local Backend)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/luna_mobile/lib/main.dart",
+      "args": [
+        "--dart-define=USE_LOCAL_API=true"
+      ]
+    },
+    {
+      "name": "Luna Mobile (Production Cloud)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/luna_mobile/lib/main.dart"
+    }
+  ]
+}
+```
+
+---
 
 #### **4. Tombol Pintas Interaktif (`flutter run` CLI):**
 - Tekan **`r`** : **Hot Reload** (Pembaruan UI secara instan tanpa mereset halaman)

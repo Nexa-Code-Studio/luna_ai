@@ -60,8 +60,13 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final token = data['access_token'] as String?;
+        final refreshToken = data['refresh_token'] as String?;
         if (token != null) {
-          await AppConfig.setToken(token);
+          if (refreshToken != null) {
+            await AppConfig.setTokens(accessToken: token, refreshToken: refreshToken);
+          } else {
+            await AppConfig.setToken(token);
+          }
         }
         final userData = data['user'] as Map<String, dynamic>?;
         await AppConfig.setUserInfo(

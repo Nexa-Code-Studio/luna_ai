@@ -95,19 +95,41 @@ async def test_analytics_monitoring():
         data_week = res_week.json()
         assert data_week["periodKey"] == "week"
 
+        res_month = await client.get("/api/v1/analytics/monitoring?period=month")
+        assert res_month.status_code == 200
+        data_month = res_month.json()
+        assert data_month["periodKey"] == "month"
+        assert len(data_month["xLabels"]) == 4
+        assert len(data_month["chartData"]) == 4
+
 
 @pytest.mark.asyncio
 async def test_recommendations():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # 1. Test GET /recommendations catalog
         res = await client.get("/api/v1/recommendations")
         assert res.status_code == 200
         recs = res.json()
         assert isinstance(recs, list)
         assert len(recs) >= 1
 
-        rec_id = recs[0]["id"]
+        # 2. Test GET /recommendations/today
+        today_res = await client.get("/api/v1/recommendations/today")
+        assert today_res.status_code == 200
+        today_data = today_res.json()
+        assert "targetCondition" in today_data
+        assert "conditionLabel" in today_data
+        assert "todayActivity" in today_data
+        today_act = today_data["todayActivity"]
+        assert "title" in today_act
+        assert "instructions" in today_act
+
+        # 3. Mark completed
+        rec_id = today_act["id"]
         comp_res = await client.post(f"/api/v1/recommendations/{rec_id}/complete")
         assert comp_res.status_code == 200
+        comp_data = comp_res.json()
+        assert comp_data["isCompleted"] is True
 
 
 @pytest.mark.asyncio
