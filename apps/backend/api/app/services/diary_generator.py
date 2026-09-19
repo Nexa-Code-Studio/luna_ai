@@ -22,7 +22,7 @@ class DiaryGeneratorService:
     """Service to aggregate today's conversation transcripts and invoke DeepSeek LLM to generate a structured DiaryEntry."""
 
     @staticmethod
-    async def generate_today_diary(user_id: uuid.UUID, db: AsyncSession) -> DiaryEntry:
+    async def generate_today_diary(user_id: uuid.UUID, db: AsyncSession) -> DiaryEntry | None:
         today_date = get_wib_today()
 
         # 1. Retrieve all conversations for today
@@ -51,8 +51,8 @@ class DiaryGeneratorService:
                     all_formatted_msgs.append(f"[{time_str}] {msg.role.upper()}: {msg.content}")
 
         if not all_formatted_msgs:
-            logger.info(f"ℹ️ [DIARY GENERATOR] No conversation messages found for user {user_id} on {today_date}. Returning default diary.")
-            return await DiaryGeneratorService._upsert_default_diary(user_id, today_date, db)
+            logger.info(f"ℹ️ [DIARY GENERATOR] No conversation messages found for user {user_id} on {today_date}. No diary generated.")
+            return None
 
         transcript_text = "\n".join(all_formatted_msgs)
 
