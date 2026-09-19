@@ -2,6 +2,7 @@ import logging
 from collections.abc import AsyncGenerator
 
 from packages.ai.interfaces.tts import BaseTTSProvider
+from packages.ai.utils.tts_text_normalizer import sanitize_text_for_tts
 from packages.shared.config import settings
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ class EdgeTTSProvider(BaseTTSProvider):
         except ImportError:
             raise ImportError("edge-tts package is missing. Run pip install edge-tts.")
 
-        clean_text = text.strip()
+        clean_text = sanitize_text_for_tts(text)
         if not clean_text or not any(c.isalnum() for c in clean_text):
             return b""
 

@@ -207,7 +207,9 @@ class AIOrchestrator:
             "1. Berbicaralah dalam Bahasa Indonesia yang santun, akrab, dan hangat (seperti teman bicara yang penuh pengertian).\n"
             "2. Berikan respon yang ringkas dan nyaman didengar (1-3 kalimat) karena ini adalah percakapan suara real-time.\n"
             "3. Validasi perasaan pengguna terlebih dahulu sebelum memberikan pandangan menenangkan atau pertanyaan terbuka ringan.\n"
-            "4. Jangan mendiagnosis penyakit mental secara klinis."
+            "4. Format Teks untuk Suara (TTS): Tulis dalam teks lisan murni. DILARANG menggunakan tanda bintang markdown (* atau **), simbol garis bawah, tanda pagar (#), bullet points (-), atau emoji. Tulis kata secara lengkap tanpa singkatan (misal: tulis 'dan lain-lain', bukan 'dll.').\n"
+            "5. Gunakan tanda koma (,) dan titik (.) secara teratur dan wajar untuk mengatur jeda napas pelafalan suara.\n"
+            "6. Jangan mendiagnosis penyakit mental secara klinis."
         )
         return prompt
 
