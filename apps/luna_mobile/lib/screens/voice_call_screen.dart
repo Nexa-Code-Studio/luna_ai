@@ -7,6 +7,7 @@ import '../features/voice_call/domain/entities/call_state.dart';
 import '../features/voice_call/presentation/controllers/ai_call_controller.dart';
 import '../features/voice_call/presentation/controllers/ai_call_state.dart';
 import '../features/voice_call/presentation/providers/ai_call_provider.dart';
+import '../services/daily_progress_local_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/glass_card.dart';
@@ -281,6 +282,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
     bool isHighDistress, {
     bool hasDassTriggered = false,
   }) {
+    DailyProgressLocalService.recordConversationCheckin(hasConversation: true);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
