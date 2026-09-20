@@ -73,11 +73,14 @@ class LunaApp extends StatelessWidget {
         '/recommendation': (context) => const RecommendationScreen(),
 
         '/support': (context) => const SupportEmergencyScreen(),
-
         '/profile': (context) => const ProfileScreen(),
-
         '/emergency_contacts': (context) => const EmergencyContactsScreen(),
-
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/support') {
+          return SupportEmergencyScreen.route();
+        }
+        return null;
       },
     ),
   );

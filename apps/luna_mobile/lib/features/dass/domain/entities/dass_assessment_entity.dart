@@ -4,6 +4,7 @@ class DASSItemEntity {
   final String questionText;
   final int score; // 0, 1, 2, 3
   final String? evidence;
+  final String? reason;
   final double confidence;
   final bool isUserEdited;
 
@@ -13,6 +14,7 @@ class DASSItemEntity {
     required this.questionText,
     required this.score,
     this.evidence,
+    this.reason,
     required this.confidence,
     required this.isUserEdited,
   });
@@ -23,6 +25,7 @@ class DASSItemEntity {
     String? questionText,
     int? score,
     String? evidence,
+    String? reason,
     double? confidence,
     bool? isUserEdited,
   }) {
@@ -32,6 +35,7 @@ class DASSItemEntity {
       questionText: questionText ?? this.questionText,
       score: score ?? this.score,
       evidence: evidence ?? this.evidence,
+      reason: reason ?? this.reason,
       confidence: confidence ?? this.confidence,
       isUserEdited: isUserEdited ?? this.isUserEdited,
     );
