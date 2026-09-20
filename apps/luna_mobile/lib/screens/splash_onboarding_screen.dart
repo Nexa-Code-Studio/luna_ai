@@ -7,6 +7,7 @@ import '../config/app_config.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/luna_loading_orb.dart';
 
 class SplashOnboardingScreen extends StatefulWidget {
   const SplashOnboardingScreen({super.key});
@@ -24,11 +25,28 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
     _checkExistingSession();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage('assets/images/luna_logo.png'), context);
+  }
+
   Future<void> _checkExistingSession() async {
+    final startTime = DateTime.now();
+
+    Future<void> ensureMinDuration() async {
+      final elapsed = DateTime.now().difference(startTime);
+      const minDuration = Duration(milliseconds: 1500);
+      if (elapsed < minDuration) {
+        await Future.delayed(minDuration - elapsed);
+      }
+    }
+
     final token = await AppConfig.getToken();
     final refreshToken = await AppConfig.getRefreshToken();
 
     if (token == null && refreshToken == null) {
+      await ensureMinDuration();
       if (mounted) {
         setState(() => _isCheckingAuth = false);
       }
@@ -68,6 +86,9 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
       isAuthenticated = await AppConfig.refreshAccessToken();
     }
 
+    if (!mounted) return;
+
+    await ensureMinDuration();
     if (!mounted) return;
 
     if (isAuthenticated) {
@@ -148,78 +169,63 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
 
                           const Spacer(),
 
-                          // Center 3D Glowing Orb Visual
+                          // Center Visual: Animated Luna Loading Orb while checking auth,
+                          // or static glowing orb on onboarding.
                           Center(
-                            child: Container(
-                              width: 220,
-                              height: 220,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const SweepGradient(
-                                  colors: [
-                                    Color(0xFFFFB6C1),
-                                    Color(0xFFE2DAFF),
-                                    Color(0xFFA7E6FF),
-                                    Color(0xFF8B93FF),
-                                    Color(0xFFFFB6C1),
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.3),
-                                    blurRadius: 40,
-                                    spreadRadius: 5,
-                                  ),
-                                ],
-                              ),
-                              child: Container(
-                                margin: const EdgeInsets.all(3),
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: RadialGradient(
-                                    colors: [
-                                      Colors.white,
-                                      Color(0xFFEADBFF),
-                                      Color(0xFFA7E6FF),
-                                    ],
-                                    center: Alignment(-0.3, -0.3),
-                                    radius: 0.8,
-                                  ),
-                                ),
-                              ),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 600),
+                              child: _isCheckingAuth
+                                  ? const LunaLoadingOrb(
+                                      key: ValueKey('splash_loading_orb'),
+                                      size: 210,
+                                      message: 'Memuat ruang tenangmu...',
+                                    )
+                                  : Container(
+                                      key: const ValueKey('splash_static_orb'),
+                                      width: 220,
+                                      height: 220,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: const SweepGradient(
+                                          colors: [
+                                            Color(0xFFFFB6C1),
+                                            Color(0xFFE2DAFF),
+                                            Color(0xFFA7E6FF),
+                                            Color(0xFF8B93FF),
+                                            Color(0xFFFFB6C1),
+                                          ],
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.primary.withValues(alpha: 0.3),
+                                            blurRadius: 40,
+                                            spreadRadius: 5,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Container(
+                                        margin: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: RadialGradient(
+                                            colors: [
+                                              Colors.white,
+                                              Color(0xFFEADBFF),
+                                              Color(0xFFA7E6FF),
+                                            ],
+                                            center: Alignment(-0.3, -0.3),
+                                            radius: 0.8,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                             ),
                           ),
 
                           const Spacer(),
 
-                          // Bottom Content: Checking Auth or Onboarding Card
-                          if (_isCheckingAuth)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 40.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Memuat ruang tenangmu...',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else ...[
+                          // Bottom Content: Onboarding Card (shown when session check completes)
+                          if (!_isCheckingAuth) ...[
                             // Bottom Glass Card Onboarding Content
                             GlassCard(
                               padding: const EdgeInsets.all(28.0),

@@ -1001,18 +1001,19 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
     final bool isAiSpeaking = state.callState == CallState.aiSpeaking;
     final double soundLevel = state.isMuted ? 0.0 : state.soundLevel;
 
-    return AnimatedBuilder(
-      animation: _aiRippleController,
-      builder: (context, child) {
-        final animValue = _aiRippleController.value;
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _aiRippleController,
+        builder: (context, child) {
+          final animValue = _aiRippleController.value;
 
-        return Center(
-          child: SizedBox(
-            width: 280,
-            height: 280,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
+          return Center(
+            child: SizedBox(
+              width: 280,
+              height: 280,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
                 // 1. RADIAL FREQUENCY EQUALIZER BARS (CIRCULAR AUDIO SPECTRUM)
                 CustomPaint(
                   size: const Size(280, 280),
@@ -1106,8 +1107,9 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
           ),
         );
       },
-    );
-  }
+    ),
+  );
+}
 }
 
 /// Unified 5-node interactive visualizer built entirely in pure Flutter code.
@@ -1143,6 +1145,7 @@ class _MorphingVoiceNodesVisualizer extends StatefulWidget {
 class _MorphingVoiceNodesVisualizerState extends State<_MorphingVoiceNodesVisualizer>
     with SingleTickerProviderStateMixin {
   late final AnimationController _morphController;
+  late final Animation<double> _morphAnimation;
 
   static const double _dotSize = 5.0;
   static const List<double> _minHeights = [8.0, 12.0, 16.0, 12.0, 8.0];
@@ -1156,6 +1159,10 @@ class _MorphingVoiceNodesVisualizerState extends State<_MorphingVoiceNodesVisual
     _morphController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 550),
+    );
+    _morphAnimation = CurvedAnimation(
+      parent: _morphController,
+      curve: Curves.easeInOutCubic,
     );
 
     if (widget.callState == CallState.thinking) {
@@ -1222,23 +1229,22 @@ class _MorphingVoiceNodesVisualizerState extends State<_MorphingVoiceNodesVisual
     return AnimatedBuilder(
       animation: _morphController,
       builder: (context, child) {
-        final morphValue = CurvedAnimation(
-          parent: _morphController,
-          curve: Curves.easeInOutCubic,
-        ).value;
+        final morphValue = _morphAnimation.value;
 
         return SizedBox(
           width: 174,
           height: 174,
           child: ClipOval(
-            child: CustomPaint(
-              size: const Size(174, 174),
-              painter: _VoiceNodesMorphPainter(
-                morphProgress: morphValue,
-                animProgress: widget.animValue,
-                barHeights: _currentHeights,
-                isThinking: widget.callState == CallState.thinking,
-                isMuted: widget.isMuted,
+            child: RepaintBoundary(
+              child: CustomPaint(
+                size: const Size(174, 174),
+                painter: _VoiceNodesMorphPainter(
+                  morphProgress: morphValue,
+                  animProgress: widget.animValue,
+                  barHeights: _currentHeights,
+                  isThinking: widget.callState == CallState.thinking,
+                  isMuted: widget.isMuted,
+                ),
               ),
             ),
           ),

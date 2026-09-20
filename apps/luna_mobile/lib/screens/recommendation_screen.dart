@@ -8,6 +8,8 @@ import '../config/app_config.dart';
 import '../services/daily_progress_local_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/skeleton_shimmer.dart';
+import '../widgets/staggered_entrance.dart';
 
 class RecommendationScreen extends StatefulWidget {
   const RecommendationScreen({super.key});
@@ -465,12 +467,13 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              _buildTopBar(),
+              StaggeredEntrance(
+                index: 0,
+                child: _buildTopBar(),
+              ),
               Expanded(
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(),
-                      )
+                    ? const _RecommendationSkeletonLoader()
                     : RefreshIndicator(
                         onRefresh: _fetchRecommendations,
                         child: SingleChildScrollView(
@@ -486,63 +489,88 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                               ],
 
                               // 2. Clinically Tailored Condition Header Card
-                              _buildConditionContextCard(),
+                              StaggeredEntrance(
+                                index: 1,
+                                child: _buildConditionContextCard(),
+                              ),
                               const SizedBox(height: 20),
 
                               // 3. Featured Activity of the Day
                               if (_todayActivity != null) ...[
-                                Text(
-                                  'Aktivitas Utama Hari Ini',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
+                                StaggeredEntrance(
+                                  index: 2,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Aktivitas Utama Hari Ini',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Langkah kecil paling relevan untuk menenangkan pikiranmu saat ini.',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      _buildFeaturedTodayCard(_todayActivity!),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Langkah kecil paling relevan untuk menenangkan pikiranmu saat ini.',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                _buildFeaturedTodayCard(_todayActivity!),
                                 const SizedBox(height: 24),
                               ],
 
                               // 4. Category Filter Chips
-                              Text(
-                                'Pilihan Latihan Ketenangan',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
+                              StaggeredEntrance(
+                                index: 3,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Pilihan Latihan Ketenangan',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Pilih teknik yang paling nyaman dan sesuai kebutuhanmu.',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildCategorySelector(),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Pilih teknik yang paling nyaman dan sesuai kebutuhanmu.',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildCategorySelector(),
                               const SizedBox(height: 14),
 
                               // 5. List of Recommended Activities
                               if (filteredRecommendations.isEmpty)
                                 _buildEmptyState()
                               else
-                                ...filteredRecommendations.map((rec) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12.0),
-                                    child: _buildActivityCard(rec),
-                                  );
-                                }),
+                                StaggeredEntrance(
+                                  index: 4,
+                                  child: Column(
+                                    children: [
+                                      for (final rec in filteredRecommendations)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 12.0),
+                                          child: _buildActivityCard(rec),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -1659,6 +1687,105 @@ class _GuidanceModalContentState extends State<_GuidanceModalContent> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Shimmer skeleton loader for the Recommendations Screen.
+class _RecommendationSkeletonLoader extends StatelessWidget {
+  const _RecommendationSkeletonLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonShimmerHost(
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 80.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Condition Header Card Skeleton
+            GlassCard(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const SkeletonCircle(size: 38),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          SkeletonLine(width: 140, height: 16),
+                          SizedBox(height: 6),
+                          SkeletonLine(width: 90, height: 12),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const SkeletonLine(width: double.infinity, height: 13),
+                  const SizedBox(height: 8),
+                  const SkeletonLine(width: 220, height: 13),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Featured Activity Skeleton
+            GlassCard(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  SkeletonBox(width: 110, height: 22, borderRadius: 8),
+                  SizedBox(height: 14),
+                  SkeletonLine(width: 200, height: 18),
+                  SizedBox(height: 10),
+                  SkeletonLine(width: double.infinity, height: 13),
+                  SizedBox(height: 6),
+                  SkeletonLine(width: 260, height: 13),
+                  SizedBox(height: 16),
+                  SkeletonBox(width: double.infinity, height: 44, borderRadius: 12),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Activity List Skeletons
+            ...List.generate(
+              2,
+              (index) => Padding(
+                padding: const EdgeInsets.only(bottom: 14.0),
+                child: GlassCard(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const SkeletonCircle(size: 42),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            SkeletonLine(width: 150, height: 15),
+                            SizedBox(height: 8),
+                            SkeletonLine(width: 100, height: 12),
+                          ],
+                        ),
+                      ),
+                      const SkeletonBox(width: 28, height: 28, borderRadius: 8),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
