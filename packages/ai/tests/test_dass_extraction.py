@@ -16,6 +16,7 @@ class MockExtractionLLMProvider(BaseLLMProvider):
                 "question_text": "Saya merasa sulit untuk beristirahat atau menenangkan diri",
                 "score": 2,
                 "evidence": "Gue pusing banget dan gak bisa tenang mikirin kerjaan",
+                "reason": "Pengguna mengekspresikan ketegangan pikiran yang menghambat relaksasi.",
                 "confidence": 0.90,
                 "is_user_edited": False,
             },
@@ -25,6 +26,7 @@ class MockExtractionLLMProvider(BaseLLMProvider):
                 "question_text": "Saya merasa sedih, murung, dan tertekan",
                 "score": 3,
                 "evidence": "Aku merasa sedih dan hampa seharian",
+                "reason": "Pengguna merasa hampa dan sedih terus menerus sepanjang hari.",
                 "confidence": 0.95,
                 "is_user_edited": False,
             },
@@ -45,16 +47,19 @@ async def test_dass_extraction_from_transcript():
     item_1 = next(it for it in items if it["item_id"] == 1)
     assert item_1["score"] == 2
     assert "pusing banget" in item_1["evidence"]
+    assert item_1["reason"] is not None
     assert item_1["confidence"] == 0.90
 
     item_13 = next(it for it in items if it["item_id"] == 13)
     assert item_13["score"] == 3
     assert item_13["scale"] == "depression"
+    assert item_13["reason"] is not None
 
     # Butir yang tidak terindikasi harus bernilai 0
     item_2 = next(it for it in items if it["item_id"] == 2)
     assert item_2["score"] == 0
     assert item_2["evidence"] is None
+    assert item_2["reason"] is None
 
 
 @pytest.mark.asyncio

@@ -9,11 +9,13 @@ class QueuedAudioChunk {
   final Uint8List bytes;
   final int assistantTurnId;
   final int sequence;
+  final List<double> envelope;
 
   const QueuedAudioChunk({
     required this.bytes,
     required this.assistantTurnId,
     required this.sequence,
+    this.envelope = const [],
   });
 }
 
@@ -35,13 +37,20 @@ class AiAudioPlaybackService {
 
   final StreamController<int> _playbackCompletedController =
       StreamController<int>.broadcast();
+  final StreamController<double> _soundLevelController =
+      StreamController<double>.broadcast();
 
   Stream<int> get onPlaybackCompleted => _playbackCompletedController.stream;
+  Stream<double> get soundLevelStream => _soundLevelController.stream;
   bool get isPlaying => _isPlaying;
   int get currentAssistantTurnId => _currentAssistantTurnId;
 
+  Timer? _envelopeTimer;
+  final Stopwatch _playbackStopwatch = Stopwatch();
+
   void _initPlayerListeners() {
     _player.onPlayerComplete.listen((_) async {
+      _stopEnvelopeTicker();
       _isPlaying = false;
       _lastChunkCompletedAt = DateTime.now();
 
@@ -66,11 +75,12 @@ class AiAudioPlaybackService {
     }
   }
 
-  /// Enqueue an incoming TTS audio byte chunk
+  /// Enqueue an incoming TTS audio byte chunk with its time-aligned speech envelope
   void enqueueChunk({
     required Uint8List bytes,
     required int assistantTurnId,
     required int sequence,
+    List<double> envelope = const [],
   }) {
     // Drop if turn has been cancelled or belongs to older assistant turn
     if (_cancelledTurnIds.contains(assistantTurnId) || assistantTurnId < _currentAssistantTurnId) {
@@ -83,6 +93,7 @@ class AiAudioPlaybackService {
       bytes: bytes,
       assistantTurnId: assistantTurnId,
       sequence: sequence,
+      envelope: envelope,
     ));
 
     if (!_isPlaying) {
@@ -130,23 +141,81 @@ class AiAudioPlaybackService {
 
     try {
       _isPlaying = true;
-      debugPrint('🔊 [AUDIO PLAYING CHUNK]: Turn ${nextChunk.assistantTurnId}, Seq ${nextChunk.sequence} (${nextChunk.bytes.length} bytes)');
+      debugPrint('🔊 [AUDIO PLAYING CHUNK]: Turn ${nextChunk.assistantTurnId}, Seq ${nextChunk.sequence} (${nextChunk.bytes.length} bytes, ${nextChunk.envelope.length} env points)');
+      _playbackStopwatch.reset();
+      _playbackStopwatch.start();
+      _startEnvelopeTicker(nextChunk.envelope);
+
       await _player.play(BytesSource(nextChunk.bytes));
     } catch (e) {
       debugPrint('⚠️ [AUDIO PLAY EXCEPTION]: $e');
+      _stopEnvelopeTicker();
       _isPlaying = false;
       _playNextChunk();
+    }
+  }
+
+  void _startEnvelopeTicker(List<double> envelope) {
+    _envelopeTimer?.cancel();
+    if (envelope.isEmpty) {
+      _envelopeTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
+        if (!_isPlaying) {
+          _stopEnvelopeTicker();
+          return;
+        }
+        if (!_soundLevelController.isClosed) {
+          _soundLevelController.add(0.25);
+        }
+      });
+      return;
+    }
+
+    _envelopeTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      if (!_isPlaying) {
+        _stopEnvelopeTicker();
+        return;
+      }
+      final elapsedMs = _playbackStopwatch.elapsedMilliseconds;
+      // 50ms per envelope sample point
+      final double sampleIndex = elapsedMs / 50.0;
+      final int baseIdx = sampleIndex.floor();
+
+      if (baseIdx < envelope.length) {
+        final double frac = sampleIndex - baseIdx;
+        final double v1 = envelope[baseIdx];
+        final double v2 = (baseIdx + 1 < envelope.length) ? envelope[baseIdx + 1] : 0.0;
+        final double level = v1 + (v2 - v1) * frac;
+        if (!_soundLevelController.isClosed) {
+          _soundLevelController.add(level.clamp(0.0, 1.0));
+        }
+      } else {
+        if (!_soundLevelController.isClosed) {
+          _soundLevelController.add(0.0);
+        }
+      }
+    });
+  }
+
+  void _stopEnvelopeTicker() {
+    _envelopeTimer?.cancel();
+    _envelopeTimer = null;
+    _playbackStopwatch.stop();
+    if (!_soundLevelController.isClosed) {
+      _soundLevelController.add(0.0);
     }
   }
 
   void _notifyCompleted() {
     final finishedTurn = _currentAssistantTurnId;
     debugPrint('✅ [AUDIO PLAYBACK COMPLETED]: All audio for turn $finishedTurn finished playing.');
-    _playbackCompletedController.add(finishedTurn);
+    if (!_playbackCompletedController.isClosed) {
+      _playbackCompletedController.add(finishedTurn);
+    }
   }
 
   /// Immediately stop playback, flush audio queue, and invalidate current assistant turn
   Future<void> stop() async {
+    _stopEnvelopeTicker();
     if (_currentAssistantTurnId > 0) {
       _cancelledTurnIds.add(_currentAssistantTurnId);
     }
@@ -170,5 +239,6 @@ class AiAudioPlaybackService {
     stop();
     _player.dispose();
     _playbackCompletedController.close();
+    _soundLevelController.close();
   }
 }

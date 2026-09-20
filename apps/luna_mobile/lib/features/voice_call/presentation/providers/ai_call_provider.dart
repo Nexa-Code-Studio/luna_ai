@@ -6,19 +6,21 @@ import '../../data/services/speech_recognition_service.dart';
 import '../controllers/ai_call_controller.dart';
 import '../controllers/ai_call_state.dart';
 
-final speechRecognitionServiceProvider = Provider<SpeechRecognitionService>((ref) {
+final speechRecognitionServiceProvider =
+    Provider.autoDispose<SpeechRecognitionService>((ref) {
   final service = SpeechRecognitionService();
   ref.onDispose(() => service.dispose());
   return service;
 });
 
-final aiAudioPlaybackServiceProvider = Provider<AiAudioPlaybackService>((ref) {
+final aiAudioPlaybackServiceProvider =
+    Provider.autoDispose<AiAudioPlaybackService>((ref) {
   final service = AiAudioPlaybackService();
   ref.onDispose(() => service.dispose());
   return service;
 });
 
-final voiceCallWsClientProvider = Provider<VoiceCallWsClient>((ref) {
+final voiceCallWsClientProvider = Provider.autoDispose<VoiceCallWsClient>((ref) {
   final client = VoiceCallWsClient();
   ref.onDispose(() => client.dispose());
   return client;

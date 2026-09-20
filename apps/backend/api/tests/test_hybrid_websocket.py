@@ -264,3 +264,27 @@ def test_hybrid_websocket_multi_turn_flow():
         assert turn_2_committed is True
         assert ai_thinking_2 is True
 
+
+def test_hybrid_websocket_empty_force_commit_keeps_turn_open():
+    with client.websocket_connect("/api/v1/call/ws/test_hybrid_empty_force") as ws:
+        connected = ws.receive_json()
+        assert connected["type"] == "call_connected"
+
+        ws.send_json({"type": "start_call"})
+        started = ws.receive_json()
+        assert started["type"] == "call_started"
+
+        # User presses Selesai Bicara (force commit) without saying anything
+        ws.send_json({
+            "type": "user.force_commit",
+            "call_id": "test_hybrid_empty_force",
+            "user_turn_id": 1,
+        })
+
+        # Expect turn.keep_open with restart_stt=True and empty_force_commit reason
+        event = ws.receive_json()
+        assert event["type"] == "turn.keep_open"
+        assert event.get("restart_stt") is True
+        assert event.get("reason") == "empty_force_commit"
+        assert event.get("user_turn_id") == 1
+

@@ -127,14 +127,6 @@ class CallSessionManager:
                         except Exception:
                             pass
 
-                if not user:
-                    user_query = select(User).where(User.email == "user.luna@gmail.com")
-                    res_user = await db.execute(user_query)
-                    user = res_user.scalar_one_or_none()
-                if not user:
-                    res_any = await db.execute(select(User))
-                    user = res_any.scalars().first()
-
                 if user:
                     session.user_id = user.id
 
@@ -479,6 +471,18 @@ class CallSessionManager:
         transcript = session.aggregator.force_commit()
         if transcript.strip():
             await self._commit_turn_and_start_ai(session, transcript, reason="manual_commit")
+        else:
+            logger.info(
+                f"ℹ️ [EMPTY FORCE COMMIT] Session {session.session_id}: Turn {user_turn_id} transcript is empty, resetting aggregator and keeping turn open"
+            )
+            session.aggregator.reset_for_new_turn(user_turn_id)
+            await session.websocket.send_json({
+                "type": "turn.keep_open",
+                "call_id": session.session_id,
+                "user_turn_id": user_turn_id,
+                "restart_stt": True,
+                "reason": "empty_force_commit",
+            })
 
     async def _handle_call_sync(self, session: CallSession, payload: dict[str, Any]) -> None:
         await session.websocket.send_json({
@@ -707,25 +711,32 @@ class CallSessionManager:
                         "assistant_turn_id": task_id,
                         "risk_level": turn.safety_decision.risk_level,
                         "protocol_action": str(turn.safety_decision.response_policy),
-                        "hotline": "Kemenkes 119 ext 8 / LISA 0811-3855-472",
+                        "hotline": "Hotline Dinkes (WhatsApp 0813-8007-3120) / Kemenkes 119 ext 8",
+                        "hotline_url": "https://api.whatsapp.com/send/?phone=6281380073120&text=halo%20kak%2C%20saya%20ingin%20bercerita%20mengenai...&type=phone_number&app_absent=0",
                     })
                 except Exception as ws_err:
                     logger.warning(f"Failed to send crisis event over websocket: {ws_err}")
 
             full_text_list = []
             try:
-                async for token in turn.token_stream:
-                    if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
-                        logger.info(f"⚡ [LLM STREAM SUPERSEDED] Session {session.session_id} (Assistant Turn {task_id})")
-                        break
-                    full_text_list.append(token)
+                async with asyncio.timeout(12.0):
+                    async for token in turn.token_stream:
+                        if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
+                            logger.info(f"⚡ [LLM STREAM SUPERSEDED] Session {session.session_id} (Assistant Turn {task_id})")
+                            break
+                        full_text_list.append(token)
 
             except asyncio.CancelledError:
                 logger.info(f"⚡ [LLM STREAM CANCELLED] Session {session.session_id} (Assistant Turn {task_id})")
                 raise
+            except TimeoutError:
+                logger.warning(f"⚠️ [LLM STREAM TIMEOUT] Session {session.session_id} (Assistant Turn {task_id}): Exceeded 12s timeout")
+                if not full_text_list:
+                    full_text_list = ["Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"]
             except Exception as e:
                 logger.error(f"❌ [LLM STREAM ERROR] Session {session.session_id} (Assistant Turn {task_id}): {e}")
-                full_text_list = ["Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"]
+                if not full_text_list:
+                    full_text_list = ["Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"]
 
             if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
                 return
@@ -744,7 +755,7 @@ class CallSessionManager:
                 )
                 await self._save_message_to_db(session, "assistant", spoken_text)
 
-            # Pecah kalimat agar dibacakan per kalimat secara berurutan dengan jeda alami, bukan langsung dibaca sekaligus tanpa jeda
+            # Pecah kalimat agar dibacakan per kalimat secara berurutan dengan jeda alami
             raw_sentences = re.split(r"(?<=[.!?])\s+", spoken_text)
             sentences = [s.strip() for s in raw_sentences if s.strip()]
             if not sentences:
@@ -765,9 +776,16 @@ class CallSessionManager:
                     logger.info(f"⚡ [TTS INTERRUPTED BEFORE SENTENCE {seq}] Session {session.session_id}")
                     return
 
+                chunk_audio = None
+                envelope = []
                 try:
                     logger.info(f"🎙️ [TTS SYNTHESIZE SENTENCE {seq}/{len(sentences)}] Session {session.session_id}: '{sentence}'")
-                    chunk_audio = await tts_provider.synthesize(sentence)
+                    async with asyncio.timeout(8.0):
+                        if hasattr(tts_provider, "synthesize_with_envelope"):
+                            chunk_audio, envelope = await tts_provider.synthesize_with_envelope(sentence)
+                        else:
+                            chunk_audio = await tts_provider.synthesize(sentence)
+
                     if chunk_audio:
                         total_audio_bytes += len(chunk_audio)
                         b64_audio = base64.b64encode(chunk_audio).decode("ascii")
@@ -778,8 +796,11 @@ class CallSessionManager:
                             "sequence": seq,
                             "text": sentence,
                             "audio_base64": b64_audio,
+                            "envelope": envelope,
                         })
-                        logger.info(f"🔊 [OUTGOING TTS AUDIO CHUNK {seq}/{len(sentences)}] Session {session.session_id}: Sent {len(chunk_audio)} bytes")
+                        logger.info(f"🔊 [OUTGOING TTS AUDIO CHUNK {seq}/{len(sentences)}] Session {session.session_id}: Sent {len(chunk_audio)} bytes with {len(envelope)} envelope points")
+                except TimeoutError:
+                    logger.warning(f"⚠️ [TTS TIMEOUT SENTENCE {seq}] Session {session.session_id}: Exceeded 8s timeout, skipping sentence chunk")
                 except Exception as ex:
                     logger.error(f"⚠️ [TTS SYNTHESIS ERROR SENTENCE {seq}] Session {session.session_id}: {ex}")
 
@@ -803,8 +824,15 @@ class CallSessionManager:
         except Exception as e:
             logger.error(f"❌ [AI PIPELINE ERROR] Session {session.session_id} (Assistant Turn {task_id}): {e}")
             if session.current_task_id == task_id:
-                await session.websocket.send_json({"type": "error", "message": str(e)})
                 session.state = "listening"
+                await session.websocket.send_json({"type": "error", "message": str(e)})
+                await session.websocket.send_json({
+                    "type": "call.sync_state",
+                    "call_id": session.session_id,
+                    "state": "listening",
+                    "active_user_turn_id": session.aggregator.user_turn_id,
+                    "active_assistant_turn_id": session.assistant_turn_id,
+                })
 
 
 call_session_manager = CallSessionManager()

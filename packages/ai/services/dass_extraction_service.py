@@ -65,9 +65,10 @@ class DASSExtractionService:
                 "   - 1: Kadang-kadang / keluhan ringan sepintas.\n"
                 "   - 2: Sering / keluhan tampak jelas dan mengganggu.\n"
                 "   - 3: Hampir selalu / intensitas keluhan sangat berat atau berulang.\n"
-                "2. JIKA butir tidak pernah disinggung atau tidak ada indikasi dalam teks, WAJIB beri skor 0, evidence: null, confidence: 0.0.\n"
+                "2. JIKA butir tidak pernah disinggung atau tidak ada indikasi dalam teks, WAJIB beri skor 0, evidence: null, reason: null, confidence: 0.0.\n"
                 "3. JIKA butir terindikasi (skor >= 1), sertakan kutipan kalimat pengguna yang paling relevan pada field 'evidence', dan confidence (float 0.50 s.d 1.00).\n"
-                "4. WAJIB mengembalikan JSON ARRAY VALID yang berisi TEPAT 21 objek (item_id 1 s.d 21) TANPA MARKDOWN (tanpa ```json atau teks lain).\n"
+                "4. Sertakan field 'reason': berikan penjelasan ringkas (1-2 kalimat) bahasa Indonesia yang empatik mengenai alasan AI mengaitkan ucapan pengguna dengan skor butir ini (atau null jika skor 0).\n"
+                "5. WAJIB mengembalikan JSON ARRAY VALID yang berisi TEPAT 21 objek (item_id 1 s.d 21) TANPA MARKDOWN (tanpa ```json atau teks lain).\n"
                 "Format setiap elemen array:\n"
                 "{\n"
                 '  "item_id": <int 1-21>,\n'
@@ -75,6 +76,7 @@ class DASSExtractionService:
                 '  "question_text": "<teks resmi>",\n'
                 '  "score": <int 0-3>,\n'
                 '  "evidence": "<kutipan kalimat user atau null>",\n'
+                '  "reason": "<penjelasan alasan AI atau null>",\n'
                 '  "confidence": <float 0.0 - 1.0>,\n'
                 '  "is_user_edited": false\n'
                 "}"
@@ -113,6 +115,7 @@ class DASSExtractionService:
                             "question_text": spec["question_text"],
                             "score": min(3, max(0, int(item_data.get("score", 0)))),
                             "evidence": item_data.get("evidence"),
+                            "reason": item_data.get("reason"),
                             "confidence": float(item_data.get("confidence", 0.0)),
                             "is_user_edited": False,
                         })
@@ -123,6 +126,7 @@ class DASSExtractionService:
                             "question_text": spec["question_text"],
                             "score": 0,
                             "evidence": None,
+                            "reason": None,
                             "confidence": 0.0,
                             "is_user_edited": False,
                         })
@@ -142,6 +146,7 @@ class DASSExtractionService:
                 "question_text": item["question_text"],
                 "score": 0,
                 "evidence": None,
+                "reason": None,
                 "confidence": 0.0,
                 "is_user_edited": False,
             }
