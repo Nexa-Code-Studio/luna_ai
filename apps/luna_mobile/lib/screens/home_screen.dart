@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import '../providers/daily_progress_provider.dart';
 import '../services/daily_progress_local_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/staggered_entrance.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   final ValueChanged<int>? onNavigateTab;
 
   const HomeScreen({
@@ -19,10 +21,10 @@ class HomeScreen extends StatefulWidget {
   });
 
   @override
-  State<HomeScreen> createState() => HomeScreenState();
+  ConsumerState<HomeScreen> createState() => HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   String _userName = 'Sahabat LUNA';
   int _todayConversationsCount = 0;
   bool _hasTodayDiary = false;
@@ -137,13 +139,30 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _recommendations = List<Map<String, dynamic>>.from(
       _defaultRecommendations.map((item) => Map<String, dynamic>.from(item)),
     );
     _loadHomeScreenData();
   }
 
-  void refresh() => _loadHomeScreenData();
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      refresh();
+    }
+  }
+
+  void refresh() {
+    _loadHomeScreenData();
+    ref.read(dailyProgressProvider.notifier).refresh();
+  }
 
   Future<void> _loadHomeScreenData() async {
     // 1. Load cached user info first for instant display
@@ -428,6 +447,9 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final liveProgress = ref.watch(dailyProgressProvider);
+    _localProgress = liveProgress;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -671,8 +693,9 @@ class HomeScreenState extends State<HomeScreen> {
           badgeText: _todayConversationsCount > 0
               ? '$_todayConversationsCount Sesi'
               : 'Siap Mendengar',
-          onTap: () {
-            Navigator.pushNamed(context, '/chat');
+          onTap: () async {
+            await Navigator.pushNamed(context, '/chat');
+            refresh();
           },
         ),
         const SizedBox(height: 12),
@@ -683,11 +706,12 @@ class HomeScreenState extends State<HomeScreen> {
           title: 'Jurnal Refleksi AI',
           subtitle: 'Lihat rangkuman emosi harimu',
           badgeText: _hasTodayDiary ? 'Tersintesis 🌿' : 'Otomatis',
-          onTap: () {
+          onTap: () async {
             if (widget.onNavigateTab != null) {
               widget.onNavigateTab!(1);
             } else {
-              Navigator.pushNamed(context, '/diary');
+              await Navigator.pushNamed(context, '/diary');
+              refresh();
             }
           },
         ),
@@ -719,7 +743,7 @@ class HomeScreenState extends State<HomeScreen> {
                   : AppColors.primaryContainer.withValues(alpha: 0.6)),
           onTap: () async {
             await Navigator.pushNamed(context, '/dass_assessment');
-            _loadHomeScreenData();
+            refresh();
           },
         ),
       ],
@@ -1014,7 +1038,10 @@ class HomeScreenState extends State<HomeScreen> {
                     : 'Ekspresikan perasaanmu lewat suara atau teks',
                 icon: Icons.chat_bubble_outline_rounded,
                 isCompleted: isConversationDone,
-                onTap: () => Navigator.pushNamed(context, '/chat'),
+                onTap: () async {
+                  await Navigator.pushNamed(context, '/chat');
+                  refresh();
+                },
               ),
               const SizedBox(height: 8),
 
@@ -1026,11 +1053,12 @@ class HomeScreenState extends State<HomeScreen> {
                     : 'Baca rangkuman & pola emosimu hari ini',
                 icon: Icons.menu_book_rounded,
                 isCompleted: isDiaryDone,
-                onTap: () {
+                onTap: () async {
                   if (widget.onNavigateTab != null) {
                     widget.onNavigateTab!(1);
                   } else {
-                    Navigator.pushNamed(context, '/diary');
+                    await Navigator.pushNamed(context, '/diary');
+                    refresh();
                   }
                 },
               ),
@@ -1044,7 +1072,10 @@ class HomeScreenState extends State<HomeScreen> {
                     : 'Coba 1 teknik pernapasan atau mindfulness',
                 icon: Icons.spa_rounded,
                 isCompleted: isExerciseDone,
-                onTap: () => Navigator.pushNamed(context, '/recommendation'),
+                onTap: () async {
+                  await Navigator.pushNamed(context, '/recommendation');
+                  refresh();
+                },
               ),
             ],
           ),
