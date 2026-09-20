@@ -218,7 +218,7 @@ async def get_me(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Pengguna tidak ditemukan atau telah dihapus",
+            detail="Pengguna tidak ditemukan",
         )
 
     return {
