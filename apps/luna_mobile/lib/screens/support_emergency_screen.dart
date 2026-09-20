@@ -56,7 +56,7 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
   bool _isLoadingContact = true;
 
   static const String _dinkesWhatsappUrl =
-      'https://api.whatsapp.com/send/?phone=6281119220002&text=Halo%20Dinkes%20DKI,%20saya%20membutuhkan%20bantuan%20konseling%20krisis%20kesehatan%20mental&type=phone_number&app_absent=0';
+      'https://api.whatsapp.com/send/?phone=6281380073120&text=halo%20kak%2C%20saya%20ingin%20bercerita%20mengenai...&type=phone_number&app_absent=0';
 
   @override
   void initState() {
@@ -135,15 +135,24 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
 
   Future<void> _openDinkesHotline() async {
     final uri = Uri.parse(_dinkesWhatsappUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tidak dapat membuka WhatsApp Dinkes'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak dapat membuka WhatsApp Dinkes'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -163,15 +172,6 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => const _BreathingExerciseModal(),
-    );
-  }
-
-  void _openCounselorModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => const _CounselorModal(),
     );
   }
 
@@ -329,7 +329,18 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
                       ),
                       const SizedBox(height: 24),
 
-                      // Action Pill Card 1: Hubungi Orang Terpercaya
+                      // Action Pill Card 1: WhatsApp Krisis Dinkes DKI
+                      _buildSupportPillCard(
+                        icon: Icons.support_agent_rounded,
+                        iconBg: const Color(0xFFE8F8F5),
+                        iconColor: const Color(0xFF00B894),
+                        title: 'WhatsApp Krisis Dinkes DKI',
+                        subtitle: 'Pendampingan Konseling Krisis Resmi',
+                        onTap: _openDinkesHotline,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Action Pill Card 2: Hubungi Orang Terdekat
                       _buildSupportPillCard(
                         icon: Icons.perm_contact_calendar_outlined,
                         iconBg: const Color(0xFFFFDCDD),
@@ -340,18 +351,7 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
                       ),
                       const SizedBox(height: 12),
 
-                      // Action Pill Card 2: Chat dengan Profesional
-                      _buildSupportPillCard(
-                        icon: Icons.chat_bubble_outline,
-                        iconBg: const Color(0xFFE4DCFF),
-                        iconColor: const Color(0xFF6C5CE7),
-                        title: 'Chat dengan Konselor Profesional',
-                        subtitle: 'Layanan Psikolog & Puskesmas',
-                        onTap: _openCounselorModal,
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Action Pill Card 3: Hotline Krisis
+                      // Action Pill Card 3: Hotline Krisis & Bantuan Darurat
                       _buildSupportPillCard(
                         icon: Icons.language,
                         iconBg: const Color(0xFFD7F3FF),
@@ -359,17 +359,6 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
                         title: 'Hotline Krisis & Bantuan Darurat',
                         subtitle: 'SEJIWA 119, LISA, 112 Bebas Pulsa',
                         onTap: _openHotlineModal,
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Action Pill Card 4: WhatsApp Dinkes
-                      _buildSupportPillCard(
-                        icon: Icons.support_agent_rounded,
-                        iconBg: const Color(0xFFE8F8F5),
-                        iconColor: const Color(0xFF00B894),
-                        title: 'WhatsApp Krisis Dinkes DKI',
-                        subtitle: 'Pendampingan Konseling Krisis Resmi',
-                        onTap: _openDinkesHotline,
                       ),
                       const Spacer(flex: 2),
 
@@ -720,250 +709,7 @@ class _BreathingExerciseModalState extends State<_BreathingExerciseModal> {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Counselor Options Modal
-// -----------------------------------------------------------------------------
-class _CounselorModal extends StatelessWidget {
-  const _CounselorModal();
 
-  void _copy(BuildContext context, String text, String label) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label berhasil disalin ke clipboard'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Konseling & Dukungan',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 22),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Pilih jalur komunikasi yang paling membuatmu merasa aman.',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Option 1: Chat dengan LUNA (Mode Krisis)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F0FF),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFD8B4FE)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF6C5CE7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.auto_awesome,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Chat dengan LUNA (24/7)',
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            'Pendampingan de-eskalasi kecemasan instan',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, '/chat');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C5CE7),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: Text(
-                      'Buka Chat dengan LUNA Sekarang',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Option 2: LISA (Layanan Sahabat Jiwa)
-          _buildContactRow(
-            context,
-            icon: Icons.support_agent,
-            title: 'LISA - Hotline Pencegahan Krisis',
-            subtitle: 'Layanan Sahabat Jiwa (WhatsApp & Call 24 Jam)',
-            contactInfo: '0811-3855-472',
-            onCopy: () => _copy(context, '0811-3855-472', 'Nomor LISA'),
-          ),
-          const SizedBox(height: 12),
-
-          // Option 3: SEJIWA (Kemenkes)
-          _buildContactRow(
-            context,
-            icon: Icons.local_hospital_outlined,
-            title: 'Layanan SEJIWA (Kemenkes & BNPB)',
-            subtitle: 'Konseling psikologis gratis dari pemerintah',
-            contactInfo: '119 (Ekstensi 8)',
-            onCopy: () => _copy(context, '119', 'Nomor SEJIWA (119 Ext 8)'),
-          ),
-          const SizedBox(height: 12),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContactRow(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String contactInfo,
-    required VoidCallback onCopy,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  contactInfo,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.copy, size: 18, color: AppColors.textSecondary),
-            tooltip: 'Salin nomor',
-            onPressed: onCopy,
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // -----------------------------------------------------------------------------
 // Emergency Hotline Modal
