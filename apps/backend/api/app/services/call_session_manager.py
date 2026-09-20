@@ -18,7 +18,7 @@ from app.core.prompt_templates import LUNA_SYSTEM_PROMPT
 from app.core.security import decode_access_token
 from app.core.tz import get_wib_now, get_wib_today
 from app.db.session import AsyncSessionLocal
-from app.models.conversation import Conversation, Message
+from app.models.conversation import Conversation, ConversationSummary, Message
 from app.models.dass import DASSAssessment
 from app.models.diary import DiaryEntry
 from app.models.enums import MessageType
@@ -271,14 +271,22 @@ class CallSessionManager:
             analysis = await EmotionAnalyzerService.analyze_transcript(session.conversation_history)
 
             session_title = analysis.get("session_title")
-            if session_title and session.db_conversation_id:
+            session_summary = analysis.get("diary_summary") or analysis.get("ai_insight")
+            if session.db_conversation_id:
                 async with AsyncSessionLocal() as db_conv:
                     conv_res = await db_conv.execute(select(Conversation).where(Conversation.id == session.db_conversation_id))
                     conv_obj = conv_res.scalar_one_or_none()
                     if conv_obj:
-                        conv_obj.title = session_title
+                        if session_title:
+                            conv_obj.title = session_title
+                        if session_summary:
+                            new_summary = ConversationSummary(
+                                conversation_id=conv_obj.id,
+                                summary=session_summary,
+                            )
+                            db_conv.add(new_summary)
                         await db_conv.commit()
-                        logger.info(f"🏷️ [AI CONVERSATION TITLE PERSISTED]: Conversation {conv_obj.id} -> '{session_title}'")
+                        logger.info(f"🏷️ [AI CONVERSATION TITLE & SUMMARY PERSISTED]: Conversation {conv_obj.id} -> '{session_title}'")
 
             async with AsyncSessionLocal() as db:
                 diary_entry = await DiaryGeneratorService.generate_today_diary(session.user_id, db)

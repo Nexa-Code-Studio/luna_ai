@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../theme/app_colors.dart';
 import '../../../../widgets/glass_card.dart';
+import '../../../../widgets/skeleton_shimmer.dart';
 import '../providers/dass_provider.dart';
 import '../../domain/entities/dass_assessment_entity.dart';
 
@@ -47,10 +48,27 @@ class _DASSFormCardState extends ConsumerState<DASSFormCard> {
     final notifier = ref.read(dassAssessmentNotifierProvider.notifier);
 
     return dassState.assessment.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: CircularProgressIndicator(color: AppColors.primary),
+      loading: () => SkeletonShimmerHost(
+        child: GlassCard(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: const [
+                  SkeletonCircle(size: 32),
+                  SizedBox(width: 12),
+                  SkeletonLine(width: 160, height: 16),
+                  Spacer(),
+                  SkeletonBox(width: 60, height: 22, borderRadius: 6),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const SkeletonLine(width: double.infinity, height: 13),
+              const SizedBox(height: 8),
+              const SkeletonLine(width: 220, height: 13),
+            ],
+          ),
         ),
       ),
       error: (err, _) => GlassCard(

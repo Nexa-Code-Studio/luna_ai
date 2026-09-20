@@ -6,8 +6,9 @@ import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../theme/app_colors.dart';
-import '../widgets/custom_button.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/skeleton_shimmer.dart';
+import '../widgets/staggered_entrance.dart';
 
 class EmergencyContactsScreen extends StatefulWidget {
   const EmergencyContactsScreen({super.key});
@@ -642,47 +643,29 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
             children: [
 
               // Header Bar with Back Button Only (Cleaned App Bar)
-
-              Padding(
-
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-
-                child: Row(
-
-                  children: [
-
-                    IconButton(
-
-                      icon: const Icon(Icons.arrow_back),
-
-                      color: AppColors.textPrimary,
-
-                      onPressed: () => Navigator.pop(context),
-
-                    ),
-
-                    const SizedBox(width: 4),
-
-                    Text(
-
-                      'Kontak Darurat Krisis',
-
-                      style: GoogleFonts.inter(
-
-                        fontSize: 18,
-
-                        fontWeight: FontWeight.w800,
-
+              StaggeredEntrance(
+                index: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
                         color: AppColors.textPrimary,
-
+                        onPressed: () => Navigator.pop(context),
                       ),
-
-                    ),
-
-                  ],
-
+                      const SizedBox(width: 4),
+                      Text(
+                        'Kontak Darurat Krisis',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-
               ),
 
               const Divider(height: 1, color: Color(0xFFEBECEF)),
@@ -704,522 +687,308 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                     children: [
 
                       // Info Banner Card
-
-                      GlassCard(
-
-                        width: double.infinity,
-
-                        padding: const EdgeInsets.all(18),
-
-                        child: Row(
-
-                          children: [
-
-                            Container(
-
-                              padding: const EdgeInsets.all(10),
-
-                              decoration: BoxDecoration(
-
-                                color: const Color(0xFFFFDCDD),
-
-                                borderRadius: BorderRadius.circular(14),
-
+                      StaggeredEntrance(
+                        index: 1,
+                        child: GlassCard(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(18),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFDCDD),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.shield_outlined,
+                                  color: Color(0xFFD32F2F),
+                                  size: 24,
+                                ),
                               ),
-
-                              child: const Icon(
-
-                                Icons.shield_outlined,
-
-                                color: Color(0xFFD32F2F),
-
-                                size: 24,
-
-                              ),
-
-                            ),
-
-                            const SizedBox(width: 14),
-
-                            Expanded(
-
-                              child: Column(
-
-                                crossAxisAlignment: CrossAxisAlignment.start,
-
-                                children: [
-
-                                  Text(
-
-                                    'RENCANA KESELAMATAN KRISIS',
-
-                                    style: GoogleFonts.inter(
-
-                                      fontSize: 10,
-
-                                      fontWeight: FontWeight.w700,
-
-                                      color: AppColors.textLight,
-
-                                      letterSpacing: 0.8,
-
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'RENCANA KESELAMATAN KRISIS',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textLight,
+                                        letterSpacing: 0.8,
+                                      ),
                                     ),
-
-                                  ),
-
-                                  const SizedBox(height: 4),
-
-                                  Text(
-
-                                    'Kontak ini siap dihubungi secara instan saat sistem LUNA mendeteksi indikasi krisis emosional tinggi.',
-
-                                    style: GoogleFonts.inter(
-
-                                      fontSize: 13,
-
-                                      color: AppColors.textPrimary,
-
-                                      height: 1.4,
-
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Kontak ini siap dihubungi secara instan saat sistem LUNA mendeteksi indikasi krisis emosional tinggi.',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: AppColors.textPrimary,
+                                        height: 1.4,
+                                      ),
                                     ),
-
-                                  ),
-
-                                ],
-
+                                  ],
+                                ),
                               ),
-
-                            ),
-
-                          ],
-
+                            ],
+                          ),
                         ),
-
                       ),
-
                       const SizedBox(height: 20),
 
-
-
                       // List Header Title (Cleaned header without duplicate button)
-
-                      Text(
-
-                        'DAFTAR KONTAK (${_contacts.length})',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 11,
-
-                          fontWeight: FontWeight.w700,
-
-                          color: AppColors.textLight,
-
-                          letterSpacing: 0.8,
-
+                      StaggeredEntrance(
+                        index: 2,
+                        child: Text(
+                          'DAFTAR KONTAK (${_contacts.length})',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textLight,
+                            letterSpacing: 0.8,
+                          ),
                         ),
-
                       ),
-
                       const SizedBox(height: 12),
 
 
 
                       // Contacts List Items
-                      if (_isLoading)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      else if (_contacts.isEmpty)
-                        Center(
-
-                          child: Padding(
-
-                            padding: const EdgeInsets.symmetric(vertical: 40.0),
-
-                            child: Column(
-
-                              children: [
-
-                                const Icon(Icons.contacts_outlined, size: 48, color: AppColors.textLight),
-
-                                const SizedBox(height: 12),
-
-                                Text(
-
-                                  'Belum ada kontak darurat',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 14,
-
-                                    fontWeight: FontWeight.w600,
-
-                                    color: AppColors.textSecondary,
-
-                                  ),
-
-                                ),
-
-                              ],
-
-                            ),
-
-                          ),
-
-                        )
-
-                      else
-
-                        ListView.separated(
-
-                          shrinkWrap: true,
-
-                          physics: const NeverScrollableScrollPhysics(),
-
-                          itemCount: _contacts.length,
-
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
-
-                          itemBuilder: (context, index) {
-
-                            final contact = _contacts[index];
-
-                            final bool isPrimary = contact['isPrimary'] == true;
-
-
-
-                            return GlassCard(
-
-                              width: double.infinity,
-
-                              padding: const EdgeInsets.all(18),
-
-                              child: Column(
-
-                                crossAxisAlignment: CrossAxisAlignment.start,
-
-                                children: [
-
-                                  Row(
-
-                                    children: [
-
-                                      Container(
-
-                                        width: 44,
-
-                                        height: 44,
-
-                                        decoration: BoxDecoration(
-
-                                          color: isPrimary
-
-                                              ? const Color(0xFFFFDCDD)
-
-                                              : AppColors.primaryContainer,
-
-                                          shape: BoxShape.circle,
-
-                                        ),
-
-                                        child: Icon(
-
-                                          isPrimary ? Icons.star_rounded : Icons.person_outline,
-
-                                          color: isPrimary ? const Color(0xFFD32F2F) : AppColors.primary,
-
-                                          size: 22,
-
-                                        ),
-
+                      StaggeredEntrance(
+                        index: 3,
+                        child: _isLoading
+                            ? const _EmergencyContactsSkeletonLoader()
+                            : _contacts.isEmpty
+                                ? Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 40.0),
+                                      child: Column(
+                                        children: [
+                                          const Icon(Icons.contacts_outlined, size: 48, color: AppColors.textLight),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'Belum ada kontak darurat',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-
-                                      const SizedBox(width: 14),
-
-                                      Expanded(
-
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: _contacts.length,
+                                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final contact = _contacts[index];
+                                      final bool isPrimary = contact['isPrimary'] == true;
+                                      return GlassCard(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(18),
                                         child: Column(
-
                                           crossAxisAlignment: CrossAxisAlignment.start,
-
                                           children: [
-
                                             Row(
-
                                               children: [
-
+                                                Container(
+                                                  width: 44,
+                                                  height: 44,
+                                                  decoration: BoxDecoration(
+                                                    color: isPrimary ? const Color(0xFFFFDCDD) : AppColors.primaryContainer,
+                                                    borderRadius: BorderRadius.circular(14),
+                                                  ),
+                                                  child: Icon(
+                                                    isPrimary ? Icons.star_rounded : Icons.person_outline,
+                                                    color: isPrimary ? const Color(0xFFD32F2F) : AppColors.primary,
+                                                    size: 24,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 14),
                                                 Expanded(
-
-                                                  child: Text(
-
-                                                    contact['name'],
-
-                                                    maxLines: 1,
-
-                                                    overflow: TextOverflow.ellipsis,
-
-                                                    style: GoogleFonts.inter(
-
-                                                      fontSize: 15,
-
-                                                      fontWeight: FontWeight.w700,
-
-                                                      color: AppColors.textPrimary,
-
-                                                    ),
-
-                                                  ),
-
-                                                ),
-
-                                                if (isPrimary) ...[
-
-                                                  const SizedBox(width: 6),
-
-                                                  Container(
-
-                                                    padding: const EdgeInsets.symmetric(
-
-                                                      horizontal: 8,
-
-                                                      vertical: 2,
-
-                                                    ),
-
-                                                    decoration: BoxDecoration(
-
-                                                      color: const Color(0xFFFFDCDD),
-
-                                                      borderRadius: BorderRadius.circular(999),
-
-                                                    ),
-
-                                                    child: Text(
-
-                                                      'KONTAK UTAMA',
-
-                                                      style: GoogleFonts.inter(
-
-                                                        fontSize: 9,
-
-                                                        fontWeight: FontWeight.w800,
-
-                                                        color: const Color(0xFFD32F2F),
-
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          Flexible(
+                                                            child: Text(
+                                                              contact['name'] ?? '',
+                                                              style: GoogleFonts.inter(
+                                                                fontSize: 15,
+                                                                fontWeight: FontWeight.w700,
+                                                                color: AppColors.textPrimary,
+                                                              ),
+                                                              overflow: TextOverflow.ellipsis,
+                                                            ),
+                                                          ),
+                                                          if (isPrimary) ...[
+                                                            const SizedBox(width: 8),
+                                                            Container(
+                                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                              decoration: BoxDecoration(
+                                                                color: const Color(0xFFFFEBEE),
+                                                                borderRadius: BorderRadius.circular(6),
+                                                                border: Border.all(color: const Color(0xFFFFCDD2)),
+                                                              ),
+                                                              child: Text(
+                                                                'UTAMA',
+                                                                style: GoogleFonts.inter(
+                                                                  fontSize: 9,
+                                                                  fontWeight: FontWeight.w800,
+                                                                  color: const Color(0xFFD32F2F),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ],
                                                       ),
-
-                                                    ),
-
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        contact['relationship'] ?? '',
+                                                        style: GoogleFonts.inter(
+                                                          fontSize: 12,
+                                                          color: AppColors.textSecondary,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-
-                                                ],
-
-                                              ],
-
-                                            ),
-
-                                            const SizedBox(height: 2),
-
-                                            Text(
-
-                                              '${contact['relation']} • ${contact['phone']}',
-
-                                              style: GoogleFonts.inter(
-
-                                                fontSize: 12,
-
-                                                color: AppColors.textSecondary,
-
-                                              ),
-
-                                            ),
-
-                                          ],
-
-                                        ),
-
-                                      ),
-
-                                    ],
-
-                                  ),
-
-                                  const SizedBox(height: 14),
-
-                                  const Divider(height: 1, color: Color(0xFFEBECEF)),
-
-                                  const SizedBox(height: 10),
-
-                                  Row(
-
-                                    children: [
-
-                                      // Test Call Action Button
-
-                                      Expanded(
-
-                                        child: CustomPillButton(
-
-                                          text: 'Uji Panggilan',
-
-                                          height: 38,
-
-                                          isOutline: true,
-
-                                          onPressed: () {
-
-                                            _copyToClipboard(
-
-                                              contact['phone'] ?? '',
-
-                                              'Nomor ${contact['name']}',
-
-                                            );
-
-                                            ScaffoldMessenger.of(context).showSnackBar(
-
-                                              SnackBar(
-
-                                                content: Text(
-
-                                                  'Uji panggilan ke ${contact['name']} (${contact['phone']}). Nomor disalin ke clipboard.',
-
                                                 ),
-
-                                                backgroundColor: const Color(0xFFD32F2F),
-
-                                                behavior: SnackBarBehavior.floating,
-
-                                                duration: const Duration(seconds: 3),
-
-                                              ),
-
-                                            );
-
-                                          },
-
+                                              ],
+                                            ),
+                                            const SizedBox(height: 14),
+                                            const Divider(height: 1, color: Color(0xFFF0F1F5)),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: InkWell(
+                                                    onTap: () => _copyToClipboard(contact['phone'] ?? '', 'Nomor Telepon'),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                                      child: Row(
+                                                        children: [
+                                                          const Icon(Icons.phone_outlined, size: 16, color: AppColors.textSecondary),
+                                                          const SizedBox(width: 8),
+                                                          Flexible(
+                                                            child: Text(
+                                                              contact['phone'] ?? '',
+                                                              style: GoogleFonts.inter(
+                                                                fontSize: 13,
+                                                                fontWeight: FontWeight.w600,
+                                                                color: AppColors.textPrimary,
+                                                              ),
+                                                              overflow: TextOverflow.ellipsis,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                IconButton(
+                                                  icon: const Icon(Icons.edit_outlined, size: 20),
+                                                  color: AppColors.primary,
+                                                  onPressed: () => _showContactFormDialog(contactToEdit: contact),
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(Icons.delete_outline, size: 20),
+                                                  color: const Color(0xFFD32F2F),
+                                                  onPressed: () => _confirmDeleteContact(contact),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
-
-                                      ),
-
-                                      const SizedBox(width: 10),
-
-                                      // Edit Icon Button
-
-                                      IconButton(
-
-                                        icon: const Icon(Icons.edit_outlined, size: 20),
-
-                                        color: AppColors.primary,
-
-                                        onPressed: () => _showContactFormDialog(contactToEdit: contact),
-
-                                      ),
-
-                                      // Delete Icon Button
-
-                                      IconButton(
-
-                                        icon: const Icon(Icons.delete_outline, size: 20),
-
-                                        color: const Color(0xFFD32F2F),
-
-                                        onPressed: () => _confirmDeleteContact(contact),
-
-                                      ),
-
-                                    ],
-
+                                      );
+                                    },
                                   ),
-
-                                ],
-
-                              ),
-
-                            );
-
-                          },
-
-                        ),
+                      ),
 
                       const SizedBox(height: 28),
 
                       // Official Emergency & Counseling Hotlines Section
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE4DCFF),
-                              borderRadius: BorderRadius.circular(8),
+                      StaggeredEntrance(
+                        index: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE4DCFF),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.support_agent,
+                                    size: 16,
+                                    color: Color(0xFF6C5CE7),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'HOTLINE KRISIS & KONSELING RESMI (24 JAM)',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textLight,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: const Icon(
-                              Icons.support_agent,
-                              size: 16,
-                              color: Color(0xFF6C5CE7),
+                            const SizedBox(height: 12),
+                            _buildOfficialHotlineCard(
+                              title: 'Layanan SEJIWA (Kemenkes & BNPB)',
+                              desc: 'Konseling psikologis gratis dari pemerintah RI',
+                              number: '119',
+                              displayNumber: '119 (Ekstensi 8)',
+                              icon: Icons.local_hospital_outlined,
+                              accentColor: const Color(0xFF6C5CE7),
+                              badgeBg: const Color(0xFFF3F0FF),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'HOTLINE KRISIS & KONSELING RESMI (24 JAM)',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textLight,
-                              letterSpacing: 0.8,
+                            const SizedBox(height: 10),
+                            _buildOfficialHotlineCard(
+                              title: 'LISA - Sahabat Jiwa',
+                              desc: 'Hotline pencegahan krisis & WhatsApp 24 Jam',
+                              number: '08113855472',
+                              displayNumber: '0811-3855-472',
+                              icon: Icons.phone_in_talk_outlined,
+                              accentColor: const Color(0xFF00CEC9),
+                              badgeBg: const Color(0xFFD7F3FF),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 10),
+                            _buildOfficialHotlineCard(
+                              title: 'Nomor Darurat Nasional Terpadu',
+                              desc: 'Panggilan darurat nasional bebas pulsa (Polisi/Damkar/Medis)',
+                              number: '112',
+                              displayNumber: '112',
+                              icon: Icons.emergency_outlined,
+                              accentColor: const Color(0xFFD32F2F),
+                              badgeBg: const Color(0xFFFFDCDD),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildOfficialHotlineCard(
+                              title: 'Halo Kemenkes',
+                              desc: 'Informasi fasilitas kesehatan & layanan rujukan',
+                              number: '1500567',
+                              displayNumber: '1500-567',
+                              icon: Icons.info_outline,
+                              accentColor: const Color(0xFF0984E3),
+                              badgeBg: const Color(0xFFDFE6E9),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 12),
-
-                      _buildOfficialHotlineCard(
-                        title: 'Layanan SEJIWA (Kemenkes & BNPB)',
-                        desc: 'Konseling psikologis gratis dari pemerintah RI',
-                        number: '119',
-                        displayNumber: '119 (Ekstensi 8)',
-                        icon: Icons.local_hospital_outlined,
-                        accentColor: const Color(0xFF6C5CE7),
-                        badgeBg: const Color(0xFFF3F0FF),
-                      ),
-                      const SizedBox(height: 10),
-
-                      _buildOfficialHotlineCard(
-                        title: 'LISA - Sahabat Jiwa',
-                        desc: 'Hotline pencegahan krisis & WhatsApp 24 Jam',
-                        number: '08113855472',
-                        displayNumber: '0811-3855-472',
-                        icon: Icons.phone_in_talk_outlined,
-                        accentColor: const Color(0xFF00CEC9),
-                        badgeBg: const Color(0xFFD7F3FF),
-                      ),
-                      const SizedBox(height: 10),
-
-                      _buildOfficialHotlineCard(
-                        title: 'Nomor Darurat Nasional Terpadu',
-                        desc: 'Panggilan darurat nasional bebas pulsa (Polisi/Damkar/Medis)',
-                        number: '112',
-                        displayNumber: '112',
-                        icon: Icons.emergency_outlined,
-                        accentColor: const Color(0xFFD32F2F),
-                        badgeBg: const Color(0xFFFFDCDD),
-                      ),
-                      const SizedBox(height: 10),
-
-                      _buildOfficialHotlineCard(
-                        title: 'Halo Kemenkes',
-                        desc: 'Informasi fasilitas kesehatan & layanan rujukan',
-                        number: '1500567',
-                        displayNumber: '1500-567',
-                        icon: Icons.info_outline,
-                        accentColor: const Color(0xFF0984E3),
-                        badgeBg: const Color(0xFFDFE6E9),
-                      ),
-
                       const SizedBox(height: 80),
 
                     ],
@@ -1312,6 +1081,61 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
             onPressed: () => _copyToClipboard(number, title),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Shimmer skeleton loader for Emergency Contacts list.
+class _EmergencyContactsSkeletonLoader extends StatelessWidget {
+  const _EmergencyContactsSkeletonLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonShimmerHost(
+      child: Column(
+        children: List.generate(
+          3,
+          (index) => Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: GlassCard(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const SkeletonBox(width: 44, height: 44, borderRadius: 14),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            SkeletonLine(width: 140, height: 16),
+                            SizedBox(height: 6),
+                            SkeletonLine(width: 90, height: 12),
+                          ],
+                        ),
+                      ),
+                      const SkeletonBox(width: 60, height: 22, borderRadius: 6),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: const [
+                      SkeletonBox(width: 130, height: 28, borderRadius: 8),
+                      Spacer(),
+                      SkeletonCircle(size: 32),
+                      SizedBox(width: 8),
+                      SkeletonCircle(size: 32),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

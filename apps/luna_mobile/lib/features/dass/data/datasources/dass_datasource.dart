@@ -125,22 +125,48 @@ class MockDASSDataSource implements DASSDataSource {
       if (it.scale == 'stress') strRaw += it.score;
     }
 
+    final depScore = depRaw * 2;
+    final anxScore = anxRaw * 2;
+    final strScore = strRaw * 2;
+
     _mockData = DASSAssessmentModel(
       id: _mockData.id,
       userId: _mockData.userId,
       assessedDate: _mockData.assessedDate,
-      depressionScore: depRaw * 2,
-      anxietyScore: anxRaw * 2,
-      stressScore: strRaw * 2,
-      depressionSeverity: (depRaw * 2 >= 14) ? 'Moderate' : 'Normal',
-      anxietySeverity: (anxRaw * 2 >= 10) ? 'Moderate' : 'Normal',
-      stressSeverity: (strRaw * 2 >= 19) ? 'Moderate' : 'Normal',
+      depressionScore: depScore,
+      anxietyScore: anxScore,
+      stressScore: strScore,
+      depressionSeverity: _calcSeverity('depression', depScore),
+      anxietySeverity: _calcSeverity('anxiety', anxScore),
+      stressSeverity: _calcSeverity('stress', strScore),
       verifiedByUser: true,
       status: 'verified',
       items: updatedItems,
     );
 
     return _mockData;
+  }
+
+  static String _calcSeverity(String scale, int score) {
+    if (scale == 'depression') {
+      if (score >= 28) return 'Extremely Severe';
+      if (score >= 21) return 'Severe';
+      if (score >= 14) return 'Moderate';
+      if (score >= 10) return 'Mild';
+      return 'Normal';
+    } else if (scale == 'anxiety') {
+      if (score >= 20) return 'Extremely Severe';
+      if (score >= 15) return 'Severe';
+      if (score >= 10) return 'Moderate';
+      if (score >= 8) return 'Mild';
+      return 'Normal';
+    } else {
+      if (score >= 34) return 'Extremely Severe';
+      if (score >= 26) return 'Severe';
+      if (score >= 19) return 'Moderate';
+      if (score >= 15) return 'Mild';
+      return 'Normal';
+    }
   }
 
   @override

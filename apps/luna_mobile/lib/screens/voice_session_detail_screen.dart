@@ -10,6 +10,7 @@ import '../features/diary/data/datasources/remote_diary_datasource.dart';
 import '../features/diary/data/models/diary_entry_model.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/staggered_entrance.dart';
 
 class VoiceSessionDetailScreen extends StatefulWidget {
   final Map<String, dynamic>? sessionData;
@@ -225,26 +226,29 @@ class _VoiceSessionDetailScreenState extends State<VoiceSessionDetailScreen> {
           child: Column(
             children: [
               // Header Bar Navigation
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 22),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Detail Sesi Suara',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+              StaggeredEntrance(
+                index: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 22),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Detail Sesi Suara',
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -255,138 +259,149 @@ class _VoiceSessionDetailScreenState extends State<VoiceSessionDetailScreen> {
                   child: Column(
                     children: [
                       // Header Card: Title (with Skeleton Loading support), Date, Duration Badge
-                      GlassCard(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryContainer,
-                                borderRadius: BorderRadius.circular(16),
+                      StaggeredEntrance(
+                        index: 1,
+                        child: GlassCard(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryContainer,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(
+                                  Icons.volume_up_rounded,
+                                  color: AppColors.primary,
+                                  size: 26,
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.volume_up_rounded,
-                                color: AppColors.primary,
-                                size: 26,
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: isTitleLoading
+                                    ? _buildTitleSkeleton()
+                                    : Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            title,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '$date • $duration',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                               ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: isTitleLoading
-                                  ? _buildTitleSkeleton()
-                                  : Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          title,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '$date • $duration',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
                       const SizedBox(height: 20),
 
                       // 1. ANALISIS PARAMETER EMOSI (Progress Chart Section)
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryContainer,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.analytics_outlined,
-                              color: AppColors.primary,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'ANALISIS PARAMETER EMOSI',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-
-                      GlassCard(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
+                      StaggeredEntrance(
+                        index: 2,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ...emotionsBreakdown.map((emo) {
-                              final double pct = (emo['percent'] as double).clamp(0.0, 1.0);
-                              final int pctInt = (pct * 100).round();
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 14.0),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(emo['emoji'].toString(), style: const TextStyle(fontSize: 16)),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              emo['label'].toString(),
-                                              style: GoogleFonts.inter(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.textPrimary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                          '$pctInt%',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(999),
-                                      child: LinearProgressIndicator(
-                                        value: pct,
-                                        minHeight: 8,
-                                        backgroundColor: const Color(0xFFE2E4F0),
-                                        valueColor: AlwaysStoppedAnimation<Color>(emo['color'] as Color),
-                                      ),
-                                    ),
-                                  ],
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryContainer,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.analytics_outlined,
+                                    color: AppColors.primary,
+                                    size: 18,
+                                  ),
                                 ),
-                              );
-                            }),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'ANALISIS PARAMETER EMOSI',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primary,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+
+                            GlassCard(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  ...emotionsBreakdown.map((emo) {
+                                    final double pct = (emo['percent'] as double).clamp(0.0, 1.0);
+                                    final int pctInt = (pct * 100).round();
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 14.0),
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(emo['emoji'].toString(), style: const TextStyle(fontSize: 16)),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    emo['label'].toString(),
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: AppColors.textPrimary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              Text(
+                                                '$pctInt%',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: AppColors.textPrimary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(999),
+                                            child: LinearProgressIndicator(
+                                              value: pct,
+                                              minHeight: 8,
+                                              backgroundColor: const Color(0xFFE2E4F0),
+                                              valueColor: AlwaysStoppedAnimation<Color>(emo['color'] as Color),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -394,8 +409,10 @@ class _VoiceSessionDetailScreenState extends State<VoiceSessionDetailScreen> {
                       const SizedBox(height: 14),
 
                       // Tombol Lihat Jurnal Harian AI (dengan State Loading vs Ready)
-                      SizedBox(
-                        width: double.infinity,
+                      StaggeredEntrance(
+                        index: 3,
+                        child: SizedBox(
+                          width: double.infinity,
                         child: isTitleLoading
                             ? Container(
                                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
@@ -531,12 +548,18 @@ class _VoiceSessionDetailScreenState extends State<VoiceSessionDetailScreen> {
                                   ],
                                 ),
                               ),
+                        ),
                       ),
 
                       const SizedBox(height: 24),
 
                       // 2. TRANSKRIP PERCAKAPAN SUARA (Diary Style)
-                      Row(
+                      StaggeredEntrance(
+                        index: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
@@ -711,7 +734,9 @@ class _VoiceSessionDetailScreenState extends State<VoiceSessionDetailScreen> {
                           );
                         },
                       ),
-
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 24),
                     ],
                   ),
