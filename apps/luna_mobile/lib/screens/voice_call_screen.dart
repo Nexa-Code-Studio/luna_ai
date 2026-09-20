@@ -57,10 +57,230 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
     }
   }
 
+  bool _isHighDistressSession(AiCallViewState state) {
+    if (state.crisisHotline != null) return true;
+    final text = '${state.currentTranscript} ${state.aiTranscript}'.toLowerCase();
+    final highDistressKeywords = [
+      'krisis',
+      'panik',
+      'sesak',
+      'bunuh diri',
+      'menyakiti',
+      'tidak sanggup',
+      'kelelahan mental',
+      'anxiety berat',
+      'depresi berat',
+      'putus asa',
+      'tidak ada harapan',
+      'takut sekali',
+      'stres berat',
+    ];
+    return highDistressKeywords.any((k) => text.contains(k));
+  }
+
+  bool _isDassTriggeredSession(AiCallViewState state) {
+    if (state.crisisHotline != null) return true;
+    final text = '${state.currentTranscript} ${state.aiTranscript}'.toLowerCase();
+    final dassKeywords = [
+      'dass',
+      'skala 0',
+      'skor 0',
+      'pertanyaan asesmen',
+      'gejala yang kamu rasakan',
+      'seberapa sering kamu merasa',
+      'jantung berdebar',
+      'sulit bernapas',
+      'cemas berlebihan',
+      'merasa putus asa',
+      'kehilangan minat',
+      'panik',
+      'stres berat',
+      'depresi berat',
+    ];
+    return dassKeywords.any((k) => text.contains(k));
+  }
 
   void _showSessionSummaryBottomSheet(int durationSeconds) {
+    final state = ref.read(aiCallControllerProvider);
     ref.read(aiCallControllerProvider.notifier).endCall();
+    final isHighDistress = _isHighDistressSession(state);
+    final hasDassTriggered = _isDassTriggeredSession(state);
 
+    if (isHighDistress) {
+      _showPostCallCrisisModal(durationSeconds);
+    } else {
+      _showNormalSessionSummaryBottomSheet(
+        durationSeconds,
+        false,
+        hasDassTriggered: hasDassTriggered,
+      );
+    }
+  }
+
+  void _showPostCallCrisisModal(int durationSeconds) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Glowing Heart Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFFFE0E3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE57373).withValues(alpha: 0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.favorite,
+                  color: Color(0xFFE57373),
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Title
+              Text(
+                'Deteksi Beban Emosional Berat 🍃',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Subtitle
+              Text(
+                'LUNA mendeteksi tingkat ketegangan dan beban emosional yang tinggi dalam percakapan tadi. Kamu tidak harus memikulnya sendirian.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Reassurance info box
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF5F5),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFFE57373).withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.air_rounded,
+                      color: Color(0xFFE57373),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Tersedia Latihan Napas 4-7-8 untuk menstabilkan detak jantung, kontak orang terpercaya, dan hotline krisis.',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF881337),
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Action 1: Open Crisis Support (Pink/Rose button)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE57373),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                  ),
+                  icon: const Icon(Icons.favorite_rounded, size: 18),
+                  label: Text(
+                    'Buka Latihan Napas & Bantuan Krisis',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(context, '/support');
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Action 2: Review Session Summary
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showNormalSessionSummaryBottomSheet(
+                      durationSeconds,
+                      true,
+                      hasDassTriggered: true,
+                    );
+                  },
+                  child: Text(
+                    'Lihat Ringkasan Sesi Dulu',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showNormalSessionSummaryBottomSheet(
+    int durationSeconds,
+    bool isHighDistress, {
+    bool hasDassTriggered = false,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -124,37 +344,176 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              GlassCard(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ANALISIS AI SESI INI',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textLight,
-                        letterSpacing: 0.8,
-                      ),
+              const SizedBox(height: 16),
+
+              // If High Distress: Show top Crisis Support Card
+              if (isHighDistress) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF0F2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFFE57373).withValues(alpha: 0.4),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'LUNA telah berhasil merekam percakapanmu melalui arsitektur Hybrid Half-Duplex. Ringkasan emosi harianmu di jurnal telah diperbarui secara otomatis.',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.textPrimary,
-                        height: 1.4,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFDCDD),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.favorite,
+                          color: Color(0xFFE57373),
+                          size: 18,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Intervensi De-eskalasi Disarankan',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFD32F2F),
+                              ),
+                            ),
+                            Text(
+                              'Coba teknik napas 4-7-8 untuk menenangkan detak jantung.',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.pushNamed(context, '/support');
+                        },
+                        child: Text(
+                          'Buka →',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFD32F2F),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 14),
+              ],
+
+              if (hasDassTriggered) ...[
+                GlassCard(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE0F4FB),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'SINTESIS OTOMATIS DASS-21',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF20667B),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'LUNA telah mengekstrak indikator stres, kecemasan, dan suasana hatimu dari percakapan tadi ke dalam lembar DASS-21 hari ini. Kamu bisa langsung meninjau bukti kutipan obrolan, mengedit skor, atau melengkapi butir yang belum terbahas.',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppColors.textPrimary,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                CustomPillButton(
+                  text: 'Tinjau & Lengkapi Skor DASS-21',
+                  suffixIcon: Icons.arrow_forward_rounded,
+                  onPressed: () {
+                    Navigator.pop(context); // Close Bottom Sheet
+                    Navigator.pushNamed(context, '/dass_assessment');
+                  },
+                ),
+                const SizedBox(height: 10),
+              ] else ...[
+                GlassCard(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'REFLEKSI HARIAN TERSIMPAN',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF2E7D32),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Obrolanmu telah tersimpan dan terangkum rapi ke dalam catatan refleksi emosimu hari ini. Kamu bisa membacanya kembali kapan saja.',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppColors.textPrimary,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               CustomPillButton(
-                text: 'Lihat Detail Jurnal',
+                text: 'Lihat Detail Jurnal Refleksi',
+                isOutline: hasDassTriggered,
                 onPressed: () {
                   Navigator.pop(context); // Close Bottom Sheet
                   Navigator.pushNamedAndRemoveUntil(
@@ -164,6 +523,27 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
                     arguments: {'initialIndex': 1},
                   );
                 },
+              ),
+              const SizedBox(height: 6),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/home',
+                      (route) => false,
+                    );
+                  },
+                  child: Text(
+                    'Kembali ke Beranda',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

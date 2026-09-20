@@ -6,6 +6,7 @@ class CallConfig {
   static const int sttRestartDelayMs = 200;
   static const int playbackToListeningGuardMs = 200;
   static const int bargeInGuardMs = 150;
+  static const int interChunkPauseMs = 500; // Jeda alami antar-kalimat saat AI berbicara
 
   // Adaptive turn baseline timeouts (ms)
   static const int completeWaitMs = 650;

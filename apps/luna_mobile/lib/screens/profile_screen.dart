@@ -12,14 +12,18 @@ class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  String _userName = 'User Luna';
-  String _userEmail = 'user.luna@gmail.com';
-  String _emergencyContactName = 'Budi Utami (Ibu)';
-  String _emergencyContactPhone = '+62 812-3456-7890';
+class ProfileScreenState extends State<ProfileScreen> {
+  String _userName = 'Pengguna LUNA';
+  String _userEmail = '';
+  String? _emergencyContactName;
+  String? _emergencyContactPhone;
+
+  void refresh() {
+    _loadProfileData();
+  }
 
   String get _userInitials {
     final parts = _userName.trim().split(RegExp(r'\s+'));
@@ -93,6 +97,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final rel = primary['relationship'] != null ? ' (${primary['relationship']})' : '';
             _emergencyContactName = '${primary['name']}$rel';
             _emergencyContactPhone = primary['phone']?.toString() ?? '';
+          });
+        } else {
+          setState(() {
+            _emergencyContactName = null;
+            _emergencyContactPhone = null;
           });
         }
       }
@@ -322,18 +331,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: AppColors.primary,
 
                       ),
-
-                    ),
-
-                    const Spacer(),
-
-                    IconButton(
-
-                      icon: const Icon(Icons.settings_outlined),
-
-                      color: AppColors.primary,
-
-                      onPressed: () {},
 
                     ),
 
@@ -689,21 +686,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
 
                           subtitle: Text(
-
-                            '$_emergencyContactName • $_emergencyContactPhone',
-
+                            _emergencyContactName != null
+                                ? '$_emergencyContactName • ${_emergencyContactPhone ?? ''}'
+                                : 'Belum diatur • Ketuk untuk menambah',
                             maxLines: 1,
-
                             overflow: TextOverflow.ellipsis,
-
                             style: GoogleFonts.inter(
-
                               fontSize: 12,
-
-                              color: AppColors.textSecondary,
-
+                              color: _emergencyContactName != null
+                                  ? AppColors.textSecondary
+                                  : AppColors.textLight,
                             ),
-
                           ),
 
                           trailing: const Icon(
@@ -722,6 +715,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               _loadProfileData();
                             }
                           },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Section 3: PENGATURAN APLIKASI
+                    Text(
+                      'PENGATURAN APLIKASI',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textLight,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    GlassCard(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          leading: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.tune_rounded,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            'Pengaturan & Preferensi',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Suara AI, pengingat harian, privasi & sistem',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: AppColors.textLight,
+                          ),
+                          onTap: () => Navigator.pushNamed(context, '/settings'),
                         ),
                       ),
                     ),

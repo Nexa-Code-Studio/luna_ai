@@ -86,6 +86,8 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
     final int changedCount = currentAssessment != null
         ? currentAssessment.items.where((it) => (staged[it.itemId] ?? it.score) != it.score).length
         : 0;
+    final bool isUnverified = currentAssessment != null && !currentAssessment.verifiedByUser;
+    final bool showSaveBar = isEditable && currentAssessment != null && (hasChanges || isUnverified);
 
     return Scaffold(
       body: Stack(
@@ -204,30 +206,50 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
       ),
 
       // Animated Slide-Up Floating Save Bar
-      _buildFloatingSaveBar(hasChanges, changedCount, dassState, notifier),
+      _buildFloatingSaveBar(
+        showSaveBar,
+        hasChanges,
+        isUnverified,
+        changedCount,
+        dassState,
+        notifier,
+      ),
     ],
   ),
 );
   }
 
   Widget _buildFloatingSaveBar(
+    bool showSaveBar,
     bool hasChanges,
+    bool isUnverified,
     int changedCount,
     DASSAssessmentState dassState,
     DASSAssessmentNotifier notifier,
   ) {
+    final String titleText = hasChanges
+        ? '$changedCount Butir Diperbarui'
+        : (isUnverified ? 'Sintesis AI Siap Dikonfirmasi' : 'Asesmen Tersimpan');
+    final String subtitleText = hasChanges
+        ? (isUnverified ? 'Simpan koreksi & verifikasi untuk hari ini' : 'Simpan koreksi skor DASS-21')
+        : (isUnverified ? 'Konfirmasi untuk simpan asesmen hari ini' : 'Skor hari ini telah terverifikasi');
+    final String buttonText = hasChanges
+        ? (isUnverified ? 'Simpan & Verifikasi' : 'Simpan')
+        : 'Konfirmasi & Simpan';
+    final IconData barIcon = hasChanges ? Icons.edit_note_rounded : Icons.check_circle_outline_rounded;
+
     return Positioned(
       left: 16,
       right: 16,
       bottom: 16,
       child: IgnorePointer(
-        ignoring: !hasChanges,
+        ignoring: !showSaveBar,
         child: AnimatedSlide(
-          offset: hasChanges ? Offset.zero : const Offset(0, 2.0),
+          offset: showSaveBar ? Offset.zero : const Offset(0, 2.0),
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutCubic,
           child: AnimatedOpacity(
-            opacity: hasChanges ? 1.0 : 0.0,
+            opacity: showSaveBar ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 250),
             child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -250,8 +272,8 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                     color: Colors.white.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.edit_note_rounded,
+                  child: Icon(
+                    barIcon,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -263,7 +285,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '$changedCount Butir Diubah',
+                        titleText,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -271,7 +293,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                         ),
                       ),
                       Text(
-                        'Simpan untuk sinkronkan ritem',
+                        subtitleText,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.75),
@@ -291,7 +313,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                             scaffoldMessenger.showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'Koreksi DASS-21 berhasil disimpan & ritem emosional diselaraskan!',
+                                  'Asesmen DASS-21 hari ini berhasil diverifikasi dan disimpan!',
                                   style: GoogleFonts.plusJakartaSans(),
                                 ),
                                 backgroundColor: const Color(0xFF10B981),
@@ -316,7 +338,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
-                          'Simpan',
+                          buttonText,
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -364,6 +386,35 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                 ),
               ],
             ),
+          ),
+          IconButton(
+            onPressed: () async {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Menganalisis dan mengekstrak DASS-21 dari riwayat dialog hari ini...',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                  duration: const Duration(seconds: 4),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              await notifier.extractTodayAssessment();
+            },
+            icon: const Icon(Icons.auto_awesome, size: 20, color: Color(0xFF7C3AED)),
+            tooltip: 'Ekstrak AI dari Percakapan Hari Ini',
           ),
           IconButton(
             onPressed: () => notifier.loadTodayAssessment(),

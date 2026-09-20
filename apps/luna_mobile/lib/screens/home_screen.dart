@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,10 +30,45 @@ class HomeScreenState extends State<HomeScreen> {
       'Setiap perasaan yang kamu alami hari ini adalah valid. Luangkan waktu sejenak untuk menarik napas dalam dan menyayangi dirimu sendiri.';
 
   DailyProgressData _localProgress = const DailyProgressData(date: '');
+  bool _hasTodayDass = false;
+  bool _dassVerifiedByUser = false;
+  String _dassStatus = '';
+  int _dassStressScore = 0;
+  int _dassAnxietyScore = 0;
+  int _dassDepressionScore = 0;
   String _targetCondition = 'general';
   String _conditionLabel = 'Fokus: Relaksasi & Perawatan Diri';
   String _conditionReason = 'Menjaga ritme emosi dan ketenangan pikiran harian';
+  String _severityLevel = 'Normal';
+  bool _isCrisis = false;
+  String _crisisHotline = 'Kemenkes 119 ext 8 / LISA 0811-3855-472';
+  String _crisisGuidance =
+      'Keselamatan dan ketenanganmu adalah prioritas paling berharga. Silakan hubungi bantuan darurat bila beban terasa terlalu berat.';
   Map<String, dynamic>? _todayActivity;
+
+  Color _getSeverityColor(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'berat':
+      case 'sangat berat':
+      case 'krisis / darurat':
+        return const Color(0xFFEF4444);
+      case 'sedang':
+        return const Color(0xFFF59E0B);
+      case 'ringan':
+        return const Color(0xFF10B981);
+      default:
+        return const Color(0xFF6366F1);
+    }
+  }
+
+  String _normalizeCategory(String? raw) {
+    final cat = (raw ?? '').toLowerCase();
+    if (cat.contains('mindful') || cat.contains('napas') || cat.contains('breath')) return 'Mindfulness';
+    if (cat.contains('cbt') || cat.contains('kognitif') || cat.contains('problem')) return 'CBT';
+    if (cat.contains('refleksi') || cat.contains('syukur') || cat.contains('self-care')) return 'Refleksi';
+    if (cat.contains('fisik') || cat.contains('gerak') || cat.contains('somatis') || cat.contains('aktivasi') || cat.contains('jalan')) return 'Fisik & Gerak';
+    return raw?.isNotEmpty == true ? raw! : 'Self-Care';
+  }
 
   static final List<Map<String, dynamic>> _defaultRecommendations = [
     {
@@ -169,6 +205,14 @@ class HomeScreenState extends State<HomeScreen> {
             )
             .timeout(const Duration(seconds: 4))
             .catchError((_) => http.Response('{}', 500)),
+        // 4: Today DASS-21 assessment
+        http
+            .get(
+              Uri.parse('${AppConfig.baseUrl}/dass/today'),
+              headers: headers,
+            )
+            .timeout(const Duration(seconds: 4))
+            .catchError((_) => http.Response('{}', 500)),
       ]);
 
       if (!mounted) return;
@@ -237,6 +281,14 @@ class HomeScreenState extends State<HomeScreen> {
           _conditionLabel =
               data['conditionLabel']?.toString() ?? 'Fokus: Relaksasi & Perawatan Diri';
           _conditionReason = data['conditionReason']?.toString() ?? '';
+          _severityLevel = data['severityLevel']?.toString() ?? 'Normal';
+          _isCrisis = data['isCrisis'] == true;
+          if (data['crisisHotline'] != null) {
+            _crisisHotline = data['crisisHotline'].toString();
+          }
+          if (data['crisisGuidance'] != null) {
+            _crisisGuidance = data['crisisGuidance'].toString();
+          }
 
           final act = data['todayActivity'] as Map<String, dynamic>;
           final actId = act['id']?.toString() ?? '';
@@ -291,6 +343,26 @@ class HomeScreenState extends State<HomeScreen> {
               actId,
               true,
             );
+          }
+        }
+      }
+
+      // Handle Today DASS-21 Assessment
+      if (results.length > 4) {
+        final resDass = results[4];
+        if (resDass.statusCode == 200) {
+          final dynamic data = jsonDecode(resDass.body);
+          if (data is Map<String, dynamic>) {
+            _hasTodayDass = data['id'] != null;
+            _dassVerifiedByUser =
+                data['verifiedByUser'] == true || data['verified_by_user'] == true;
+            _dassStatus = data['status']?.toString() ?? '';
+            _dassStressScore =
+                (data['stressScore'] ?? data['stress_score'] ?? 0) as int;
+            _dassAnxietyScore =
+                (data['anxietyScore'] ?? data['anxiety_score'] ?? 0) as int;
+            _dassDepressionScore =
+                (data['depressionScore'] ?? data['depression_score'] ?? 0) as int;
           }
         }
       }
@@ -401,15 +473,6 @@ class HomeScreenState extends State<HomeScreen> {
                         color: AppColors.primary,
                         letterSpacing: 0.5,
                       ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.settings_outlined),
-                      color: AppColors.primary,
-                      tooltip: 'Pengaturan Profil',
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/profile');
-                      },
                     ),
                   ],
                 ),
@@ -610,10 +673,29 @@ class HomeScreenState extends State<HomeScreen> {
           iconBg: const Color(0xFFE0F4FB),
           iconColor: const Color(0xFF20667B),
           title: 'Asesmen DASS-21',
-          subtitle: 'Evaluasi & koreksi 21 butir emosi',
-          badgeText: 'DASS-21',
-          onTap: () {
-            Navigator.pushNamed(context, '/dass_assessment');
+          subtitle: _dassVerifiedByUser
+              ? 'Stres: $_dassStressScore • Cemas: $_dassAnxietyScore • Depresi: $_dassDepressionScore'
+              : (_hasTodayDass && _dassStatus == 'auto_extracted'
+                  ? 'Tersintesis AI • Ketuk untuk meninjau'
+                  : 'Evaluasi & koreksi 21 butir emosi'),
+          badgeText: _dassVerifiedByUser
+              ? 'Terverifikasi ✓'
+              : (_hasTodayDass && _dassStatus == 'auto_extracted'
+                  ? 'Perlu Ditinjau ⚡'
+                  : 'Belum Diisi'),
+          badgeColor: _dassVerifiedByUser
+              ? const Color(0xFF059669)
+              : (_hasTodayDass && _dassStatus == 'auto_extracted'
+                  ? const Color(0xFFD97706)
+                  : AppColors.primary),
+          badgeBg: _dassVerifiedByUser
+              ? const Color(0xFFECFDF5)
+              : (_hasTodayDass && _dassStatus == 'auto_extracted'
+                  ? const Color(0xFFFEF3C7)
+                  : AppColors.primaryContainer.withValues(alpha: 0.6)),
+          onTap: () async {
+            await Navigator.pushNamed(context, '/dass_assessment');
+            _loadHomeScreenData();
           },
         ),
       ],
@@ -627,6 +709,8 @@ class HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
     required String badgeText,
+    Color? badgeColor,
+    Color? badgeBg,
     required VoidCallback onTap,
   }) {
     return GlassCard(
@@ -675,7 +759,7 @@ class HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primaryContainer.withValues(alpha: 0.6),
+              color: badgeBg ?? AppColors.primaryContainer.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -683,7 +767,7 @@ class HomeScreenState extends State<HomeScreen> {
               style: GoogleFonts.inter(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: badgeColor ?? AppColors.primary,
               ),
             ),
           ),
@@ -708,7 +792,7 @@ class HomeScreenState extends State<HomeScreen> {
     String progressMotivation;
     if (completed == 3) {
       progressMotivation =
-          'Target harian tercapai! Kamu luar biasa merawat dirimu hari ini 🌟';
+          'Luar biasa! Semua target perawatan dirimu tercapai hari ini 🌟';
     } else if (completed == 2) {
       progressMotivation =
           'Tinggal 1 langkah lagi untuk melengkapi rutinitas terapeutikmu.';
@@ -717,7 +801,7 @@ class HomeScreenState extends State<HomeScreen> {
           'Kemajuan yang sangat baik! Terus jaga ritme emosionalmu.';
     } else {
       progressMotivation =
-          'Mulai harimu dengan satu langkah kecil bersama LUNA.';
+          'Mulai harimu dengan satu langkah kecil penuh perhatian bersama LUNA.';
     }
 
     final bool isConversationDone =
@@ -732,16 +816,38 @@ class HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Section Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Progres Perawatan Diri',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: completed == 3
+                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                        : AppColors.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    completed == 3 ? Icons.stars_rounded : Icons.spa_rounded,
+                    size: 16,
+                    color: completed == 3
+                        ? const Color(0xFF10B981)
+                        : AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Progres Perawatan Diri',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -750,50 +856,128 @@ class HomeScreenState extends State<HomeScreen> {
                     ? const Color(0xFFD1FAE5)
                     : AppColors.primaryContainer,
                 borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                '$completed / 3 Selesai',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+                border: Border.all(
                   color: completed == 3
-                      ? const Color(0xFF047857)
-                      : AppColors.primary,
+                      ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                      : AppColors.primary.withValues(alpha: 0.15),
+                  width: 1,
                 ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (completed == 3) ...[
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 13,
+                      color: Color(0xFF047857),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    '$completed / 3 Selesai',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: completed == 3
+                          ? const Color(0xFF047857)
+                          : AppColors.primary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
-        // Progress Bar & Motivation Box
+        // Premium Progress Container
         GlassCard(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Linear Progress Bar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: progressFraction,
-                  minHeight: 8,
-                  backgroundColor: const Color(0xFFE5E7EB),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    completed == 3
-                        ? const Color(0xFF10B981)
-                        : AppColors.primary,
+              // Segmented 3-Step Progress Bars
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSegmentBar(isActive: isConversationDone),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _buildSegmentBar(isActive: isDiaryDone),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _buildSegmentBar(isActive: isExerciseDone),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Motivation & Percentage Banner
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: completed == 3
+                      ? const Color(0xFFF0FDF4)
+                      : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: completed == 3
+                        ? const Color(0xFF86EFAC).withValues(alpha: 0.5)
+                        : const Color(0xFFE2E8F0),
+                    width: 1,
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                progressMotivation,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+                child: Row(
+                  children: [
+                    Icon(
+                      completed == 3
+                          ? Icons.emoji_events_rounded
+                          : Icons.auto_awesome,
+                      size: 16,
+                      color: completed == 3
+                          ? const Color(0xFF10B981)
+                          : AppColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        progressMotivation,
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: completed == 3
+                              ? const Color(0xFF065F46)
+                              : AppColors.textSecondary,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: completed == 3
+                            ? const Color(0xFF10B981)
+                            : AppColors.primary,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${(progressFraction * 100).round()}%',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 14),
@@ -804,11 +988,11 @@ class HomeScreenState extends State<HomeScreen> {
                 subtitle: isConversationDone
                     ? '$_todayConversationsCount sesi dialog telah tercatat hari ini'
                     : 'Ekspresikan perasaanmu lewat suara atau teks',
-                icon: Icons.chat_bubble_outline,
+                icon: Icons.chat_bubble_outline_rounded,
                 isCompleted: isConversationDone,
                 onTap: () => Navigator.pushNamed(context, '/chat'),
               ),
-              const Divider(height: 20, thickness: 0.5),
+              const SizedBox(height: 8),
 
               // Routine 2: Refleksi Jurnal AI
               _buildProgressCheckItem(
@@ -816,7 +1000,7 @@ class HomeScreenState extends State<HomeScreen> {
                 subtitle: isDiaryDone
                     ? 'Jurnal & analisis emosi telah disintesis'
                     : 'Baca rangkuman & pola emosimu hari ini',
-                icon: Icons.menu_book_outlined,
+                icon: Icons.menu_book_rounded,
                 isCompleted: isDiaryDone,
                 onTap: () {
                   if (widget.onNavigateTab != null) {
@@ -826,7 +1010,7 @@ class HomeScreenState extends State<HomeScreen> {
                   }
                 },
               ),
-              const Divider(height: 20, thickness: 0.5),
+              const SizedBox(height: 8),
 
               // Routine 3: Latihan Koping Terpandu
               _buildProgressCheckItem(
@@ -834,7 +1018,7 @@ class HomeScreenState extends State<HomeScreen> {
                 subtitle: isExerciseDone
                     ? '1 latihan koping mandiri telah diselesaikan'
                     : 'Coba 1 teknik pernapasan atau mindfulness',
-                icon: Icons.spa_outlined,
+                icon: Icons.spa_rounded,
                 isCompleted: isExerciseDone,
                 onTap: () => Navigator.pushNamed(context, '/recommendation'),
               ),
@@ -845,6 +1029,26 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildSegmentBar({required bool isActive}) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: 6,
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+    );
+  }
+
   Widget _buildProgressCheckItem({
     required String title,
     required String subtitle,
@@ -852,66 +1056,124 @@ class HomeScreenState extends State<HomeScreen> {
     required bool isCompleted,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          children: [
-            // Checkmark Icon
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isCompleted
-                    ? const Color(0xFF10B981)
-                    : Colors.white.withValues(alpha: 0.9),
-                border: Border.all(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: isCompleted
+                ? const Color(0xFFF0FDF4)
+                : Colors.white.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isCompleted
+                  ? const Color(0xFF86EFAC).withValues(alpha: 0.6)
+                  : const Color(0xFFE2E8F0),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Icon Container
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   color: isCompleted
                       ? const Color(0xFF10B981)
-                      : const Color(0xFFD1D5DB),
-                  width: 2,
+                      : AppColors.primaryContainer,
+                  boxShadow: isCompleted
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Icon(
+                  isCompleted ? Icons.check_rounded : icon,
+                  size: isCompleted ? 18 : 17,
+                  color: isCompleted ? Colors.white : AppColors.primary,
                 ),
               ),
-              child: isCompleted
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                  : Icon(icon, size: 14, color: AppColors.textLight),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isCompleted
-                          ? AppColors.textPrimary
-                          : AppColors.textPrimary,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: AppColors.textLight,
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              size: 16,
-              color: AppColors.textLight,
-            ),
-          ],
+              const SizedBox(width: 8),
+              // Action Pill / Status
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? const Color(0xFFD1FAE5)
+                      : AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isCompleted ? 'Selesai' : 'Mulai',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isCompleted
+                            ? const Color(0xFF047857)
+                            : AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    Icon(
+                      isCompleted
+                          ? Icons.check_rounded
+                          : Icons.arrow_forward_rounded,
+                      size: 12,
+                      color: isCompleted
+                          ? const Color(0xFF047857)
+                          : AppColors.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -920,6 +1182,114 @@ class HomeScreenState extends State<HomeScreen> {
   // --------------------------------------------------------------------------
   // 4. Tailored Daily Recommendation Container
   // --------------------------------------------------------------------------
+  Widget _buildCrisisBanner() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFECACA), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFEE2E2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.favorite,
+                  color: Color(0xFFDC2626),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Kamu Berharga & Tidak Sendirian',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF991B1B),
+                      ),
+                    ),
+                    Text(
+                      'Prioritas Utama: Keselamatan & Bantuan Nyata',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: const Color(0xFFB91C1C),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _crisisGuidance,
+            style: GoogleFonts.inter(
+              fontSize: 11.5,
+              height: 1.4,
+              color: const Color(0xFF7F1D1D),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Hotline: $_crisisHotline',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF991B1B),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(context, '/support');
+              },
+              icon: const Icon(Icons.support_agent, size: 16, color: Colors.white),
+              label: Text(
+                'Pusat Bantuan & Hotline Darurat',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLatestRecommendationSection() {
     Map<String, dynamic> activeRec = (_todayActivity != null &&
             _todayActivity!['isCompleted'] != true)
@@ -934,9 +1304,9 @@ class HomeScreenState extends State<HomeScreen> {
     final id = activeRec['id']?.toString() ?? '1';
     final isDone = activeRec['isCompleted'] == true ||
         _localProgress.isActivityCompleted(id);
-    final category = activeRec['category']?.toString() ?? 'Self-Care';
+    final rawCategory = activeRec['category']?.toString() ?? 'Self-Care';
+    final category = _normalizeCategory(rawCategory);
     final duration = activeRec['duration']?.toString() ?? '5 menit';
-    final difficulty = activeRec['difficulty']?.toString() ?? 'Pemula';
     final title = activeRec['title']?.toString() ?? 'Latihan Relaksasi';
     final description = activeRec['description']?.toString() ?? '';
 
@@ -982,34 +1352,38 @@ class HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 3),
         Text(
-          'Disesuaikan dengan kondisi emosional terkinimu',
+          _conditionLabel.isNotEmpty
+              ? _conditionLabel
+              : 'Disesuaikan dengan kondisi emosionalmu hari ini',
           style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w400,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w500,
             color: AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: 12),
 
-        // Interactive Single Recommendation Container
+        // Crisis Alert Banner (if applicable)
+        if (_isCrisis) _buildCrisisBanner(),
+
+        // Clean, Sleek Recommendation Card
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(20),
             gradient: const LinearGradient(
               colors: [
-                Color(0xFF5B61D6),
-                Color(0xFF7A70EC),
-                Color(0xFF9D84F5),
+                Color(0xFF4F46E5),
+                Color(0xFF6366F1),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF5B61D6).withValues(alpha: 0.25),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+                color: const Color(0xFF4F46E5).withValues(alpha: 0.22),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -1018,119 +1392,167 @@ class HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Condition Focus Chip
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.35),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.track_changes,
-                        size: 13,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          _conditionLabel.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Category, Duration & Difficulty Tags Row
+                // Top Tag Row: Category • Duration + Severity Pill
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        // Category Chip
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            category.toUpperCase(),
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$category  •  $duration'.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
-                        const SizedBox(width: 8),
-                        // Duration Pill
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.access_time,
-                              size: 12,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              duration,
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '•  $difficulty',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
+                    if (_severityLevel != 'Normal')
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getSeverityColor(_severityLevel)
+                              .withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: _getSeverityColor(_severityLevel)
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Text(
+                          'Level: $_severityLevel',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
 
-                    // Quick Toggle Complete Button
+                // Title
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                // Description (clean, concise)
+                Text(
+                  description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Bottom Action Buttons: Mulai Latihan (CTA) + Tandai Selesai
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () =>
+                            _showActivityDetailModal(context, activeRec),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.play_circle_filled,
+                                size: 18,
+                                color: Color(0xFF4F46E5),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isDone ? 'Buka Panduan' : 'Mulai Latihan',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF4F46E5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     GestureDetector(
-                      onTap: () => _toggleRecommendationComplete(id),
+                      onTap: () {
+                        if (isDone) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.info_outline,
+                                      color: Colors.white, size: 18),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Kamu sudah menyelesaikan latihan ini hari ini! Kerja bagus, istirahatlah sejenak dan lanjutkan kembali besok 🌿',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: const Color(0xFF6366F1),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                          return;
+                        }
+                        _toggleRecommendationComplete(id);
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                            horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: isDone
                               ? const Color(0xFF10B981)
-                              : Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(999),
+                              : Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isDone
                                 ? const Color(0xFF10B981)
-                                : Colors.white.withValues(alpha: 0.4),
-                            width: 1,
+                                : Colors.white.withValues(alpha: 0.35),
                           ),
                         ),
                         child: Row(
@@ -1140,14 +1562,14 @@ class HomeScreenState extends State<HomeScreen> {
                               isDone
                                   ? Icons.check_circle
                                   : Icons.check_circle_outline,
-                              size: 13,
+                              size: 16,
                               color: Colors.white,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             Text(
-                              isDone ? 'Selesai' : 'Tandai Selesai',
+                              isDone ? 'Selesai' : 'Tandai',
                               style: GoogleFonts.inter(
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
                               ),
@@ -1157,70 +1579,6 @@ class HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-
-                // Title
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 6),
-
-                // Description
-                Text(
-                  description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    height: 1.4,
-                    color: Colors.white.withValues(alpha: 0.85),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Start Practice Button CTA
-                GestureDetector(
-                  onTap: () => _showActivityDetailModal(context, activeRec),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.play_circle_filled,
-                          size: 18,
-                          color: Color(0xFF5B61D6),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Mulai Latihan Sekarang',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF5B61D6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ],
             ),
@@ -1232,134 +1590,283 @@ class HomeScreenState extends State<HomeScreen> {
 
   void _showActivityDetailModal(
       BuildContext context, Map<String, dynamic> activity) {
-    final title = activity['title']?.toString() ?? 'Latihan Relaksasi';
-    final category = activity['category']?.toString() ?? 'Self-Care';
-    final duration = activity['duration']?.toString() ?? '5 menit';
-    final difficulty = activity['difficulty']?.toString() ?? 'Pemula';
-    final description = activity['description']?.toString() ?? '';
-    final rationale = activity['rationale']?.toString() ?? '';
-    final rawInstructions = activity['instructions'];
-    final List<String> instructions = rawInstructions is List
-        ? List<String>.from(rawInstructions.map((e) => e.toString()))
-        : <String>[];
-    final id = activity['id']?.toString() ?? '';
-
-    final displayRationale =
-        rationale.isNotEmpty ? rationale : _conditionReason;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (modalContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final currentDone = (_todayActivity != null &&
-                    _todayActivity!['id'] == id)
-                ? (_todayActivity!['isCompleted'] == true)
-                : _localProgress.isActivityCompleted(id);
+      builder: (ctx) {
+        final id = activity['id']?.toString() ?? '';
+        final isDone = (_todayActivity != null && _todayActivity!['id'] == id)
+            ? (_todayActivity!['isCompleted'] == true)
+            : _localProgress.isActivityCompleted(id);
 
-            return Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.85,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Header Tags
-                  Row(
+        return _HomeActivityModalContent(
+          activity: activity,
+          conditionReason: _conditionReason,
+          isCompleted: isDone,
+          onComplete: () async {
+            if (isDone) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryContainer,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
+                      const Icon(Icons.info_outline,
+                          color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: Text(
-                          category.toUpperCase(),
+                          'Kamu sudah menyelesaikan latihan ini hari ini! Kerja bagus, istirahatlah sejenak dan lanjutkan kembali besok 🌿',
                           style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '⏱️ $duration',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '• $difficulty',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                              fontSize: 12, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-
-                  // Title
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
+                  backgroundColor: const Color(0xFF6366F1),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+              Navigator.pop(ctx);
+              return;
+            }
+            await _toggleRecommendationComplete(id);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle,
+                          color: Colors.white, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Bagus sekali! Satu langkah kecil untuk ketenanganmu telah selesai.',
+                          style: GoogleFonts.inter(
+                              fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
+                  backgroundColor: const Color(0xFF10B981),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+              Navigator.pop(ctx);
+            }
+          },
+        );
+      },
+    );
+  }
+}
 
-                  // Description
-                  Text(
-                    description,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: AppColors.textSecondary,
-                    ),
+/// Modal bottom sheet content for home screen with rationale, steps, and breath pacer
+class _HomeActivityModalContent extends StatefulWidget {
+  final Map<String, dynamic> activity;
+  final String conditionReason;
+  final bool isCompleted;
+  final VoidCallback onComplete;
+
+  const _HomeActivityModalContent({
+    required this.activity,
+    required this.conditionReason,
+    required this.isCompleted,
+    required this.onComplete,
+  });
+
+  @override
+  State<_HomeActivityModalContent> createState() =>
+      _HomeActivityModalContentState();
+}
+
+class _HomeActivityModalContentState extends State<_HomeActivityModalContent> {
+  bool _isBreathPacerActive = false;
+  int _breathTimerSec = 0;
+  String _breathPhase = 'Tarik Napas';
+  Timer? _breathTimer;
+
+  @override
+  void dispose() {
+    _breathTimer?.cancel();
+    super.dispose();
+  }
+
+  void _toggleBreathPacer() {
+    if (_isBreathPacerActive) {
+      _breathTimer?.cancel();
+      setState(() {
+        _isBreathPacerActive = false;
+        _breathTimerSec = 0;
+        _breathPhase = 'Selesai';
+      });
+    } else {
+      setState(() {
+        _isBreathPacerActive = true;
+        _breathTimerSec = 0;
+        _breathPhase = 'Tarik Napas (4 dtk)';
+      });
+
+      _breathTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted) return;
+        setState(() {
+          _breathTimerSec++;
+          final cycle = _breathTimerSec % 19;
+          if (cycle < 4) {
+            _breathPhase = 'Tarik Napas Perlahan (4s)';
+          } else if (cycle < 11) {
+            _breathPhase = 'Tahan Napas di Dada (7s)';
+          } else {
+            _breathPhase = 'Hembuskan Napas Rileks (8s)';
+          }
+        });
+      });
+    }
+  }
+
+  String _normalizeCategory(String? raw) {
+    final cat = (raw ?? '').toLowerCase();
+    if (cat.contains('mindful') || cat.contains('napas') || cat.contains('breath')) return 'Mindfulness';
+    if (cat.contains('cbt') || cat.contains('kognitif') || cat.contains('problem')) return 'CBT';
+    if (cat.contains('refleksi') || cat.contains('syukur') || cat.contains('self-care')) return 'Refleksi';
+    if (cat.contains('fisik') || cat.contains('gerak') || cat.contains('somatis') || cat.contains('aktivasi') || cat.contains('jalan')) return 'Fisik & Gerak';
+    return raw?.isNotEmpty == true ? raw! : 'Self-Care';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = widget.activity['title']?.toString() ?? 'Latihan Relaksasi';
+    final rawCat = widget.activity['category']?.toString() ?? 'Self-Care';
+    final category = _normalizeCategory(rawCat);
+    final duration = widget.activity['duration']?.toString() ?? '5 menit';
+    final difficulty = widget.activity['difficulty']?.toString() ?? 'Pemula';
+    final description = widget.activity['description']?.toString() ?? '';
+    final rationale = widget.activity['rationale']?.toString() ?? '';
+    final rawInstructions = widget.activity['instructions'];
+    List<String> instructions = rawInstructions is List
+        ? List<String>.from(rawInstructions.map((e) => e.toString()))
+        : <String>[];
+
+    if (instructions.isEmpty) {
+      instructions = [
+        'Cari posisi duduk yang santai dan nyaman.',
+        'Tarik napas dalam perlahan dan hembuskan perlahan.',
+        'Lakukan langkah latihan ini secara tenang selama $duration.',
+        'Rasakan perubahan sensasi rileks di tubuhmu setelah selesai.'
+      ];
+    }
+
+    final displayRationale =
+        rationale.isNotEmpty ? rationale : widget.conditionReason;
+
+    final isBreathingActivity = title.toLowerCase().contains('napas') ||
+        title.toLowerCase().contains('breath') ||
+        category.toLowerCase() == 'mindfulness';
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: const EdgeInsets.fromLTRB(22, 14, 22, 24),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Header tags & close button (X)
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  category.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
                   ),
-                  const SizedBox(height: 16),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '•  $duration  •  $difficulty',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
 
-                  // Clinical Rationale Box (if present)
+          // Title
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Description
+          Text(
+            description,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Scrollable Body
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Rationale Card
                   if (displayRationale.isNotEmpty) ...[
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3F0FF),
+                        color: const Color(0xFFF5F3FF),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(0xFFDDD6FE),
-                          width: 1,
-                        ),
+                        border: Border.all(color: const Color(0xFFDDD6FE)),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1371,14 +1878,27 @@ class HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              displayRationale,
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                height: 1.4,
-                                color: const Color(0xFF5B21B6),
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Kenapa Latihan Ini Membantu?',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF5B21B6),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  displayRationale,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11.5,
+                                    height: 1.4,
+                                    color: const Color(0xFF6D28D9),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -1387,118 +1907,200 @@ class HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // Step-by-step instructions
-                  if (instructions.isNotEmpty) ...[
-                    Text(
-                      'Langkah-Langkah Latihan:',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                  // 2. Interactive Breath Pacer (if relevant)
+                  if (isBreathingActivity) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFEEF2FF),
+                            Color(0xFFE0E7FF),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFC7D2FE)),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: instructions.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 8),
-                        itemBuilder: (context, i) {
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                width: 22,
-                                height: 22,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color:
-                                      AppColors.primary.withValues(alpha: 0.12),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text(
-                                  '${i + 1}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary,
+                              Row(
+                                children: [
+                                  const Icon(Icons.air,
+                                      size: 16, color: Color(0xFF4F46E5)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Pemandu Irama Napas',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF3730A3),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  instructions[i],
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    height: 1.4,
-                                    color: AppColors.textPrimary,
+                              GestureDetector(
+                                onTap: _toggleBreathPacer,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _isBreathPacerActive
+                                        ? const Color(0xFFEF4444)
+                                        : const Color(0xFF4F46E5),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _isBreathPacerActive
+                                        ? 'Hentikan'
+                                        : 'Mulai Pemandu',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
-                          );
-                        },
+                          ),
+                          if (_isBreathPacerActive) ...[
+                            const SizedBox(height: 14),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 700),
+                              width: _breathPhase.contains('Tarik') ? 80 : 65,
+                              height: _breathPhase.contains('Tarik') ? 80 : 65,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF6366F1)
+                                    .withValues(alpha: 0.2),
+                                border: Border.all(
+                                    color: const Color(0xFF4F46E5), width: 2),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${_breathTimerSec}s',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF3730A3),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _breathPhase,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF4338CA),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                   ],
 
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await _toggleRecommendationComplete(id);
-                            setModalState(() {});
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: currentDone
-                                ? const Color(0xFF10B981)
-                                : AppColors.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                  // 3. Step-by-step instructions
+                  Text(
+                    'Langkah-Langkah yang Perlu Dilakukan:',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: instructions.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (context, idx) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 22,
+                            height: 22,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryContainer,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '${idx + 1}',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                currentDone
-                                    ? Icons.check_circle
-                                    : Icons.check_circle_outline,
-                                color: Colors.white,
-                                size: 18,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              instructions[idx],
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                height: 1.4,
+                                color: AppColors.textPrimary,
                               ),
-                              const SizedBox(width: 8),
-                              Text(
-                                currentDone
-                                    ? 'Selesai Dilakukan'
-                                    : 'Tandai Selesai',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
-            );
-          },
-        );
-      },
+            ),
+          ),
+
+          // Completion Button CTA
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: widget.onComplete,
+              icon: Icon(
+                widget.isCompleted ? Icons.check_circle : Icons.check,
+                color: Colors.white,
+                size: 18,
+              ),
+              label: Text(
+                widget.isCompleted
+                    ? 'Sudah Diselesaikan Hari Ini'
+                    : 'Saya Sudah Melakukan Latihan Ini',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: widget.isCompleted
+                    ? const Color(0xFF10B981)
+                    : AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

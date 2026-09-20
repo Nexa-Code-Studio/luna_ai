@@ -45,7 +45,6 @@ async def _get_current_user(
     query_jwt = select(User).where(User.id == u_uuid)
     res_jwt = await db.execute(query_jwt)
     user = res_jwt.scalar_one_or_none()
-
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -90,19 +90,19 @@ class MLEmotionDetectorService:
 
         # DEFAULT FALLBACK SIMULATION (Akan digantikan oleh output model emotion2vec_plus_large Anda)
         text_lower = text.lower()
-        if any(w in text_lower for w in ["senang", "bahagia", "suka", "terima kasih", "lega"]):
+        if any(w in text_lower for w in ["senang", "bahagia", "suka", "terima kasih", "lega", "gembira", "bersyukur", "tenang"]):
             primary = "happy"
             primary_id = 3
             confidence = 0.88
-        elif any(w in text_lower for w in ["cemas", "takut", "khawatir", "stres", "panik"]):
+        elif any(w in text_lower for w in ["cemas", "takut", "khawatir", "stres", "panik", "nervous", "gelisah", "demam panggung", "was-was", "tegang"]):
             primary = "fearful"
             primary_id = 2
             confidence = 0.82
-        elif any(w in text_lower for w in ["sedih", "kecewa", "menangis", "lelah"]):
+        elif any(w in text_lower for w in ["sedih", "kecewa", "menangis", "lelah", "depresi", "putus asa", "hampa", "terpuruk", "capek"]):
             primary = "sad"
             primary_id = 6
             confidence = 0.78
-        elif any(w in text_lower for w in ["marah", "kesal", "benci", "jengkel"]):
+        elif any(w in text_lower for w in ["marah", "kesal", "benci", "jengkel", "geram", "murka", "emosi"]):
             primary = "angry"
             primary_id = 0
             confidence = 0.80

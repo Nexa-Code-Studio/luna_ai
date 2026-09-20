@@ -62,83 +62,11 @@ async def seed_master_data() -> User:
             await session.commit()
             logger.info(f"Existing Master User updated: {user.email}")
 
-        # 2. Seed Emergency Contacts
-        query_contacts = select(EmergencyContact).where(EmergencyContact.user_id == user.id)
-        res_contacts = await session.execute(query_contacts)
-        existing_contacts = res_contacts.scalars().all()
+        # 2. Emergency Contacts (Skipped: Start with 0 contacts for clean real user experience)
+        logger.info("Skipping emergency contacts seeding for 100% clean user state.")
 
-        if not existing_contacts:
-            c1 = EmergencyContact(
-                user_id=user.id,
-                name="Ibu (Siti Rahma)",
-                relationship="Ibu",
-                phone_number="0812-3456-7890",
-                is_primary=True,
-            )
-            c2 = EmergencyContact(
-                user_id=user.id,
-                name="Dr. Handoko (Psikiater)",
-                relationship="Dokter",
-                phone_number="0811-9876-5432",
-                is_primary=False,
-            )
-            session.add_all([c1, c2])
-            await session.commit()
-            logger.info("Seeded Emergency Contacts.")
-
-        # 3. Seed Full Diary Entries History (including 28 Agustus 2026 Emergency Entry)
-        target_entries = [
-            {
-                "entry_date": date(2026, 9, 1),
-                "title": "Jurnal Refleksi Hari Ini",
-                "summary": "Samsul merasa lebih semangat dan positif setelah berdiskusi mengenai target pribadi dan meditasi pagi bersama LUNA.",
-                "content": "Catatan harian mengenai target positif dan meditasi.",
-                "mood_tag": "Bahagia 😃",
-                "mood_emoji": "😃",
-                "ai_insight": "Progres emosional Samsul menunjukkan peningkatan kebahagiaan dan motivasi positif.",
-                "emotional_reflection": "Merasa optimis menghadapi tantangan hari ini.",
-                "important_events": ["[Sesi #1] Afirmasi positif pagi dan perencanaan aktivitas produktif."],
-            },
-            {
-                "entry_date": date(2026, 8, 31),
-                "title": "Catatan Refleksi Emosi Harian",
-                "summary": "Samsul merasakan ketenangan setelah menyelesaikan sesi konsultasi mengenai manajemen waktu dan relaksasi pikiran.",
-                "content": "Diskusi relaksasi emosional.",
-                "mood_tag": "Tenang 😌",
-                "mood_emoji": "😌",
-                "ai_insight": "Kondisi emosional Samsul tergolong stabil.",
-                "emotional_reflection": "Merasa lebih lega dan siap melanjutkan aktivitas.",
-                "important_events": ["[Sesi #1] Refleksi mengenai rutinitas harian dan teknik olah napas."],
-            },
-            {
-                "entry_date": date(2026, 8, 28),
-                "title": "Jurnal Emosional Krisis — Samsul",
-                "summary": "Samsul mengutarakan rasa kecemasan dan kelelahan mental ekstrem terkait beban kerja dan kondisi krisis. Terdeteksi indikasi krisis emosional tinggi.",
-                "content": "Sesi konseling mengindikasikan kecemasan mendalam dan risiko tinggi emosional.",
-                "mood_tag": "Darurat 🚨",
-                "mood_emoji": "🚨",
-                "ai_insight": "Luna AI mengaktifkan mode de-eskalasi dan menyajikan rujukan kontak krisis darurat (Hotline 119 ext 8).",
-                "emotional_reflection": "Samsul menganjurkan diri untuk beristirahat penuh dan menghubungi Kontak Darurat Utama atau Konselor Profesional.",
-                "important_events": [
-                    "[Sesi #1] Samsul menyampaikan keluhan kelelahan fisik dan kecemasan mendalam.",
-                    "[Sesi #2] Terdeteksi puncak stres emosional tinggi — Protokol Krisis dipicu.",
-                ],
-            },
-        ]
-
-        for entry_data in target_entries:
-            query_d = select(DiaryEntry).where(
-                DiaryEntry.user_id == user.id,
-                DiaryEntry.entry_date == entry_data["entry_date"],
-            )
-            res_d = await session.execute(query_d)
-            existing_d = res_d.scalar_one_or_none()
-
-            if not existing_d:
-                new_d = DiaryEntry(user_id=user.id, **entry_data)
-                session.add(new_d)
-                await session.commit()
-                logger.info(f"Seeded Diary Entry for date {entry_data['entry_date']}: {entry_data['title']}")
+        # 3. Diary Entries (Skipped: Start with 0 entries for clean real user experience)
+        logger.info("Skipping diary entry seeding for 100% clean user diary state.")
 
         # 4. Seed Recommendations
         query_recs = select(RecommendationItem)
@@ -327,9 +255,58 @@ async def seed_master_data() -> User:
                 icon_name="psychology",
                 is_active=True,
             )
-            session.add_all([c1, c2, c3, c4, c5, c6, c7, c8])
+            c9 = CopingActivity(
+                title="Metode Notice and Name (Unhooking)",
+                category="CBT Kognitif",
+                target_condition="anxiety",
+                duration="5 Menit",
+                difficulty="Pemula",
+                description="Melepaskan diri dari jebakan pikiran overthinking dan kecemasan dengan formula sadar, beri label, dan fokus kembali.",
+                instructions=[
+                    "Sadari (Notice): Perhatikan pikiran cemas yang sedang berputar di kepalamu tanpa melawannya.",
+                    "Beri Nama (Name): Ucapkan dalam hati: 'Saya menyadari di sini ada pikiran bahwa [sebutkan pikiranmu]'.",
+                    "Fokus Kembali (Refocus): Arahkan kembali perhatian fisikmu pada apa yang sedang kamu kerjakan saat ini.",
+                ],
+                rationale="Berdasarkan panduan klinis WHO (Doing What Matters in Times of Stress, Modul 2), teknik unhooking mencegah pikiran cemas mengendalikan tindakan kita.",
+                icon_name="psychology",
+                is_active=True,
+            )
+            c10 = CopingActivity(
+                title="Metode Stop, Think, Go (Solusi Bertahap)",
+                category="Problem Solving",
+                target_condition="stress",
+                duration="8 Menit",
+                difficulty="Menengah",
+                description="Mengurai rasa kewalahan akibat tumpukan masalah menjadi langkah-langkah solusi praktis yang terukur.",
+                instructions=[
+                    "STOP: Berhentilah sejenak dari kesibukan. Tarik napas panjang dan pilih satu masalah yang paling mendesak.",
+                    "THINK: Tuliskan minimal 3 hingga 5 kemungkinan ide solusi, tanpa menghakimi apakah ide tersebut konyol atau tidak.",
+                    "GO: Pilih satu ide yang paling mudah dan dapat kamu jalankan sekarang juga. Lakukan langkah pertama.",
+                ],
+                rationale="Berdasarkan panduan WHO EASE (Aktivitas 5.4), metode ini memulihkan fungsi eksekutif kognitif yang terhambat saat stres tinggi.",
+                icon_name="task_alt",
+                is_active=True,
+            )
+            c11 = CopingActivity(
+                title="Stabilisasi Krisis & Grounding Darurat",
+                category="Bantuan Krisis",
+                target_condition="crisis",
+                duration="3 Menit",
+                difficulty="Darurat",
+                description="Langkah stabilisasi sensorik segera saat emosi terasa sangat meluap atau muncul pemikiran menyakiti diri.",
+                instructions=[
+                    "Hentikan aktivitasmu saat ini dan duduklah bersandar dengan aman di kursi atau lantai.",
+                    "Tekan kedua telapak kakimu kuat-kuat ke lantai, rasakan bumi menopang tubuhmu.",
+                    "Pegang benda bersuhu dingin (seperti air es atau batu) untuk memutus badai impuls emosional.",
+                    "Tolong hubungi Hotline Kemenkes di 119 ext 8 atau kontak terdekatmu sekarang juga.",
+                ],
+                rationale="Berdasarkan standar rujukan WHO EASE (Tabel 5), grounding sensorik fisik menstabilkan kesadaran sebelum intervensi profesional diberikan.",
+                icon_name="emergency",
+                is_active=True,
+            )
+            session.add_all([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11])
             await session.commit()
-            logger.info("Seeded Evidence-Based Coping Activities.")
+            logger.info("Seeded Evidence-Based Coping Activities (including crisis, anxiety unhooking, and problem solving).")
 
         # 5. Conversations & Messages (Skipped: Start with 0 conversations for clean user state)
         logger.info("Skipping conversation seeding for 100% clean conversation history.")
