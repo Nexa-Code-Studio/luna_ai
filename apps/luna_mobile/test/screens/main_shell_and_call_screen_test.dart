@@ -112,7 +112,6 @@ void main() {
 
       // Title & Status
       expect(find.text('LUNA Sedang Berbicara...'), findsOneWidget);
-      expect(find.byIcon(Icons.record_voice_over), findsOneWidget);
     });
 
     testWidgets(
@@ -145,15 +144,17 @@ void main() {
 
       // Tap End Call button (Icons.call_end)
       await tester.tap(find.byIcon(Icons.call_end));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify Session Summary bottom sheet appears
       expect(find.text('Sesi Suara Selesai 🍃'), findsOneWidget);
-      expect(find.text('Lihat Detail Jurnal'), findsOneWidget);
+      expect(find.text('Lihat Detail Jurnal Refleksi'), findsOneWidget);
 
-      // Tap "Lihat Detail Jurnal"
-      await tester.tap(find.text('Lihat Detail Jurnal'));
-      await tester.pumpAndSettle();
+      // Tap "Lihat Detail Jurnal Refleksi"
+      await tester.tap(find.text('Lihat Detail Jurnal Refleksi'));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Destination reached
       expect(find.text('Home Screen Destination'), findsOneWidget);

@@ -2,12 +2,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../features/dass/presentation/providers/dass_provider.dart';
 import '../features/monitoring/domain/entities/monitoring_data_entity.dart';
 import '../features/monitoring/presentation/providers/monitoring_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/skeleton_shimmer.dart';
 
 class MonitoringScreen extends ConsumerStatefulWidget {
   const MonitoringScreen({super.key});
@@ -374,10 +376,12 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
               SizedBox(
                 height: 160,
                 width: double.infinity,
-                child: CustomPaint(
-                  painter: _StackedEmotionChartPainter(
-                    chartData: data.chartData,
-                    emotionColors: _emotionLegend.map((e) => e['color'] as Color).toList(),
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _StackedEmotionChartPainter(
+                      chartData: data.chartData,
+                      emotionColors: _emotionLegend.map((e) => e['color'] as Color).toList(),
+                    ),
                   ),
                 ),
               ),
@@ -715,17 +719,18 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
                                 ),
                               ),
                               const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F0FE),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  '21 Butir',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
+                              InkWell(
+                                onTap: () => _showDassInfoDialog(context),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFE8F0FE),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.info_outline,
+                                    size: 16,
                                     color: AppColors.primary,
                                   ),
                                 ),
@@ -751,14 +756,35 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
                 const SizedBox(height: 14),
 
                 // Mini Subscale Summary Pills
-                Row(
-                  children: [
-                    _buildSubscaleMiniChip('Stres', '${assessment.stressScore}', const Color(0xFFFF7675)),
-                    const SizedBox(width: 8),
-                    _buildSubscaleMiniChip('Kecemasan', '${assessment.anxietyScore}', const Color(0xFF6C63FF)),
-                    const SizedBox(width: 8),
-                    _buildSubscaleMiniChip('Depresi', '${assessment.depressionScore}', const Color(0xFF74B9FF)),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      _buildSubscaleMiniChip(
+                        context,
+                        'Stres',
+                        assessment.stressScore,
+                        assessment.stressSeverity,
+                        'stress',
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSubscaleMiniChip(
+                        context,
+                        'Kecemasan',
+                        assessment.anxietyScore,
+                        assessment.anxietySeverity,
+                        'anxiety',
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSubscaleMiniChip(
+                        context,
+                        'Depresi',
+                        assessment.depressionScore,
+                        assessment.depressionSeverity,
+                        'depression',
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 14),
 
@@ -804,32 +830,592 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
     );
   }
 
-  Widget _buildSubscaleMiniChip(String label, String value, Color color) {
+  String _getIndonesianSeverity(String scaleType, int score, String rawSeverity) {
+    final s = rawSeverity.toLowerCase();
+    if (s.contains('extremely') || s.contains('sangat berat')) return 'Sangat Berat';
+    if (s.contains('severe') || s.contains('berat')) return 'Berat';
+    if (s.contains('moderate') || s.contains('sedang')) return 'Sedang';
+    if (s.contains('mild') || s.contains('ringan')) return 'Ringan';
+    if (s.contains('normal')) return 'Normal';
+
+    if (scaleType == 'depression') {
+      if (score >= 28) return 'Sangat Berat';
+      if (score >= 21) return 'Berat';
+      if (score >= 14) return 'Sedang';
+      if (score >= 10) return 'Ringan';
+      return 'Normal';
+    } else if (scaleType == 'anxiety') {
+      if (score >= 20) return 'Sangat Berat';
+      if (score >= 15) return 'Berat';
+      if (score >= 10) return 'Sedang';
+      if (score >= 8) return 'Ringan';
+      return 'Normal';
+    } else {
+      if (score >= 34) return 'Sangat Berat';
+      if (score >= 26) return 'Berat';
+      if (score >= 19) return 'Sedang';
+      if (score >= 15) return 'Ringan';
+      return 'Normal';
+    }
+  }
+
+  Color _getScoreColor(String severityIndo) {
+    switch (severityIndo) {
+      case 'Sangat Berat':
+        return const Color(0xFFD32F2F);
+      case 'Berat':
+        return const Color(0xFFE65100);
+      case 'Sedang':
+        return const Color(0xFFF57C00);
+      case 'Ringan':
+        return const Color(0xFFFBC02D);
+      case 'Normal':
+      default:
+        return const Color(0xFF2E7D32);
+    }
+  }
+
+  Widget _buildSubscaleMiniChip(
+    BuildContext context,
+    String label,
+    int score,
+    String rawSeverity,
+    String scaleType,
+  ) {
+    final severityIndo = _getIndonesianSeverity(scaleType, score, rawSeverity);
+    final scoreColor = _getScoreColor(severityIndo);
+    final bool isExtremelySevere = severityIndo == 'Sangat Berat';
+
+    final Color bgColor = isExtremelySevere
+        ? const Color(0xFFD32F2F)
+        : scoreColor.withValues(alpha: 0.08);
+
+    final Color labelColor = isExtremelySevere ? Colors.white70 : scoreColor;
+
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+      child: GestureDetector(
+        onTap: () {
+          if (isExtremelySevere) {
+            _showPsychologistReferralModal(context, label, score, scaleType);
+          } else {
+            _showSubscaleInfoModal(context, label, score, severityIndo, scaleType);
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isExtremelySevere
+                  ? const Color(0xFFB71C1C)
+                  : scoreColor.withValues(alpha: 0.25),
+              width: isExtremelySevere ? 1.5 : 1,
+            ),
+            boxShadow: isExtremelySevere
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFD32F2F).withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isExtremelySevere) ...[
+                    const Icon(Icons.warning_amber_rounded, size: 12, color: Colors.white),
+                    const SizedBox(width: 3),
+                  ],
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: labelColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '$score',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: isExtremelySevere ? Colors.white : scoreColor,
+                    ),
+                  ),
+                  Text(
+                    '/42',
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: isExtremelySevere ? Colors.white70 : AppColors.textLight,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: isExtremelySevere
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : scoreColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  severityIndo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                    color: isExtremelySevere ? Colors.white : scoreColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          children: [
-            Text(
-              label,
+      ),
+    );
+  }
+
+  void _showDassInfoDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0xFFD1D5DB), width: 1),
+      ),
+      builder: (ctx) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.info_outline, color: AppColors.primary, size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Panduan Skala DASS-21',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'DASS-21 (Depression Anxiety Stress Scales) mengukur 3 indikator psikologis harian (0–42 poin per subskala) dari transkrip percakapanmu bersama Luna AI.',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'KATEGORI WARNA & TINGKAT KEPARAHAN:',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textLight,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildLegendRow('Normal', 'Kondisi emosi stabil & terkendali.', const Color(0xFF2E7D32)),
+              _buildLegendRow('Ringan (Mild)', 'Fluktuasi emosi ringan harian.', const Color(0xFFFBC02D)),
+              _buildLegendRow('Sedang (Moderate)', 'Mulai mengganggu kenyamanan & butuh jeda istirahat.', const Color(0xFFF57C00)),
+              _buildLegendRow('Berat (Severe)', 'Beban emosional terasa berat & perlu perhatian khusus.', const Color(0xFFE65100)),
+              _buildLegendRow('Sangat Berat (Extremely Severe)', 'Indikasi krisis — sangat disarankan konsultasi ke psikolog/psikiater.', const Color(0xFFD32F2F)),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Saya Mengerti'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendRow(String label, String desc, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: color),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Padding(
+            padding: const EdgeInsets.only(left: 18),
+            child: Text(
+              desc,
               style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: color,
+                fontSize: 11.5,
+                color: AppColors.textSecondary,
+                height: 1.35,
               ),
             ),
-            const SizedBox(height: 2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSubscaleInfoModal(
+    BuildContext context,
+    String label,
+    int score,
+    String severityIndo,
+    String scaleType,
+  ) {
+    final scoreColor = _getScoreColor(severityIndo);
+    String definition = '';
+    String tip = '';
+
+    if (scaleType == 'depression') {
+      definition =
+          'Subskala Depresi mengukur tingkat suasana hati disforik, hilangnya motivasi/inisiatif, anhedonia (kesulitan merasakan hal positif), dan perasaan ketidakberhargaan.';
+      tip =
+          'Coba lakukan aktivitas kecil yang kamu sukai, luapkan pikiran melalui percakapan bersama LUNA, atau jalan santai menghirup udara segar.';
+    } else if (scaleType == 'anxiety') {
+      definition =
+          'Subskala Kecemasan mengukur stimulasi otonomik (otot tegang, detak jantung kencang), cemas situasional, dan ketakutan akan kehilangan kendali.';
+      tip =
+          'Lakukan teknik pernapasan 4-7-8 atau relaksasi otot bertahap untuk menurunkan stimulasi fisik berlebih.';
+    } else {
+      definition =
+          'Subskala Stres mengukur ketegangan syaraf non-spesifik, reaksi berlebihan pada masalah harian, kegelisahan, dan ketidakmampuan untuk bersantai.';
+      tip =
+          'Ambil jeda istirahat dari pekerjaan/tugas, hindari multitasking berlebih, dan nikmati minuman hangat.';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0xFFD1D5DB), width: 1),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: scoreColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    label.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: scoreColor,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '$score / 42 Poin',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text(
+                  'Tingkat Keparahan: ',
+                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                ),
+                Text(
+                  severityIndo,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: scoreColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: Color(0xFFEADBFF)),
+            const SizedBox(height: 14),
             Text(
-              value,
+              'PENJELASAN INDIKATOR:',
               style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1E1B4B),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textLight,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              definition,
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.45),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'REKOMENDASI MANDIRI:',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textLight,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFD1D5DB)),
+              ),
+              child: Text(
+                tip,
+                style: GoogleFonts.inter(fontSize: 12.5, color: AppColors.textPrimary, height: 1.4),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Tutup'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPsychologistReferralModal(
+    BuildContext context,
+    String label,
+    int score,
+    String scaleType,
+  ) {
+    String detailExplanation = '';
+
+    if (scaleType == 'depression') {
+      detailExplanation =
+          'Sistem mencatat tingkat Depresi pengguna pada kategori Sangat Berat (Extremely Severe). Kondisi ini dicirikan oleh anhedonia total (kehilangan kemampuan merasakan hal positif), perasaan tidak berharga mendalam, serta keletihan fisik dan emosional yang signifikan.\n\n'
+          '⚠️ Catatan Penting: Luna AI adalah pendamping mandiri dan bukan pengganti diagnosis atau terapi medis klinis. Kamu sangat disarankan untuk berbicara langsung dengan Psikolog Klinis atau Psikiater.';
+    } else if (scaleType == 'anxiety') {
+      detailExplanation =
+          'Sistem mencatat tingkat Kecemasan pengguna pada kategori Sangat Berat (Extremely Severe). Kondisi ini ditandai dengan serangan panik intens, detak jantung kencang tanpa alasan fisik, guncangan rasa takut akut, atau kekhawatiran melumpuhkan harian.\n\n'
+          '⚠️ Catatan Penting: Gejala kecemasan akut membutuhkan penanganan profesional medis. Sangat disarankan untuk segera menemui Psikolog Klinis atau Psikiater terdekat.';
+    } else {
+      detailExplanation =
+          'Sistem mencatat tingkat Stres pengguna pada kategori Sangat Berat (Extremely Severe). Kondisi ini mengindikasikan burnout ekstrem, ketegangan saraf kronis, kelelahan energi berat, serta keputusasaan dalam menangani tekanan harian.\n\n'
+          '⚠️ Catatan Penting: Beban stres kronis dapat berdampak pada kesehatan fisik. Disarankan untuk mengambil jeda penuh dan melakukan sesi konseling bersama psikolog profesional.';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0xFFD1D5DB), width: 1),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEBEE),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFD1D5DB)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Color(0xFFD32F2F), size: 28),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'SANGAT BERAT (EXTREMELY SEVERE)',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFFD32F2F),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        Text(
+                          'Indikasi $label: $score / 42 Poin',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFFB71C1C),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'PENJELASAN KLINIS & REKOMENDASI:',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textLight,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              detailExplanation,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _openWhatsappEmergency();
+                },
+                icon: const Icon(Icons.chat_outlined, size: 20),
+                label: Text(
+                  'Konsultasi via WhatsApp Psikolog / Krisis',
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF25D366),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'Tutup Penjelasan',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ),
           ],
@@ -839,16 +1425,94 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
   }
 
   Widget _buildLoadingState() {
-    return Column(
-      children: [
-        GlassCard(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          child: const Center(
-            child: CircularProgressIndicator(),
+    return SkeletonShimmerHost(
+      child: Column(
+        children: [
+          // 1. Clinical Status Header Skeleton
+          GlassCard(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const SkeletonCircle(size: 38),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        SkeletonLine(width: 130, height: 15),
+                        SizedBox(height: 6),
+                        SkeletonLine(width: 80, height: 12),
+                      ],
+                    ),
+                    const Spacer(),
+                    const SkeletonBox(width: 60, height: 24, borderRadius: 12),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const SkeletonLine(width: double.infinity, height: 13),
+                const SizedBox(height: 6),
+                const SkeletonLine(width: 200, height: 13),
+              ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 18),
+
+          // 2. Trend Chart Skeleton
+          GlassCard(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    SkeletonLine(width: 140, height: 16),
+                    SkeletonBox(width: 70, height: 26, borderRadius: 8),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const SkeletonBox(width: double.infinity, height: 160, borderRadius: 12),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // 3. Dual Metrics Skeleton
+          Row(
+            children: [
+              Expanded(
+                child: GlassCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: const [
+                      SkeletonLine(width: 60, height: 12),
+                      SizedBox(height: 8),
+                      SkeletonLine(width: 40, height: 18),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: GlassCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: const [
+                      SkeletonLine(width: 60, height: 12),
+                      SizedBox(height: 8),
+                      SkeletonLine(width: 40, height: 18),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -895,6 +1559,32 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
         ],
       ),
     );
+  }
+
+  static const String _whatsappEmergencyUrl =
+      'https://api.whatsapp.com/send/?phone=6281380073120&text=halo%20kak%2C%20saya%20ingin%20bercerita%20mengenai...&type=phone_number&app_absent=0';
+
+  Future<void> _openWhatsappEmergency() async {
+    final uri = Uri.parse(_whatsappEmergencyUrl);
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak dapat membuka WhatsApp Konseling Krisis'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
   }
 }
 
@@ -961,5 +1651,7 @@ class _StackedEmotionChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _StackedEmotionChartPainter oldDelegate) {
+    return oldDelegate.chartData != chartData;
+  }
 }

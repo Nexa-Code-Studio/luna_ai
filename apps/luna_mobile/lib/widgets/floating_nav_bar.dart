@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
@@ -63,108 +62,102 @@ class FloatingNavBar extends StatelessWidget {
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    width: 1.5,
-                  ),
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final slotWidth = constraints.maxWidth / 5.0;
-                    final pillWidth = slotWidth - 8.0;
-                    final pillHeight = 52.0;
-                    final pillTop = (constraints.maxHeight - pillHeight) / 2.0;
-                    final pillLeft = (activeSlot * slotWidth) + 4.0;
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.8),
+                width: 1.5,
+              ),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final slotWidth = constraints.maxWidth / 5.0;
+                final pillWidth = slotWidth - 8.0;
+                final pillHeight = 52.0;
+                final pillTop = (constraints.maxHeight - pillHeight) / 2.0;
+                final pillLeft = (activeSlot * slotWidth) + 4.0;
 
-                    return Stack(
-                      children: [
-                        // Animated Sliding Pill Indicator
-                        AnimatedPositioned(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOutCubic,
-                          left: pillLeft,
-                          top: pillTop,
-                          width: pillWidth,
-                          height: pillHeight,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryContainer,
-                              borderRadius: BorderRadius.circular(16),
+                return Stack(
+                  children: [
+                    // Animated Sliding Pill Indicator
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                      left: pillLeft,
+                      top: pillTop,
+                      width: pillWidth,
+                      height: pillHeight,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+
+                    // Navigation Icons & Labels Row
+                    Positioned.fill(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Slot 0: Beranda (Home)
+                          Expanded(
+                            flex: 1,
+                            child: _buildSideNavItem(
+                              index: 0,
+                              iconUnselected: Icons.home_outlined,
+                              iconSelected: Icons.home,
+                              label: 'Beranda',
                             ),
                           ),
-                        ),
 
-                        // Navigation Icons & Labels Row
-                        Positioned.fill(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Slot 0: Beranda (Home)
-                              Expanded(
-                                flex: 1,
-                                child: _buildSideNavItem(
-                                  index: 0,
-                                  iconUnselected: Icons.home_outlined,
-                                  iconSelected: Icons.home,
-                                  label: 'Beranda',
-                                ),
-                              ),
-
-                              // Slot 1: Jurnal (Diary)
-                              Expanded(
-                                flex: 1,
-                                child: _buildSideNavItem(
-                                  index: 1,
-                                  iconUnselected: Icons.menu_book_outlined,
-                                  iconSelected: Icons.menu_book,
-                                  label: 'Jurnal',
-                                ),
-                              ),
-
-                              // Slot 2: Placeholder Space for Center FAB
-                              const Expanded(
-                                flex: 1,
-                                child: SizedBox(),
-                              ),
-
-                              // Slot 3: Tren (Monitoring)
-                              Expanded(
-                                flex: 1,
-                                child: _buildSideNavItem(
-                                  index: 2,
-                                  iconUnselected: Icons.show_chart_outlined,
-                                  iconSelected: Icons.show_chart,
-                                  label: 'Tren',
-                                ),
-                              ),
-
-                              // Slot 4: Profil (Profile)
-                              Expanded(
-                                flex: 1,
-                                child: _buildSideNavItem(
-                                  index: 3,
-                                  iconUnselected: Icons.person_outline,
-                                  iconSelected: Icons.person,
-                                  label: 'Profil',
-                                ),
-                              ),
-                            ],
+                          // Slot 1: Jurnal (Diary)
+                          Expanded(
+                            flex: 1,
+                            child: _buildSideNavItem(
+                              index: 1,
+                              iconUnselected: Icons.menu_book_outlined,
+                              iconSelected: Icons.menu_book,
+                              label: 'Jurnal',
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
+
+                          // Slot 2: Placeholder Space for Center FAB
+                          const Expanded(
+                            flex: 1,
+                            child: SizedBox(),
+                          ),
+
+                          // Slot 3: Tren (Monitoring)
+                          Expanded(
+                            flex: 1,
+                            child: _buildSideNavItem(
+                              index: 2,
+                              iconUnselected: Icons.show_chart_outlined,
+                              iconSelected: Icons.show_chart,
+                              label: 'Tren',
+                            ),
+                          ),
+
+                          // Slot 4: Profil (Profile)
+                          Expanded(
+                            flex: 1,
+                            child: _buildSideNavItem(
+                              index: 3,
+                              iconUnselected: Icons.person_outline,
+                              iconSelected: Icons.person,
+                              label: 'Profil',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),

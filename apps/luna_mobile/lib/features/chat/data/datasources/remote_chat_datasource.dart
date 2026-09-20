@@ -11,8 +11,15 @@ class RemoteChatDataSource implements ChatDataSource {
   @override
   Future<List<ConversationModel>> getConversations() async {
     final response = await _apiClient.get('/conversations');
-    final list = response as List? ?? [];
-    return list.map((e) => ConversationModel.fromJson(e)).toList();
+    final List<dynamic> list;
+    if (response is Map && response['items'] is List) {
+      list = response['items'] as List;
+    } else if (response is List) {
+      list = response;
+    } else {
+      list = [];
+    }
+    return list.map((e) => ConversationModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   @override

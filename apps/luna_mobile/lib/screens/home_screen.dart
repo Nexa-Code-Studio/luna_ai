@@ -8,6 +8,7 @@ import '../config/app_config.dart';
 import '../services/daily_progress_local_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/staggered_entrance.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
@@ -446,35 +447,38 @@ class HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               // Header Bar with Logo and Settings Action
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/luna_logo.png',
-                      width: 32,
-                      height: 32,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.nightlight_round,
-                          size: 28,
-                          color: AppColors.primary,
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'LUNA',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                        letterSpacing: 0.5,
+              StaggeredEntrance(
+                index: 0,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/luna_logo.png',
+                        width: 32,
+                        height: 32,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.nightlight_round,
+                            size: 28,
+                            color: AppColors.primary,
+                          );
+                        },
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'LUNA',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -490,39 +494,59 @@ class HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // User Greeting Header
-                        Text(
-                          'Halo, $_userName! 👋',
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Bagaimana perasaanmu hari ini?',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textSecondary,
+                        StaggeredEntrance(
+                          index: 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Halo, $_userName! 👋',
+                                style: GoogleFonts.inter(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Bagaimana perasaanmu hari ini?',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 18),
 
                         // Empathetic AI Psychologist Insight Card
-                        _buildLunaInsightCard(),
+                        StaggeredEntrance(
+                          index: 2,
+                          child: _buildLunaInsightCard(),
+                        ),
                         const SizedBox(height: 20),
 
                         // Quick Navigation Shortcuts
-                        _buildQuickActionShortcuts(),
+                        StaggeredEntrance(
+                          index: 3,
+                          child: _buildQuickActionShortcuts(),
+                        ),
                         const SizedBox(height: 24),
 
                         // Evidence-Based Daily Progress Section (3 Pillars)
-                        _buildDailyProgressSection(),
+                        StaggeredEntrance(
+                          index: 4,
+                          child: _buildDailyProgressSection(),
+                        ),
                         const SizedBox(height: 24),
 
                         // Latest Clinically-Informed Recommendation
-                        _buildLatestRecommendationSection(),
+                        StaggeredEntrance(
+                          index: 5,
+                          child: _buildLatestRecommendationSection(),
+                        ),
                       ],
                     ),
                   ),

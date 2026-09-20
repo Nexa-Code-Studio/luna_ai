@@ -92,13 +92,17 @@ class _MainShellScreenState extends State<MainShellScreen> {
       _isNavBarVisible = true;
     });
 
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-    );
-
-    _triggerRefresh(index);
+    _pageController
+        .animateToPage(
+          index,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+        )
+        .then((_) {
+          if (mounted) {
+            _triggerRefresh(index);
+          }
+        });
   }
 
   void _triggerRefresh(int index) {
