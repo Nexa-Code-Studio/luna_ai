@@ -49,6 +49,32 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
     }
   }
 
+  static ({String tag, String emoji}) _detectEmotionFallback(String text) {
+    final tLow = text.toLowerCase();
+    const anxWords = ['cemas', 'takut', 'nervous', 'panggung', 'khawatir', 'panik', 'deg-degan', 'gugup', 'takutnya', 'bingung', 'was-was', 'tegang'];
+    const depWords = ['sedih', 'nangis', 'menangis', 'hampa', 'sendiri', 'kehilangan', 'terpuruk', 'putus asa', 'kecewa', 'patah hati', 'bunuh diri'];
+    const strWords = ['stres', 'capek', 'lelah', 'beban', 'berat', 'penat', 'pusing', 'mumet', 'tekanan', 'tugas', 'deadline', 'kerjaan', 'letih'];
+    const angWords = ['marah', 'kesal', 'jengkel', 'benci', 'emosi', 'sebal', 'kesel', 'geram', 'murka'];
+    const posWords = ['lega', 'senang', 'bahagia', 'terima kasih', 'makasih', 'enakan', 'tenang', 'nyaman', 'santai', 'alhamdulillah', 'syukurlah', 'baik', 'bersyukur'];
+
+    if (anxWords.any((w) => tLow.contains(w))) {
+      return (tag: 'fear (78%)', emoji: '😨');
+    }
+    if (depWords.any((w) => tLow.contains(w))) {
+      return (tag: 'sadness (82%)', emoji: '😔');
+    }
+    if (strWords.any((w) => tLow.contains(w))) {
+      return (tag: 'stress (75%)', emoji: '💥');
+    }
+    if (angWords.any((w) => tLow.contains(w))) {
+      return (tag: 'anger (70%)', emoji: '😡');
+    }
+    if (posWords.any((w) => tLow.contains(w))) {
+      return (tag: 'calm (85%)', emoji: '😌');
+    }
+    return (tag: 'netral (60%)', emoji: '😐');
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -480,15 +506,33 @@ class _AiConversationScreenState extends State<AiConversationScreen> {
                                           },
                                         ],
                                         'transcripts': msgs
-                                            .map((m) => {
-                                                  'isUser': m['sender'] == 'user',
-                                                  'time': m['time'] ?? '',
-                                                  'text': m['text'] ?? '',
-                                                  'emotionTag':
-                                                      m['sender'] == 'user' ? 'Refleksi' : '',
-                                                  'emotionEmoji':
-                                                      m['sender'] == 'user' ? '🌱' : '',
-                                                })
+                                            .map((m) {
+                                              final isUser = m['sender'] == 'user';
+                                              final text = (m['text'] ?? '').toString();
+                                              final tag = (m['emotionTag'] ?? m['emotion_tag'])?.toString();
+                                              final emoji = (m['emotionEmoji'] ?? m['emotion_emoji'])?.toString();
+
+                                              String resolvedTag = '';
+                                              String resolvedEmoji = '';
+                                              if (isUser) {
+                                                if (tag != null && tag.isNotEmpty && tag != 'Refleksi') {
+                                                  resolvedTag = tag;
+                                                  resolvedEmoji = (emoji != null && emoji.isNotEmpty) ? emoji : '🌱';
+                                                } else {
+                                                  final fallback = _detectEmotionFallback(text);
+                                                  resolvedTag = fallback.tag;
+                                                  resolvedEmoji = fallback.emoji;
+                                                }
+                                              }
+
+                                              return {
+                                                'isUser': isUser,
+                                                'time': m['time'] ?? '',
+                                                'text': text,
+                                                'emotionTag': resolvedTag,
+                                                'emotionEmoji': resolvedEmoji,
+                                              };
+                                            })
                                             .toList(),
                                       }
                                     ],
