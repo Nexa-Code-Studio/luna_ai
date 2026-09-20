@@ -33,8 +33,8 @@ class AppConfig {
     defaultValue: String.fromEnvironment('HOST', defaultValue: ''),
   );
 
-  /// Production VPS server host
-  static const String defaultServerHost = '172.93.219.133:8888';
+  /// Production server domain
+  static const String defaultServerHost = 'luna.nexacode.dev';
 
   /// Local development host (127.0.0.1:8888 with adb reverse for USB device, web, desktop)
   static const String localServerHost = '127.0.0.1:8888';
@@ -64,12 +64,35 @@ class AppConfig {
     _customHost = host;
   }
 
+  /// Whether the current connection requires secure protocol (HTTPS / WSS).
+  /// Production domain uses HTTPS/WSS, while local dev loopbacks use HTTP/WS.
+  static bool get isSecure {
+    if (useLocalApi) return false;
+    final currentHost = host;
+    if (currentHost.startsWith('127.') ||
+        currentHost.startsWith('10.') ||
+        currentHost.startsWith('192.168.') ||
+        currentHost.startsWith('localhost')) {
+      return false;
+    }
+    return true;
+  }
+
+  static String get httpScheme => isSecure ? 'https' : 'http';
+  static String get wsScheme => isSecure ? 'wss' : 'ws';
+
   static String get baseUrl {
-    return 'http://$host/api/v1';
+    if (host.startsWith('http://') || host.startsWith('https://')) {
+      return '$host/api/v1';
+    }
+    return '$httpScheme://$host/api/v1';
   }
 
   static String get wsUrl {
-    return 'ws://$host/api/v1';
+    if (host.startsWith('ws://') || host.startsWith('wss://')) {
+      return '$host/api/v1';
+    }
+    return '$wsScheme://$host/api/v1';
   }
 
   /// Get current JWT access token
