@@ -7,33 +7,23 @@ import '../theme/app_colors.dart';
 
 
 class CustomPillTextField extends StatefulWidget {
-
   final String hintText;
-
   final IconData prefixIcon;
-
   final bool isPassword;
-
   final TextEditingController? controller;
-
   final TextInputType keyboardType;
-
-
+  final Widget? suffixIcon;
+  final ValueChanged<String>? onChanged;
 
   const CustomPillTextField({
-
     super.key,
-
     required this.hintText,
-
     required this.prefixIcon,
-
     this.isPassword = false,
-
     this.controller,
-
     this.keyboardType = TextInputType.text,
-
+    this.suffixIcon,
+    this.onChanged,
   });
 
 
@@ -69,74 +59,41 @@ class _CustomPillTextFieldState extends State<CustomPillTextField> {
       ),
 
       child: TextField(
-
         controller: widget.controller,
-
         obscureText: widget.isPassword ? _obscureText : false,
-
         keyboardType: widget.keyboardType,
-
+        onChanged: widget.onChanged,
         style: GoogleFonts.inter(
-
           fontSize: 15,
-
           color: AppColors.textPrimary,
-
         ),
-
         decoration: InputDecoration(
-
           hintText: widget.hintText,
-
           hintStyle: GoogleFonts.inter(
-
             fontSize: 15,
-
             color: AppColors.textLight,
-
           ),
-
           prefixIcon: Icon(
-
             widget.prefixIcon,
-
             color: AppColors.textSecondary,
-
             size: 20,
-
           ),
-
           suffixIcon: widget.isPassword
-
               ? IconButton(
-
                   icon: Icon(
-
                     _obscureText
-
                         ? Icons.visibility_off_outlined
-
                         : Icons.visibility_outlined,
-
                     color: AppColors.textSecondary,
-
                     size: 20,
-
                   ),
-
                   onPressed: () {
-
                     setState(() {
-
                       _obscureText = !_obscureText;
-
                     });
-
                   },
-
                 )
-
-              : null,
+              : widget.suffixIcon,
 
           border: InputBorder.none,
 
