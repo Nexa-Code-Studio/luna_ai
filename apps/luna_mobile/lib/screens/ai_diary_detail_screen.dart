@@ -6,6 +6,7 @@ import '../config/app_config.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/staggered_entrance.dart';
 
 Color _parseColor(dynamic colorVal, Color fallback) {
   if (colorVal is Color) return colorVal;
@@ -35,6 +36,19 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
   Map<String, dynamic>? _diaryData;
   bool _isTranscriptExpanded = false;
 
+  // Streaming and Skeleton State
+  bool _isStreaming = false;
+  bool _isLoadingSkeleton = false;
+  bool _streamError = false;
+  String? _streamedSummary;
+  http.Client? _streamClient;
+
+  @override
+  void dispose() {
+    _streamClient?.close();
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -48,14 +62,137 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
         } else {
           _selectedSessionId = 'all';
         }
+
+        final bool isSingle = _diaryData!['isSingleSession'] == true;
         final dId = _diaryData!['id'];
-        if (dId != null) {
+
+        if (isSingle) {
+          final convId = _diaryData!['conversationId'] ?? dId;
+          final existingSummary = _diaryData!['summary'];
+          if (existingSummary == null || existingSummary.toString().trim().isEmpty) {
+            if (convId != null) {
+              _streamSummary(convId.toString());
+            }
+          } else {
+            _streamedSummary = existingSummary.toString();
+          }
+        } else if (dId != null) {
           _fetchDiaryDetail(dId.toString());
         }
       } else {
         _selectedSessionId = 'all';
       }
       _isInitialized = true;
+    }
+  }
+
+  Future<void> _streamSummary(String conversationId) async {
+    if (AppConfig.useMockData) {
+      setState(() {
+        _isLoadingSkeleton = true;
+        _isStreaming = true;
+        _streamError = false;
+        _streamedSummary = null;
+      });
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted) return;
+      setState(() {
+        _isLoadingSkeleton = false;
+        _streamedSummary =
+            'Sesi percakapan curhat bersama LUNA berjalan dengan hangat dan memberikan ruang aman untuk refleksi batin.';
+        _isStreaming = false;
+      });
+      return;
+    }
+
+    if (_isStreaming) return;
+
+    setState(() {
+      _isLoadingSkeleton = true;
+      _isStreaming = true;
+      _streamError = false;
+      _streamedSummary = null;
+    });
+
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      final url = Uri.parse('${AppConfig.baseUrl}/conversations/$conversationId/summary/stream');
+      final request = http.Request('GET', url);
+      request.headers.addAll(headers);
+
+      _streamClient?.close();
+      _streamClient = http.Client();
+      final streamedResponse =
+          await _streamClient!.send(request).timeout(const Duration(seconds: 25));
+
+      if (streamedResponse.statusCode != 200) {
+        throw Exception('Stream endpoint returned status ${streamedResponse.statusCode}');
+      }
+
+      final stream = streamedResponse.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter());
+
+      await for (final line in stream) {
+        if (!mounted) break;
+        final trimmed = line.trim();
+        if (trimmed.startsWith('data:')) {
+          final jsonStr = trimmed.substring(5).trim();
+          if (jsonStr.isEmpty) continue;
+          try {
+            final Map<String, dynamic> payload = jsonDecode(jsonStr);
+            if (payload.containsKey('token')) {
+              final token = payload['token']?.toString() ?? '';
+              if (mounted) {
+                setState(() {
+                  _isLoadingSkeleton = false;
+                  _streamedSummary = (_streamedSummary ?? '') + token;
+                });
+              }
+            }
+            if (payload['done'] == true) {
+              final finalSummary = payload['summary']?.toString();
+              final newEmotion = payload['dominant_emotion']?.toString();
+              final newEmoji = payload['dominant_emoji']?.toString();
+              if (mounted) {
+                setState(() {
+                  _isStreaming = false;
+                  _isLoadingSkeleton = false;
+                  if (finalSummary != null && finalSummary.isNotEmpty) {
+                    _streamedSummary = finalSummary;
+                  }
+                  if (_diaryData != null) {
+                    _diaryData!['summary'] = _streamedSummary;
+                    if (newEmotion != null && newEmotion.isNotEmpty) {
+                      _diaryData!['moodTag'] = newEmotion;
+                    }
+                    if (newEmoji != null && newEmoji.isNotEmpty) {
+                      _diaryData!['moodEmoji'] = newEmoji;
+                    }
+                  }
+                });
+              }
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isStreaming = false;
+          _isLoadingSkeleton = false;
+          _streamError = true;
+        });
+      }
+    } finally {
+      if (mounted && _isStreaming) {
+        setState(() {
+          _isStreaming = false;
+          _isLoadingSkeleton = false;
+        });
+      }
+      _streamClient?.close();
+      _streamClient = null;
     }
   }
 
@@ -303,6 +440,7 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
 
 
+    final bool isSingleSession = data['isSingleSession'] == true;
     final bool hasRisk = data['riskWarning'] != null && data['riskWarning']['detected'] == true;
 
     final List<dynamic> rawEvents = data['importantEvents'] is List ? data['importantEvents'] as List : [];
@@ -451,12 +589,11 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
             children: [
 
               // Header Bar with Back Button
-
-              Padding(
-
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-
-                child: Row(
+              StaggeredEntrance(
+                index: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: Row(
 
                   children: [
 
@@ -491,7 +628,9 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                             ),
                           ),
                           Text(
-                            '${data['date'] ?? 'Hari ini'} • ${sessions.length} Sesi Suara',
+                            isSingleSession
+                                ? '${data['date'] ?? 'Hari ini'} • ${data['moodTag'] ?? 'Tenang & Nyaman'}'
+                                : '${data['date'] ?? 'Hari ini'} • ${sessions.length} Sesi Suara',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
@@ -502,40 +641,37 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEADBFF),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(data['moodEmoji']?.toString() ?? '😌', style: const TextStyle(fontSize: 14)),
-                          const SizedBox(width: 4),
-                          Text(
-                            data['moodTag']?.toString() ?? 'Netral',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
+                    if (!isSingleSession) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEADBFF),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(data['moodEmoji']?.toString() ?? '😌', style: const TextStyle(fontSize: 14)),
+                            const SizedBox(width: 4),
+                            Text(
+                              data['moodTag']?.toString() ?? 'Netral',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
                             ),
-                          ),
-
-                        ],
-
+                          ],
+                        ),
                       ),
-
-                    ),
+                    ],
 
                   ],
-
                 ),
-
               ),
-
-              const Divider(height: 1, color: Color(0xFFEBECEF)),
+            ),
+            const Divider(height: 1, color: Color(0xFFEBECEF)),
 
 
 
@@ -554,10 +690,10 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                     children: [
 
                       // MENTAL HEALTH ALERT CARD (If Risk Detected)
-
                       if (hasRisk) ...[
-
-                        Container(
+                        StaggeredEntrance(
+                          index: 1,
+                          child: Container(
 
                           width: double.infinity,
 
@@ -721,20 +857,18 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                               ),
 
                             ],
-
                           ),
-
                         ),
-
-                        const SizedBox(height: 20),
-
-                      ],
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
 
 
                       // 1. WAWASAN AI KUMULATIF
-
-                      GlassCard(
+                      StaggeredEntrance(
+                        index: 2,
+                        child: GlassCard(
 
                         width: double.infinity,
 
@@ -787,302 +921,371 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                     children: [
 
                                       Text(
-
-                                        'WAWASAN AI KUMULATIF',
-
+                                        isSingleSession ? 'RINGKASAN PERCAKAPAN' : 'WAWASAN AI KUMULATIF',
                                         style: GoogleFonts.inter(
-
                                           fontSize: 12,
-
                                           fontWeight: FontWeight.w700,
-
                                           color: AppColors.primary,
-
                                           letterSpacing: 0.8,
-
                                         ),
-
                                       ),
-
                                       Text(
-
-                                        '✨ Diperbarui setelah Sesi #${sessions.length} (${data['lastSessionTime'] ?? 'Hari ini'})',
-
+                                        isSingleSession
+                                            ? '✨ Ringkasan cerdas percakapan sesi suara bersama LUNA'
+                                            : '✨ Diperbarui setelah Sesi #${sessions.length} (${data['lastSessionTime'] ?? 'Hari ini'})',
                                         style: GoogleFonts.inter(
-
                                           fontSize: 11,
-
                                           fontWeight: FontWeight.w600,
-
                                           color: AppColors.textSecondary,
-
                                         ),
-
                                       ),
-
                                     ],
-
                                   ),
-
                                 ),
-
                               ],
-
                             ),
-
                             const SizedBox(height: 14),
-
-                            Text(
-                              data['aiInsight']?.toString() ??
-                                  'Analisis AI menunjukkan kondisi emosional kamu hari ini cukup stabil.',
-                              style: GoogleFonts.inter(
-
-                                fontSize: 14,
-
-                                color: AppColors.textPrimary,
-
-                                height: 1.5,
-
+                            if (isSingleSession && _isLoadingSkeleton)
+                              const _SummarySkeletonLoader()
+                            else if (isSingleSession && _isStreaming)
+                              RichText(
+                                text: TextSpan(
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: AppColors.textPrimary,
+                                    height: 1.5,
+                                  ),
+                                  children: [
+                                    TextSpan(text: _streamedSummary ?? ''),
+                                    const TextSpan(
+                                      text: ' ▋',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (isSingleSession &&
+                                _streamError &&
+                                (_streamedSummary == null || _streamedSummary!.isEmpty))
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Ringkasan percakapan belum berhasil dimuat.',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      color: AppColors.textLight,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  InkWell(
+                                    onTap: () {
+                                      final convId = data['conversationId'] ?? data['id'];
+                                      if (convId != null) {
+                                        _streamSummary(convId.toString());
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryContainer
+                                            .withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                            color: AppColors.primary
+                                                .withValues(alpha: 0.3)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.auto_awesome,
+                                              size: 14,
+                                              color: AppColors.primary),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '✨ Generate Ringkasan',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              Text(
+                                (isSingleSession
+                                        ? (_streamedSummary ??
+                                            data['summary'] ??
+                                            data['aiInsight'])
+                                        : data['aiInsight'])
+                                    ?.toString() ??
+                                    'Analisis AI menunjukkan kondisi emosional kamu hari ini cukup stabil.',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                  height: 1.5,
+                                ),
                               ),
 
-                            ),
-
                           ],
-
                         ),
-
                       ),
-
+                      ),
                       const SizedBox(height: 16),
 
 
 
-                      // 2. PERISTIWA PENTING KUMULATIF
+                      if (!isSingleSession) ...[
+                        StaggeredEntrance(
+                          index: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 2. PERISTIWA PENTING KUMULATIF
+                              GlassCard(
 
-                      GlassCard(
+                          width: double.infinity,
 
-                        width: double.infinity,
+                          padding: const EdgeInsets.all(20),
 
-                        padding: const EdgeInsets.all(20),
+                          child: Column(
 
-                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
 
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
 
-                          children: [
+                              Row(
 
-                            Row(
+                                children: [
 
-                              children: [
+                                  Container(
 
-                                Container(
+                                    width: 36,
 
-                                  width: 36,
+                                    height: 36,
 
-                                  height: 36,
+                                    decoration: BoxDecoration(
 
-                                  decoration: BoxDecoration(
+                                      color: const Color(0xFF489BB8),
 
-                                    color: const Color(0xFF489BB8),
+                                      borderRadius: BorderRadius.circular(12),
 
-                                    borderRadius: BorderRadius.circular(12),
+                                    ),
 
-                                  ),
+                                    child: const Icon(
 
-                                  child: const Icon(
+                                      Icons.calendar_today_outlined,
 
-                                    Icons.calendar_today_outlined,
+                                      color: Colors.white,
 
-                                    color: Colors.white,
+                                      size: 18,
 
-                                    size: 18,
-
-                                  ),
-
-                                ),
-
-                                const SizedBox(width: 10),
-
-                                Text(
-
-                                  'PERISTIWA PENTING HARIAN',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 12,
-
-                                    fontWeight: FontWeight.w700,
-
-                                    color: const Color(0xFF20667B),
-
-                                    letterSpacing: 0.8,
+                                    ),
 
                                   ),
 
-                                ),
+                                  const SizedBox(width: 10),
 
-                              ],
+                                  Text(
 
-                            ),
+                                    'PERISTIWA PENTING HARIAN',
 
-                            const SizedBox(height: 14),
+                                    style: GoogleFonts.inter(
 
-                            ...importantEvents.map(
+                                      fontSize: 12,
 
-                                (item) => Padding(
+                                      fontWeight: FontWeight.w700,
 
-                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                      color: const Color(0xFF20667B),
 
-                                  child: Row(
+                                      letterSpacing: 0.8,
 
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    ),
 
-                                    children: [
+                                  ),
 
-                                      Container(
+                                ],
 
-                                        margin: const EdgeInsets.only(top: 6),
+                              ),
 
-                                        width: 6,
+                              const SizedBox(height: 14),
 
-                                        height: 6,
+                              ...importantEvents.map(
 
-                                        decoration: const BoxDecoration(
+                                  (item) => Padding(
 
-                                          shape: BoxShape.circle,
+                                    padding: const EdgeInsets.only(bottom: 8.0),
 
-                                          color: AppColors.primary,
+                                    child: Row(
 
-                                        ),
+                                      crossAxisAlignment: CrossAxisAlignment.start,
 
-                                      ),
+                                      children: [
 
-                                      const SizedBox(width: 10),
+                                        Container(
 
-                                      Expanded(
+                                          margin: const EdgeInsets.only(top: 6),
 
-                                        child: Text(
+                                          width: 6,
 
-                                          item.toString(),
+                                          height: 6,
 
-                                          style: GoogleFonts.inter(
+                                          decoration: const BoxDecoration(
 
-                                            fontSize: 14,
+                                            shape: BoxShape.circle,
 
-                                            color: AppColors.textPrimary,
+                                            color: AppColors.primary,
 
                                           ),
 
                                         ),
 
-                                      ),
+                                        const SizedBox(width: 10),
 
-                                    ],
+                                        Expanded(
 
-                                  ),
+                                          child: Text(
 
+                                            item.toString(),
+
+                                            style: GoogleFonts.inter(
+
+                                              fontSize: 14,
+
+                                              color: AppColors.textPrimary,
+
+                                            ),
+
+                                          ),
+
+                                        ),
+
+                                      ],
+
+                                    ),
+
+                                ),
                               ),
-                            ),
 
-                          ],
+                            ],
+
+                          ),
 
                         ),
 
-                      ),
-
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
 
 
-                      // 3. REFLEKSI EMOSIONAL
+                        // 3. REFLEKSI EMOSIONAL
 
-                      GlassCard(
+                        GlassCard(
 
-                        width: double.infinity,
+                          width: double.infinity,
 
-                        padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(20),
 
+                          child: Column(
+
+                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                            children: [
+
+                              Row(
+
+                                children: [
+
+                                  Container(
+
+                                    width: 36,
+
+                                    height: 36,
+
+                                    decoration: BoxDecoration(
+
+                                      color: const Color(0xFF605A79),
+
+                                      borderRadius: BorderRadius.circular(12),
+
+                                    ),
+
+                                    child: const Icon(
+
+                                      Icons.psychology_outlined,
+
+                                      color: Colors.white,
+
+                                      size: 20,
+
+                                    ),
+
+                                  ),
+
+                                  const SizedBox(width: 10),
+
+                                  Text(
+
+                                    'REFLEKSI EMOSIONAL HARIAN',
+
+                                    style: GoogleFonts.inter(
+
+                                      fontSize: 12,
+
+                                      fontWeight: FontWeight.w700,
+
+                                      color: const Color(0xFF605A79),
+
+                                      letterSpacing: 0.8,
+
+                                    ),
+
+                                  ),
+
+                                ],
+
+                              ),
+
+                              const SizedBox(height: 14),
+
+                              Text(
+                                data['emotionalReflection']?.toString() ??
+                                    'Merasa lebih tenang dan terarah setelah berefleksi bersama LUNA.',
+                                style: GoogleFonts.inter(
+
+                                  fontSize: 14,
+
+                                  color: AppColors.textPrimary,
+
+                                   height: 1.5,
+                                 ),
+                               ),
+                             ],
+                           ),
+                         ),
+                         const SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
+                       ],
+
+                      StaggeredEntrance(
+                        index: 4,
                         child: Column(
-
                           crossAxisAlignment: CrossAxisAlignment.start,
-
                           children: [
-
-                            Row(
-
-                              children: [
-
-                                Container(
-
-                                  width: 36,
-
-                                  height: 36,
-
-                                  decoration: BoxDecoration(
-
-                                    color: const Color(0xFF605A79),
-
-                                    borderRadius: BorderRadius.circular(12),
-
-                                  ),
-
-                                  child: const Icon(
-
-                                    Icons.psychology_outlined,
-
-                                    color: Colors.white,
-
-                                    size: 20,
-
-                                  ),
-
-                                ),
-
-                                const SizedBox(width: 10),
-
-                                Text(
-
-                                  'REFLEKSI EMOSIONAL HARIAN',
-
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 12,
-
-                                    fontWeight: FontWeight.w700,
-
-                                    color: const Color(0xFF605A79),
-
-                                    letterSpacing: 0.8,
-
-                                  ),
-
-                                ),
-
-                              ],
-
-                            ),
-
-                            const SizedBox(height: 14),
-
-                            Text(
-                              data['emotionalReflection']?.toString() ??
-                                  'Merasa lebih tenang dan terarah setelah berefleksi bersama LUNA.',
-                              style: GoogleFonts.inter(
-
-                                fontSize: 14,
-
-                                color: AppColors.textPrimary,
-
-                                height: 1.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // SESSION SELECTOR CHIPS SECTION
-                      if (sessions.isNotEmpty) ...[
+                            // SESSION SELECTOR CHIPS SECTION
+                            if (!isSingleSession && sessions.isNotEmpty) ...[
                         Text(
                           'PILIH SESI UNTUK PENGURAIAN SPESIFIK',
                           style: GoogleFonts.inter(
@@ -1184,7 +1387,9 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
-                              _selectedSessionId == 'all' ? 'KUMULATIF' : 'SESI SPESIFIK',
+                              isSingleSession
+                                  ? 'SESI INI'
+                                  : (_selectedSessionId == 'all' ? 'KUMULATIF' : 'SESI SPESIFIK'),
                               style: GoogleFonts.inter(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
@@ -1252,18 +1457,22 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                             );
 
                           }).toList(),
-
                         ),
-
                       ),
-
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 20),
 
 
 
                       // 5. TRANSKRIP PERCAKAPAN SUARA (Voice-to-Text Filtered with overflow protection)
-
-                      Row(
+                      StaggeredEntrance(
+                        index: 5,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
@@ -1375,15 +1584,17 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                                     ),
                                                   ),
                                                 ),
-                                                const SizedBox(width: 6),
+                                                if (!isSingleSession)
+                                                  const SizedBox(width: 6),
                                               ],
-                                              Text(
-                                                item['time']?.toString() ?? '',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 11,
-                                                  color: AppColors.textLight,
+                                              if (!isSingleSession)
+                                                Text(
+                                                  item['time']?.toString() ?? '',
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 11,
+                                                    color: AppColors.textLight,
+                                                  ),
                                                 ),
-                                              ),
                                             ],
                                           ),
                                         ],
@@ -1479,7 +1690,9 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                           ),
                         ],
                       ],
-
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 24),
 
                     ],
@@ -1502,5 +1715,77 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
   }
 
+}
+
+class _SummarySkeletonLoader extends StatefulWidget {
+  const _SummarySkeletonLoader();
+
+  @override
+  State<_SummarySkeletonLoader> createState() => _SummarySkeletonLoaderState();
+}
+
+class _SummarySkeletonLoaderState extends State<_SummarySkeletonLoader>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.25, end: 0.65).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        final opacity = _animation.value;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              height: 14,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: opacity * 0.4),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              width: MediaQuery.of(context).size.width * 0.78,
+              height: 14,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: opacity * 0.3),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              width: MediaQuery.of(context).size.width * 0.52,
+              height: 14,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: opacity * 0.2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 

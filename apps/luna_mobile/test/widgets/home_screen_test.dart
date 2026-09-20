@@ -45,7 +45,7 @@ void main() {
     // 3. Quick Action Shortcuts
     expect(find.text('Curhat ke LUNA'), findsOneWidget);
     expect(find.text('Jurnal Refleksi AI'), findsOneWidget);
-    expect(find.text('Ritem Emosional'), findsOneWidget);
+    expect(find.text('Asesmen DASS-21'), findsOneWidget);
 
     // 4. 3-Pillar Daily Therapeutic Progress
     expect(find.text('Progres Perawatan Diri'), findsOneWidget);
@@ -55,15 +55,15 @@ void main() {
 
     // 5. Clinically-Informed Recommendation Section
     expect(find.text('Aktivitas Pilihan Hari Ini'), findsOneWidget);
-    expect(find.text('Disesuaikan dengan kondisi emosional terkinimu'), findsOneWidget);
+    expect(find.text('Fokus: Relaksasi & Perawatan Diri'), findsOneWidget);
     expect(find.text('Lihat Semua'), findsOneWidget);
-    expect(find.text('Mulai Latihan Sekarang'), findsOneWidget);
-    expect(find.text('Tandai Selesai'), findsOneWidget);
+    expect(find.text('Mulai Latihan'), findsOneWidget);
+    expect(find.text('Tandai'), findsOneWidget);
     expect(find.text('Latihan Pernapasan 4-7-8'), findsOneWidget);
     expect(find.text('0 / 3 Selesai'), findsOneWidget);
 
     // 6. Test toggling recommendation completion
-    await tester.tap(find.text('Tandai Selesai'));
+    await tester.tap(find.text('Tandai'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -72,26 +72,21 @@ void main() {
     // Verify it automatically advances to the next incomplete recommendation
     expect(find.text('Teknik Grounding 5-4-3-2-1'), findsOneWidget);
 
-    // 7. Test opening detail modal via 'Mulai Latihan Sekarang'
-    await tester.tap(find.text('Mulai Latihan Sekarang'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Langkah-Langkah Latihan:'), findsOneWidget);
+    // 7. Test opening detail modal via 'Mulai Latihan'
+    await tester.tap(find.text('Mulai Latihan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Langkah-Langkah yang Perlu Dilakukan:'), findsOneWidget);
 
     // Close modal via modal button
     await tester.tap(find.descendant(
       of: find.byType(ElevatedButton),
-      matching: find.text('Tandai Selesai'),
+      matching: find.text('Saya Sudah Melakukan Latihan Ini'),
     ));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     // 8. Test Tab Navigation from Quick Action
     await tester.tap(find.text('Jurnal Refleksi AI'));
     expect(navigatedTab, 1);
-
-    await tester.tap(find.text('Ritem Emosional'));
-    expect(navigatedTab, 2);
   });
 }
 

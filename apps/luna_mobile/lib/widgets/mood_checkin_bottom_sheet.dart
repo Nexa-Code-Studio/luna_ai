@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -272,33 +271,16 @@ class _MoodCheckinBottomSheetState extends State<MoodCheckinBottomSheet> {
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return ClipRRect(
-
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-
-      child: BackdropFilter(
-
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-
-        child: Container(
-
-          padding: EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0 + bottomInset),
-
-          decoration: BoxDecoration(
-
-            color: Colors.white.withValues(alpha: 0.95),
-
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-
-            border: Border.all(
-
-              color: Colors.white.withValues(alpha: 0.8),
-
-              width: 1.5,
-
-            ),
-
-          ),
+    return Container(
+      padding: EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0 + bottomInset),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.98),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.8),
+          width: 1.5,
+        ),
+      ),
 
           child: SingleChildScrollView(
 
@@ -807,15 +789,8 @@ class _MoodCheckinBottomSheetState extends State<MoodCheckinBottomSheet> {
               ],
 
             ),
-
           ),
-
-        ),
-
-      ),
-
-    );
-
+        );
   }
 
 }

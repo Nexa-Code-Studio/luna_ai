@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/skeleton_shimmer.dart';
 
 
 
@@ -416,18 +417,10 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
 
                       const SizedBox(height: 20),
 
-                      if (_isLoading)
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 12),
-                          child: LinearProgressIndicator(
-                            color: AppColors.primary,
-                            minHeight: 2.5,
-                          ),
-                        ),
-
-                      // Journal History Cards List
-
-                      if (filteredList.isEmpty)
+                      // Journal History Cards List / Skeleton Loader
+                      if (_isLoading && _entries.isEmpty)
+                        const _DiaryListSkeleton()
+                      else if (filteredList.isEmpty)
                         if (_entries.isEmpty && !_isLoading)
                           Center(
                             child: Padding(
@@ -527,8 +520,6 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
                             final hasRisk = item['riskWarning'] != null &&
 
                                 item['riskWarning']['detected'] == true;
-
-                            final sessionCount = item['sessionCount'] ?? 1;
 
 
 
@@ -632,35 +623,6 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
 
                                       ),
 
-                                      Container(
-
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-
-                                        decoration: BoxDecoration(
-
-                                          color: AppColors.primaryContainer,
-
-                                          borderRadius: BorderRadius.circular(999),
-
-                                        ),
-
-                                        child: Text(
-
-                                          '🎙️ $sessionCount SESI SUARA',
-
-                                          style: GoogleFonts.inter(
-
-                                            fontSize: 9,
-
-                                            fontWeight: FontWeight.w800,
-
-                                            color: AppColors.primary,
-
-                                          ),
-
-                                        ),
-
-                                      ),
 
                                       if (hasRisk)
 
@@ -723,6 +685,7 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
                                   const SizedBox(height: 12),
 
                                   Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Flexible(
                                         child: Container(
@@ -786,6 +749,53 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
     );
 
   }
-
 }
 
+/// Shimmer skeleton loader for the AI Diary list.
+class _DiaryListSkeleton extends StatelessWidget {
+  const _DiaryListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonShimmerHost(
+      child: Column(
+        children: List.generate(
+          3,
+          (index) => Padding(
+            padding: const EdgeInsets.only(bottom: 14.0),
+            child: GlassCard(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const SkeletonCircle(size: 24),
+                      const SizedBox(width: 10),
+                      const SkeletonLine(width: 130, height: 16),
+                      const Spacer(),
+                      const SkeletonBox(width: 65, height: 22, borderRadius: 12),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const SkeletonLine(width: double.infinity, height: 13),
+                  const SizedBox(height: 8),
+                  const SkeletonLine(width: 220, height: 13),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: const [
+                      SkeletonBox(width: 75, height: 24, borderRadius: 8),
+                      SizedBox(width: 8),
+                      SkeletonBox(width: 90, height: 24, borderRadius: 8),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
