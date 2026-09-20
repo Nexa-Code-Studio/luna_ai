@@ -4,6 +4,7 @@ import logging
 from sqlalchemy import select
 
 from app.db.session import AsyncSessionLocal, engine
+from app.core.security import hash_password
 from app.models.base import BaseModel
 from app.models.conversation import Conversation, Message
 from app.models.diary import DiaryEntry
@@ -37,7 +38,7 @@ async def seed_master_data() -> User:
                 user.email = "samsul@gmail.com"
                 user.username = "samsul"
                 user.display_name = "Samsul"
-                user.password_hash = "password123"
+                user.password_hash = hash_password("password123")
                 await session.commit()
                 await session.refresh(user)
                 logger.info(f"Migrated existing user to Samsul: samsul@gmail.com ({user.id})")
@@ -47,7 +48,7 @@ async def seed_master_data() -> User:
                 email="samsul@gmail.com",
                 username="samsul",
                 display_name="Samsul",
-                password_hash="password123",
+                password_hash=hash_password("password123"),
                 is_active=True,
                 is_verified=True,
             )

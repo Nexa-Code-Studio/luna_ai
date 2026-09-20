@@ -3,10 +3,11 @@ import logging
 from typing import Any
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import decode_access_token
 from app.core.tz import get_wib_today
 from app.db.session import get_db_session
 from app.models.coping_activity import CopingActivity, UserActivityCompletion
@@ -19,27 +20,53 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 
 
-async def _get_default_user(db: AsyncSession) -> User:
-    query = select(User).where(User.email == "user.luna@gmail.com")
-    res = await db.execute(query)
-    user = res.scalar_one_or_none()
+async def _get_current_user(
+    authorization: str | None = Header(None),
+    db: AsyncSession = Depends(get_db_session),
+) -> User:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Header Authorization Bearer diperlukan",
+        )
+
+    token = authorization.split("Bearer ")[1].strip()
+    decoded = decode_access_token(token)
+    if not decoded or "sub" not in decoded:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token akses tidak valid atau telah kedaluwarsa",
+        )
+
+    try:
+        u_uuid = uuid.UUID(decoded["sub"])
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Format user ID dalam token tidak valid",
+        )
+
+    query_jwt = select(User).where(User.id == u_uuid)
+    res_jwt = await db.execute(query_jwt)
+    user = res_jwt.scalar_one_or_none()
+
     if not user:
-        query_any = select(User)
-        res_any = await db.execute(query_any)
-        user = res_any.scalars().first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Default user not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Pengguna tidak ditemukan atau telah dinonaktifkan",
+        )
+
     return user
 
 
 @router.get("/today")
 async def get_today_recommendation(
+    user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Retrieve today's single tailored coping activity based on dominant psychological
     risk (stress, anxiety, depression, or general) from latest diary/emotion analysis.
     """
-    user = await _get_default_user(db)
     today_wib = get_wib_today()
 
     # 1. Fetch today's diary entry for mental health scores
@@ -197,6 +224,7 @@ async def get_today_recommendation(
 @router.get("")
 async def get_recommendations(
     condition: str | None = Query(None, description="Filter by condition: stress, anxiety, depression, general"),
+    user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ) -> list[dict[str, Any]]:
     """Get all available recommendations / coping activities."""
@@ -209,7 +237,6 @@ async def get_recommendations(
     coping_items = res.scalars().all()
 
     if coping_items:
-        user = await _get_default_user(db)
         today_wib = get_wib_today()
         comp_query = select(UserActivityCompletion.activity_id).where(
             UserActivityCompletion.user_id == user.id,
@@ -258,7 +285,9 @@ async def get_recommendations(
 
 @router.post("/{recommendation_id}/complete")
 async def mark_recommendation_completed(
-    recommendation_id: str, db: AsyncSession = Depends(get_db_session)
+    recommendation_id: str,
+    user: User = Depends(_get_current_user),
+    db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Mark a recommendation or coping activity as completed for today."""
     try:
@@ -266,7 +295,6 @@ async def mark_recommendation_completed(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid recommendation ID")
 
-    user = await _get_default_user(db)
     today_wib = get_wib_today()
 
     # 1. Check if recommendation_id matches CopingActivity
