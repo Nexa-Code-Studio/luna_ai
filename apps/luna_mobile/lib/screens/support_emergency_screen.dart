@@ -1,38 +1,160 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+
+import '../config/app_config.dart';
 import '../theme/app_colors.dart';
 
 class SupportEmergencyScreen extends StatefulWidget {
   const SupportEmergencyScreen({super.key});
+
+  /// Custom Route with smooth fade & gentle slide-up animation for enter and exit
+  static Route<void> route() {
+    return PageRouteBuilder<void>(
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          const SupportEmergencyScreen(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 0.08),
+              end: Offset.zero,
+            ).animate(curved),
+            child: child,
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 320),
+      reverseTransitionDuration: const Duration(milliseconds: 250),
+    );
+  }
 
   @override
   State<SupportEmergencyScreen> createState() => _SupportEmergencyScreenState();
 }
 
 class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+    with TickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseScale;
+
+  late final AnimationController _contentFadeController;
+  late final Animation<Offset> _contentSlide;
+  late final Animation<double> _contentOpacity;
+
+  Map<String, dynamic>? _primaryContact;
+  bool _isLoadingContact = true;
+
+  static const String _dinkesWhatsappUrl =
+      'https://api.whatsapp.com/send/?phone=6281119220002&text=Halo%20Dinkes%20DKI,%20saya%20membutuhkan%20bantuan%20konseling%20krisis%20kesehatan%20mental&type=phone_number&app_absent=0';
 
   @override
   void initState() {
     super.initState();
+    _initAnimations();
+    _fetchPrimaryEmergencyContact();
+  }
+
+  void _initAnimations() {
+    _contentFadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _contentSlide = Tween<Offset>(
+      begin: const Offset(0.0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _contentFadeController, curve: Curves.easeOutCubic));
+    _contentOpacity = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _contentFadeController, curve: Curves.easeOut));
+
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4),
+      duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
+    _pulseScale = Tween<double>(
+      begin: 0.94,
+      end: 1.06,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine));
 
-    _pulseAnimation = Tween<double>(begin: 0.92, end: 1.08).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _contentFadeController.forward();
   }
 
   @override
   void dispose() {
+    _contentFadeController.dispose();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchPrimaryEmergencyContact() async {
+    try {
+      final token = await AppConfig.getToken();
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/users/me/emergency-contacts'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200 && mounted) {
+        final List<dynamic> data = jsonDecode(response.body);
+        if (data.isNotEmpty) {
+          final primary = data.firstWhere(
+            (c) => c['is_primary'] == true,
+            orElse: () => data.first,
+          );
+          setState(() {
+            _primaryContact = primary as Map<String, dynamic>;
+            _isLoadingContact = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {
+      // Graceful fallback to default contacts
+    }
+    if (mounted) {
+      setState(() {
+        _isLoadingContact = false;
+      });
+    }
+  }
+
+  Future<void> _openDinkesHotline() async {
+    final uri = Uri.parse(_dinkesWhatsappUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak dapat membuka WhatsApp Dinkes'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _onTapHubungiOrangTerdekat() {
+    if (_primaryContact != null && _primaryContact!['phone'] != null) {
+      final phone = _primaryContact!['phone'].toString().replaceAll(RegExp(r'[^\d+]'), '');
+      final uri = Uri.parse('tel:$phone');
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      Navigator.pushNamed(context, '/emergency_contacts');
+    }
   }
 
   void _openBreathingExercise() {
@@ -62,188 +184,226 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
     );
   }
 
+  Future<void> _handleDismiss() async {
+    if (_contentFadeController.isAnimating) return;
+    await _contentFadeController.reverse();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFFFF4F5),
-              Color(0xFFFFE8EC),
-              Color(0xFFFFF0F2),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    final contactSubtitle = _isLoadingContact
+        ? 'Memuat data kontak...'
+        : (_primaryContact != null
+            ? '${_primaryContact!['name']} (${_primaryContact!['relation']})'
+            : 'Atur nomor kontak keluarga atau teman');
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _handleDismiss();
+        }
+      },
+      child: Scaffold(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFFFF4F5),
+                Color(0xFFFFE8EC),
+                Color(0xFFFFF0F2),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-            child: Column(
-              children: [
-                const Spacer(flex: 1),
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _contentOpacity,
+              child: SlideTransition(
+                position: _contentSlide,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 1),
 
-                // Heart Badge Visual with Breathing Pulse Animation & Tap action
-                GestureDetector(
-                  onTap: _openBreathingExercise,
-                  child: AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnimation.value,
-                        child: child,
-                      );
-                    },
-                    child: Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFFFFE0E3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFE57373).withValues(alpha: 0.25),
-                            blurRadius: 30,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.favorite,
-                        color: Color(0xFFE57373),
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Title & Subtitle
-                Text(
-                  'Tarik napas dalam-dalam.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    "LUNA menyadari bahwa kamu mungkin membutuhkan dukungan ekstra saat ini. Kamu tidak harus menghadapi ini sendirian.",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Quick breathing guide trigger button
-                GestureDetector(
-                  onTap: _openBreathingExercise,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(0xFFE57373).withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.air,
-                          size: 16,
-                          color: Color(0xFFE57373),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Mulai Latihan Napas 4-7-8',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFFE57373),
+                      // Heart Badge Visual with Breathing Pulse Animation & Tap action
+                      GestureDetector(
+                        onTap: _openBreathingExercise,
+                        child: AnimatedBuilder(
+                          animation: _pulseScale,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _pulseScale.value,
+                              child: child,
+                            );
+                          },
+                          child: Container(
+                            width: 90,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFFFFE0E3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFE57373).withValues(alpha: 0.25),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.favorite,
+                              color: Color(0xFFE57373),
+                              size: 40,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
-
-                // Action Pill Card 1: Hubungi Orang Terpercaya
-                _buildSupportPillCard(
-                  icon: Icons.perm_contact_calendar_outlined,
-                  iconBg: const Color(0xFFFFDCDD),
-                  iconColor: const Color(0xFFE57373),
-                  title: 'Hubungi Orang Terpercaya',
-                  onTap: () {
-                    Navigator.pushNamed(context, '/emergency_contacts');
-                  },
-                ),
-                const SizedBox(height: 14),
-
-                // Action Pill Card 2: Chat dengan Profesional
-                _buildSupportPillCard(
-                  icon: Icons.chat_bubble_outline,
-                  iconBg: const Color(0xFFE4DCFF),
-                  iconColor: const Color(0xFF6C5CE7),
-                  title: 'Chat dengan Konselor Profesional',
-                  onTap: _openCounselorModal,
-                ),
-                const SizedBox(height: 14),
-
-                // Action Pill Card 3: Hotline Krisis
-                _buildSupportPillCard(
-                  icon: Icons.language,
-                  iconBg: const Color(0xFFD7F3FF),
-                  iconColor: const Color(0xFF00CEC9),
-                  title: 'Hotline Krisis & Bantuan Darurat',
-                  onTap: _openHotlineModal,
-                ),
-                const Spacer(flex: 2),
-
-                // "Saya merasa lebih baik sekarang" Bottom Button
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: const Color(0xFFE57373).withValues(alpha: 0.4),
-                        width: 1.2,
                       ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Saya merasa lebih baik sekarang",
+                      const SizedBox(height: 22),
+
+                      // Title & Subtitle
+                      Text(
+                        'Tarik napas dalam-dalam.',
+                        textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 10),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          "LUNA menyadari bahwa kamu mungkin membutuhkan dukungan ekstra saat ini. Kamu tidak harus menghadapi ini sendirian.",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Quick breathing guide trigger button
+                      GestureDetector(
+                        onTap: _openBreathingExercise,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFFE57373).withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.air,
+                                size: 16,
+                                color: Color(0xFFE57373),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Mulai Latihan Napas 4-7-8',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFE57373),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Action Pill Card 1: Hubungi Orang Terpercaya
+                      _buildSupportPillCard(
+                        icon: Icons.perm_contact_calendar_outlined,
+                        iconBg: const Color(0xFFFFDCDD),
+                        iconColor: const Color(0xFFE57373),
+                        title: 'Hubungi Orang Terdekat',
+                        subtitle: contactSubtitle,
+                        onTap: _onTapHubungiOrangTerdekat,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Action Pill Card 2: Chat dengan Profesional
+                      _buildSupportPillCard(
+                        icon: Icons.chat_bubble_outline,
+                        iconBg: const Color(0xFFE4DCFF),
+                        iconColor: const Color(0xFF6C5CE7),
+                        title: 'Chat dengan Konselor Profesional',
+                        subtitle: 'Layanan Psikolog & Puskesmas',
+                        onTap: _openCounselorModal,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Action Pill Card 3: Hotline Krisis
+                      _buildSupportPillCard(
+                        icon: Icons.language,
+                        iconBg: const Color(0xFFD7F3FF),
+                        iconColor: const Color(0xFF00CEC9),
+                        title: 'Hotline Krisis & Bantuan Darurat',
+                        subtitle: 'SEJIWA 119, LISA, 112 Bebas Pulsa',
+                        onTap: _openHotlineModal,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Action Pill Card 4: WhatsApp Dinkes
+                      _buildSupportPillCard(
+                        icon: Icons.support_agent_rounded,
+                        iconBg: const Color(0xFFE8F8F5),
+                        iconColor: const Color(0xFF00B894),
+                        title: 'WhatsApp Krisis Dinkes DKI',
+                        subtitle: 'Pendampingan Konseling Krisis Resmi',
+                        onTap: _openDinkesHotline,
+                      ),
+                      const Spacer(flex: 2),
+
+                      // 'Saya merasa lebih baik sekarang' Bottom Button
+                      GestureDetector(
+                        onTap: _handleDismiss,
+                        child: Container(
+                          width: double.infinity,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: const Color(0xFFE57373).withValues(alpha: 0.4),
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Saya merasa lebih baik sekarang",
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-              ],
+              ),
             ),
           ),
         ),
@@ -256,6 +416,7 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
     required Color iconBg,
     required Color iconColor,
     required String title,
+    String? subtitle,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -286,23 +447,42 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
               ),
               child: Icon(icon, color: iconColor, size: 22),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (subtitle != null && subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 11.5,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
             ),
             const Icon(
               Icons.arrow_forward_ios,
-              size: 16,
+              size: 15,
               color: AppColors.textLight,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
           ],
         ),
       ),
@@ -310,9 +490,6 @@ class _SupportEmergencyScreenState extends State<SupportEmergencyScreen>
   }
 }
 
-// -----------------------------------------------------------------------------
-// Interactive 4-7-8 Breathing Exercise Modal
-// -----------------------------------------------------------------------------
 class _BreathingExerciseModal extends StatefulWidget {
   const _BreathingExerciseModal();
 

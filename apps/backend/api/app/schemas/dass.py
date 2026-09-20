@@ -10,6 +10,7 @@ class DASSItemSchema(BaseModel):
     question_text: str = Field(..., description="Teks pertanyaan resmi DASS-21")
     score: int = Field(0, ge=0, le=3, description="Skor butir 0 (Tidak Pernah) s.d 3 (Hampir Selalu)")
     evidence: str | None = Field(None, description="Kutipan bukti kalimat percakapan dari user")
+    reason: str | None = Field(None, description="Penalaran atau alasan AI atas penentuan skor butir")
     confidence: float = Field(0.0, ge=0.0, le=1.0, description="Tingkat keyakinan deteksi AI")
     is_user_edited: bool = Field(False, description="Flag apakah skor butir ini telah diedit oleh user")
 

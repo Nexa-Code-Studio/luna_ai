@@ -20,7 +20,7 @@ class VoiceCallWsClient {
   bool get isConnected => _isConnected;
 
   Future<void> connect(String sessionId) async {
-    if (_isConnected) return;
+    disconnect();
 
     final wsBase = AppConfig.wsUrl.endsWith('/')
         ? AppConfig.wsUrl.substring(0, AppConfig.wsUrl.length - 1)
@@ -39,28 +39,19 @@ class VoiceCallWsClient {
       _subscription = _channel!.stream.listen(
         (data) {
           if (data is Uint8List) {
-            _audioController.add(data);
+            if (!_audioController.isClosed) _audioController.add(data);
           } else if (data is List<int>) {
-            _audioController.add(Uint8List.fromList(data));
+            if (!_audioController.isClosed) {
+              _audioController.add(Uint8List.fromList(data));
+            }
           } else if (data is String) {
             try {
               final jsonMap = jsonDecode(data) as Map<String, dynamic>;
               debugPrint('📩 [WS CLIENT <- EVENT] ${jsonMap['type']}');
 
-              // If audio_chunk contains base64 audio, decode and forward to audioStream
-              if (jsonMap['type'] == 'ai.audio_chunk' && jsonMap.containsKey('audio_base64')) {
-                final b64 = jsonMap['audio_base64'] as String?;
-                if (b64 != null && b64.isNotEmpty) {
-                  try {
-                    final bytes = base64Decode(b64);
-                    _audioController.add(Uint8List.fromList(bytes));
-                  } catch (e) {
-                    debugPrint('⚠️ [WS CLIENT BASE64 ERROR]: $e');
-                  }
-                }
+              if (!_eventController.isClosed) {
+                _eventController.add(jsonMap);
               }
-
-              _eventController.add(jsonMap);
             } catch (e) {
               debugPrint('⚠️ [WS CLIENT JSON DECODE ERROR]: $e');
             }
@@ -69,30 +60,40 @@ class VoiceCallWsClient {
         onError: (error) {
           debugPrint('❌ [WS CLIENT ERROR]: $error');
           _isConnected = false;
-          _eventController.add({
-            'type': 'error',
-            'message': error.toString(),
-          });
+          if (!_eventController.isClosed) {
+            _eventController.add({
+              'type': 'error',
+              'message': error.toString(),
+            });
+          }
         },
         onDone: () {
           debugPrint('🔌 [WS CLIENT CLOSED]');
           _isConnected = false;
-          _eventController.add({'type': 'disconnected'});
+          if (!_eventController.isClosed) {
+            _eventController.add({'type': 'disconnected'});
+          }
         },
       );
     } catch (e) {
       debugPrint('❌ [WS CLIENT EXCEPTION]: $e');
       _isConnected = false;
-      _eventController.add({
-        'type': 'error',
-        'message': e.toString(),
-      });
+      if (!_eventController.isClosed) {
+        _eventController.add({
+          'type': 'error',
+          'message': e.toString(),
+        });
+      }
     }
   }
 
   void _sendJson(Map<String, dynamic> payload) {
     if (_channel != null && _isConnected) {
-      _channel!.sink.add(jsonEncode(payload));
+      try {
+        _channel!.sink.add(jsonEncode(payload));
+      } catch (e) {
+        debugPrint('⚠️ [WS CLIENT SEND ERROR]: $e');
+      }
     }
   }
 
@@ -210,7 +211,11 @@ class VoiceCallWsClient {
 
   void disconnect() {
     _subscription?.cancel();
-    _channel?.sink.close();
+    _subscription = null;
+    try {
+      _channel?.sink.close();
+    } catch (_) {}
+    _channel = null;
     _isConnected = false;
   }
 

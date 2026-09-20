@@ -37,7 +37,12 @@ class RiskAssessmentService:
         signals: List[RiskSignal] = []
 
         # 1. Check active suicidal intent / plan
-        active_plan_kws = ["mau bunuh diri", "sudah beli obat", "mau mengakhiri hidup", "mau melompat", "sudah siapkan tali", "mau mati malam ini"]
+        active_plan_kws = [
+            "mau bunuh diri", "ingin bunuh diri", "pengen bunuh diri", "pengin bunuh diri", "berniat bunuh diri", "coba bunuh diri",
+            "sudah beli obat", "mau mengakhiri hidup", "ingin mengakhiri hidup", "pengen mengakhiri hidup",
+            "mau melompat", "ingin melompat", "pengen melompat", "sudah siapkan tali", "siapkan tali",
+            "mau mati malam ini", "ingin mati", "pengen mati", "pengin mati", "mau mati sekarang", "ingin mati sekarang"
+        ]
         for kw in active_plan_kws:
             if kw in lower_text:
                 # Check for negation, reported speech, or figurative context
@@ -111,7 +116,12 @@ class RiskAssessmentService:
 
         # 4. Check passive suicidal ideation / farewell / burden phrases
         elif not signals:
-            passive_kws = ["capek hidup", "capek banget hidup", "berharap tidur gak bangun", "berharap tidak bangun", "kalau aku gak ada", "kalau aku tidak ada", "kalau aku nggak ada", "semua orang lebih baik", "semua orang bakal lebih baik", "mau pamit"]
+            passive_kws = [
+                "capek hidup", "capek banget hidup", "berharap tidur gak bangun", "berharap tidak bangun",
+                "kalau aku gak ada", "kalau aku tidak ada", "kalau aku nggak ada",
+                "semua orang lebih baik", "semua orang bakal lebih baik", "mau pamit",
+                "pikiran bunuh diri", "merasa ingin mati", "pikiran mati"
+            ]
             for kw in passive_kws:
                 if kw in lower_text:
                     polarity = SignalPolarity.POSITIVE

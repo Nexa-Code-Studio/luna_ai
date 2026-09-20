@@ -10,6 +10,7 @@ import '../features/voice_call/presentation/providers/ai_call_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/glass_card.dart';
+import 'support_emergency_screen.dart';
 
 class VoiceCallScreen extends ConsumerStatefulWidget {
   const VoiceCallScreen({super.key});
@@ -19,7 +20,7 @@ class VoiceCallScreen extends ConsumerStatefulWidget {
 }
 
 class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _aiRippleController;
 
   @override
@@ -27,8 +28,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
     super.initState();
     _aiRippleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    );
+      duration: const Duration(milliseconds: 3500),
+    )..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(aiCallControllerProvider.notifier).startCall();
@@ -47,38 +48,13 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
     return '$minutes:$seconds';
   }
 
-  void _showCrisisAlertModal(String hotline) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 8),
-            Text('Protokol Krisis Aktif', style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Text(
-          'Luna AI mendeteksi indikasi krisis emosional tinggi. Bantuan darurat profesional tersedia.\n\nHotline Darurat: $hotline',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Saya Aman'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/support');
-            },
-            child: const Text('Buka Layanan Darurat', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+  void _handleExitCall(AiCallViewState state) {
+    if (state.isCrisisSession) {
+      ref.read(aiCallControllerProvider.notifier).endCall();
+      Navigator.pushReplacement(context, SupportEmergencyScreen.route());
+    } else {
+      _showSessionSummaryBottomSheet(state.callDurationSeconds);
+    }
   }
 
   bool _isHighDistressSession(AiCallViewState state) {
@@ -716,56 +692,43 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
     final state = ref.watch(aiCallControllerProvider);
     final controller = ref.read(aiCallControllerProvider.notifier);
 
-    // Trigger crisis modal if active & synchronize AI speech ripple animation
-    ref.listen<AiCallViewState>(aiCallControllerProvider, (_, next) {
-      if (next.crisisHotline != null) {
-        _showCrisisAlertModal(next.crisisHotline!);
-      }
-      if (next.callState == CallState.aiSpeaking) {
-        if (!_aiRippleController.isAnimating) {
-          _aiRippleController.repeat();
-        }
-      } else {
-        if (_aiRippleController.isAnimating) {
-          _aiRippleController.stop();
-          _aiRippleController.reset();
-        }
-      }
-    });
-
-    if (state.callState == CallState.aiSpeaking &&
-        !_aiRippleController.isAnimating) {
+    if (!_aiRippleController.isAnimating) {
       _aiRippleController.repeat();
     }
 
-    final int dbPercent = (state.soundLevel * 100).round();
-
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF13111C),
-              Color(0xFF0F0E17),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _handleExitCall(state);
+        }
+      },
+      child: Scaffold(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF13111C),
+                Color(0xFF0F0E17),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header Bar with Back Button, Centered Duration Timer, and Settings Icon
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Header Bar with Back Button, Centered Duration Timer, and Settings Icon
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => _handleExitCall(state),
+                      ),
                     Expanded(
                       child: Center(
                         child: Text(
@@ -832,55 +795,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
                   ),
                 ),
 
-              const SizedBox(height: 16),
 
-              // AMPLITUDE REACTIVE AUDIO WAVES (Visual Equalizer)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 48.0),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 38,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: List.generate(16, (index) {
-                          final multiplier = (index % 4 + 1) * 0.25;
-                          final barHeight = state.isMuted
-                              ? 3.5
-                              : (3.5 + (state.soundLevel * 30.0 * multiplier)).clamp(3.5, 36.0);
-
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 90),
-                            curve: Curves.easeOut,
-                            width: 3.5,
-                            height: barHeight,
-                            decoration: BoxDecoration(
-                              color: state.isMuted
-                                  ? Colors.white12
-                                  : const Color(0xFFA5B4FC).withValues(
-                                      alpha: (0.35 + (state.soundLevel * 0.65)).clamp(0.35, 1.0),
-                                    ),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                    if (!state.isMuted && state.soundLevel > 0.05) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        'Level Suara: $dbPercent dB',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white38,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
 
               const Spacer(),
 
@@ -922,7 +837,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
 
                     // End Call Button
                     GestureDetector(
-                      onTap: () => _showSessionSummaryBottomSheet(state.callDurationSeconds),
+                      onTap: () => _handleExitCall(state),
                       child: Container(
                         width: 64,
                         height: 64,
@@ -944,8 +859,9 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
 
 
@@ -983,8 +899,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
     }
 
     // Hybrid Auto Mode Dynamic Action Button
-    if (state.callState == CallState.aiSpeaking || state.callState == CallState.thinking) {
-      // Barge-in button
+    if (state.callState == CallState.aiSpeaking) {
+      // Barge-in button (Only when AI is actively speaking)
       return ElevatedButton.icon(
         onPressed: () => controller.bargeIn(),
         style: ElevatedButton.styleFrom(
@@ -1002,8 +918,38 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
           ),
         ),
       );
-    } else if (state.callState == CallState.listening && state.currentTranscript.isNotEmpty) {
-      // Force Commit button
+    } else if (state.callState == CallState.thinking) {
+      // Non-interactive thinking badge to prevent accidental tap cancellation
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Luna sedang memproses...',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (state.callState == CallState.listening &&
+        (state.currentTranscript.isNotEmpty || state.latestPartial.isNotEmpty)) {
+      // Force Commit button (Only when user has actually spoken something)
       return ElevatedButton.icon(
         onPressed: () => controller.forceCommit(),
         style: ElevatedButton.styleFrom(
@@ -1028,37 +974,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
 
 
 
-  Color _getAvatarGlowColor(AiCallViewState state) {
-    switch (state.callState) {
-      case CallState.aiSpeaking:
-        return const Color(0xFF6C63FF);
-      case CallState.thinking:
-        return const Color(0xFF8B93FF);
-      case CallState.interrupting:
-        return const Color(0xFFFB8C00);
-      case CallState.listening:
-      case CallState.idle:
-      case CallState.ended:
-      case CallState.error:
-        return const Color(0xFF8B93FF);
-    }
-  }
 
-  IconData _getCenterIcon(AiCallViewState state) {
-    switch (state.callState) {
-      case CallState.aiSpeaking:
-        return Icons.record_voice_over;
-      case CallState.thinking:
-        return Icons.psychology;
-      case CallState.interrupting:
-        return Icons.bolt;
-      case CallState.listening:
-      case CallState.idle:
-      case CallState.ended:
-      case CallState.error:
-        return Icons.nightlight_round;
-    }
-  }
 
   String _getCleanStatusText(AiCallViewState state) {
     if (state.isMuted) return 'Mikrofon Di-Mute';
@@ -1083,115 +999,594 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
 
   Widget _buildInteractiveAvatarOrb(AiCallViewState state) {
     final bool isAiSpeaking = state.callState == CallState.aiSpeaking;
-    final glowColor = _getAvatarGlowColor(state);
+    final double soundLevel = state.isMuted ? 0.0 : state.soundLevel;
 
     return AnimatedBuilder(
       animation: _aiRippleController,
       builder: (context, child) {
-        final rippleValue = _aiRippleController.value;
+        final animValue = _aiRippleController.value;
 
         return Center(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Concentric ripple wave rings when AI is speaking
-              if (isAiSpeaking) ...[
-                // Ripple Wave 3 (Outermost)
-                _buildRippleWave(rippleValue, 0.66, 150.0, 115.0, glowColor),
-                // Ripple Wave 2 (Middle)
-                _buildRippleWave(rippleValue, 0.33, 150.0, 85.0, glowColor),
-                // Ripple Wave 1 (Innermost)
-                _buildRippleWave(rippleValue, 0.0, 150.0, 55.0, glowColor),
-              ] else ...[
-                // Outer Amplitude Glow Ring for User Speech / Standby
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 120),
-                  curve: Curves.easeOutQuad,
-                  width: 156 + (state.soundLevel * 46),
-                  height: 156 + (state.soundLevel * 46),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: glowColor.withValues(
-                      alpha: state.isMuted
-                          ? 0.03
-                          : (0.08 + (state.soundLevel * 0.16)),
-                    ),
+          child: SizedBox(
+            width: 280,
+            height: 280,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 1. RADIAL FREQUENCY EQUALIZER BARS (CIRCULAR AUDIO SPECTRUM)
+                CustomPaint(
+                  size: const Size(280, 280),
+                  painter: _RadialFrequencyBarsPainter(
+                    animationProgress: animValue,
+                    soundLevel: soundLevel,
+                    isAiSpeaking: isAiSpeaking,
+                    isMuted: state.isMuted,
                   ),
                 ),
-              ],
 
-              // Inner Avatar Orb with breathing pulse during AI speech
-              Transform.scale(
-                scale: isAiSpeaking
-                    ? (1.0 + 0.045 * math.sin(rippleValue * 2 * math.pi))
-                    : 1.0,
-                child: Container(
-                  width: 150,
-                  height: 150,
+                // 2. SOFT AMBIENT IRIDESCENT HALO
+                Container(
+                  width: 200,
+                  height: 200,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF8B93FF), Color(0xFF5358CB)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: glowColor.withValues(
-                          alpha: state.isMuted
-                              ? 0.12
-                              : (isAiSpeaking ? 0.5 : 0.35),
+                        color: const Color(0xFFC7D2FE).withValues(
+                          alpha: state.isMuted ? 0.08 : 0.20 + ((isAiSpeaking ? soundLevel : 0.0) * 0.25),
                         ),
-                        blurRadius: isAiSpeaking ? 38 : 32,
-                        spreadRadius: isAiSpeaking ? 4 : 2,
+                        blurRadius: 36 + ((isAiSpeaking ? soundLevel : 0.0) * 20),
+                        spreadRadius: 3,
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFFFFD1DC).withValues(
+                          alpha: state.isMuted ? 0.05 : 0.15 + ((isAiSpeaking ? soundLevel : 0.0) * 0.15),
+                        ),
+                        blurRadius: 28,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 3. MAIN ORB (PASTEL / IRIDESCENT SPHERE)
+                Container(
+                  width: 174,
+                  height: 174,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    // Soft iridescent pastel gradient exactly like the design
+                    gradient: const RadialGradient(
+                      center: Alignment(-0.25, -0.35),
+                      radius: 0.95,
+                      colors: [
+                        Color(0xFFFFFFFF), // soft white highlight
+                        Color(0xFFEDE9FE), // pale lavender
+                        Color(0xFFE0E7FF), // soft periwinkle
+                        Color(0xFFBAE6FD), // soft cyan edge
+                      ],
+                      stops: [0.0, 0.45, 0.75, 1.0],
+                    ),
+                    border: Border.all(
+                      // Thin subtle iridescent outer border
+                      color: const Color(0xFFE2E8F0).withValues(alpha: 0.7),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      // Subtle rim illumination
+                      BoxShadow(
+                        color: const Color(0xFF818CF8).withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        spreadRadius: 1,
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFFF472B6).withValues(alpha: 0.20),
+                        blurRadius: 20,
+                        spreadRadius: -2,
+                        offset: const Offset(4, -2),
                       ),
                     ],
                   ),
                   child: Center(
-                    child: Icon(
-                      _getCenterIcon(state),
-                      size: 62,
-                      color: Colors.white,
+                    // 4. UNIFIED MORPHING VOICE NODES VISUALIZER
+                    // Seamless pure code transformation:
+                    // Listening / User Speaking / AI Speaking: Equalizer bars / flat dots
+                    // Thinking: Nodes morph, expand, orbit in circle with glowing aurora colors, and return smoothly.
+                    child: _MorphingVoiceNodesVisualizer(
+                      callState: state.callState,
+                      soundLevel: soundLevel,
+                      isAiSpeaking: isAiSpeaking,
+                      animValue: animValue,
+                      isMuted: state.isMuted,
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
+}
 
-  Widget _buildRippleWave(
-    double controllerValue,
-    double phaseOffset,
-    double baseSize,
-    double maxExpansion,
-    Color color,
-  ) {
-    final progress = (controllerValue + phaseOffset) % 1.0;
-    final size = baseSize + (progress * maxExpansion);
-    final opacity = (1.0 - progress).clamp(0.0, 1.0) * 0.40;
+/// Unified 5-node interactive visualizer built entirely in pure Flutter code.
+/// 
+/// Behaviors:
+/// 1. IDLE / LISTENING: 5 flat aligned dots.
+/// 2. USER SPEAKING / AI SPEAKING: 5 vertical music bars reacting to speech intonation.
+/// 3. THINKING (Morphing Animation):
+///    - Dots merge & curve into a rotating circular orbit.
+///    - Orbit expands outwards (radius 0px -> 26px).
+///    - Colors transition smoothly to glowing iridescent aurora (Cyan -> Violet -> Pink).
+///    - Dots rotate with gentle breathing harmonic wave.
+///    - When thinking finishes, orbit shrinks back and aligns seamlessly into line dots/bars.
+class _MorphingVoiceNodesVisualizer extends StatefulWidget {
+  final CallState callState;
+  final double soundLevel;
+  final bool isAiSpeaking;
+  final double animValue;
+  final bool isMuted;
 
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: color.withValues(alpha: opacity * 0.85),
-          width: 1.8 - (progress * 0.8),
-        ),
-        color: color.withValues(alpha: opacity * 0.18),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: opacity * 0.28),
-            blurRadius: 16 * progress + 8,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
+  const _MorphingVoiceNodesVisualizer({
+    required this.callState,
+    required this.soundLevel,
+    required this.isAiSpeaking,
+    required this.animValue,
+    required this.isMuted,
+  });
+
+  @override
+  State<_MorphingVoiceNodesVisualizer> createState() => _MorphingVoiceNodesVisualizerState();
+}
+
+class _MorphingVoiceNodesVisualizerState extends State<_MorphingVoiceNodesVisualizer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _morphController;
+
+  static const double _dotSize = 5.0;
+  static const List<double> _minHeights = [8.0, 12.0, 16.0, 12.0, 8.0];
+  static const List<double> _maxHeights = [26.0, 42.0, 58.0, 42.0, 26.0];
+
+  final List<double> _currentHeights = [_dotSize, _dotSize, _dotSize, _dotSize, _dotSize];
+
+  @override
+  void initState() {
+    super.initState();
+    _morphController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
     );
+
+    if (widget.callState == CallState.thinking) {
+      _morphController.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _MorphingVoiceNodesVisualizer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.callState == CallState.thinking && oldWidget.callState != CallState.thinking) {
+      _morphController.forward();
+    } else if (widget.callState != CallState.thinking && oldWidget.callState == CallState.thinking) {
+      _morphController.reverse();
+    }
+
+    _updatePhysics();
+  }
+
+  void _updatePhysics() {
+    final double sound = widget.isMuted ? 0.0 : widget.soundLevel;
+    final bool hasAudio = sound > 0.03 || (widget.isAiSpeaking && sound > 0.02);
+
+    for (int i = 0; i < 5; i++) {
+      double targetHeight;
+
+      if (widget.callState == CallState.thinking) {
+        // In thinking mode: nodes become circular dots
+        targetHeight = _dotSize;
+      } else if (!hasAudio || widget.isMuted) {
+        // Silence / Idle: Flat dots
+        targetHeight = _dotSize;
+      } else if (widget.isAiSpeaking) {
+        // AI Speaking: intonation follows real speech envelope in soundLevel
+        final multipliers = [0.70, 1.15, 1.40, 1.15, 0.70];
+        final variance = math.sin(widget.animValue * 2 * math.pi * 7.0 + (i * 1.4)) * 0.12;
+        final intonationScale = (sound * multipliers[i] + variance).clamp(0.0, 1.0);
+        targetHeight = sound > 0.02
+            ? _minHeights[i] + (intonationScale * (_maxHeights[i] - _minHeights[i]))
+            : _dotSize;
+      } else {
+        // User speech
+        final multipliers = [0.75, 1.1, 1.35, 1.05, 0.7];
+        final variance = math.sin(widget.animValue * 2 * math.pi * 6.0 + (i * 1.5)) * 0.15;
+        final intonationScale = (sound * multipliers[i] + variance).clamp(0.0, 1.0);
+        targetHeight = _minHeights[i] + (intonationScale * (_maxHeights[i] - _minHeights[i]));
+      }
+
+      final isRising = targetHeight > _currentHeights[i];
+      final factor = isRising ? 0.45 : 0.25;
+      _currentHeights[i] += (targetHeight - _currentHeights[i]) * factor;
+    }
+  }
+
+  @override
+  void dispose() {
+    _morphController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _morphController,
+      builder: (context, child) {
+        final morphValue = CurvedAnimation(
+          parent: _morphController,
+          curve: Curves.easeInOutCubic,
+        ).value;
+
+        return SizedBox(
+          width: 174,
+          height: 174,
+          child: ClipOval(
+            child: CustomPaint(
+              size: const Size(174, 174),
+              painter: _VoiceNodesMorphPainter(
+                morphProgress: morphValue,
+                animProgress: widget.animValue,
+                barHeights: _currentHeights,
+                isThinking: widget.callState == CallState.thinking,
+                isMuted: widget.isMuted,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Profile containing harmonized color tokens for each of the 5 nodes,
+/// tailored to Luna AI's pastel/periwinkle/lavender brand design system.
+class _NodeColorProfile {
+  final Color core;       // Saturated core tone
+  final Color highlight;  // Lighter glowing highlight tone
+  final Color ambient;    // Soft luminous dispersion tint
+  const _NodeColorProfile(this.core, this.highlight, this.ambient);
+}
+
+/// CustomPainter that renders continuous morphing of the 5 nodes into an organic,
+/// abstract swirling fluid gradient ball (inspired by flow_thinking.gif).
+class _VoiceNodesMorphPainter extends CustomPainter {
+  final double morphProgress;
+  final double animProgress;
+  final List<double> barHeights;
+  final bool isThinking;
+  final bool isMuted;
+
+  _VoiceNodesMorphPainter({
+    required this.morphProgress,
+    required this.animProgress,
+    required this.barHeights,
+    required this.isThinking,
+    required this.isMuted,
+  });
+
+  // 5 Color profiles aligned with Luna AI brand & the abstract fluid palette:
+  // Node 0 (Left): Sky Cyan (Luna Tertiary)
+  // Node 1 (Mid-Left): Electric Periwinkle (Luna Primary)
+  // Node 2 (Center): Deep Violet Orchid
+  // Node 3 (Mid-Right): Radiant Fuchsia Pink
+  // Node 4 (Right): Sunset Coral Rose
+  static const List<_NodeColorProfile> _profiles = [
+    _NodeColorProfile(Color(0xFF0284C7), Color(0xFF38BDF8), Color(0xFFA7E6FF)),
+    _NodeColorProfile(Color(0xFF4F46E5), Color(0xFF6366F1), Color(0xFFC7D2FE)),
+    _NodeColorProfile(Color(0xFF7E22CE), Color(0xFFA855F7), Color(0xFFE9D5FF)),
+    _NodeColorProfile(Color(0xFFDB2777), Color(0xFFF472B6), Color(0xFFFCE7F3)),
+    _NodeColorProfile(Color(0xFFE11D48), Color(0xFFFB7185), Color(0xFFFFE4E6)),
+  ];
+
+  static const Color _defaultIndigo = Color(0xFF5358CB); // Luna Primary
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    const int nodeCount = 5;
+    const double barWidth = 4.8;
+    const double lineSpacing = 10.5;
+
+    // 1. FLUID ABSTRACT BACKGROUND BLEND (ACTIVE DURING THINKING)
+    if (morphProgress > 0.01 && !isMuted) {
+      // Soft atmospheric backdrop within the sphere (contained center spread)
+      final backdropPaint = Paint()
+        ..color = const Color(0xFFEDE9FE).withValues(alpha: 0.35 * morphProgress)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16.0);
+      canvas.drawCircle(center, 44.0 * morphProgress, backdropPaint);
+
+      // Render the 5 expanding organic fluid lobes
+      for (int i = 0; i < nodeCount; i++) {
+        final profile = _profiles[i];
+        // 1.0x integer revolution ensures 100% seamless continuity when loop repeats
+        final double theta = (i * 2 * math.pi / nodeCount) + (animProgress * 2 * math.pi * 1.0);
+
+        // Controlled Lissajous displacement with integer harmonic cycles
+        final double lissajousX = math.cos(theta) * (18.0 + math.sin(animProgress * 2 * math.pi * 1.0 + i) * 4.0);
+        final double lissajousY = math.sin(theta) * (16.0 + math.cos(animProgress * 2 * math.pi * 1.0 - i) * 4.0);
+        final Offset linePos = Offset(center.dx + (i - 2) * lineSpacing, center.dy);
+        final Offset orbitPos = center + Offset(lissajousX, lissajousY);
+        final Offset lobeCenter = Offset.lerp(linePos, orbitPos, morphProgress)!;
+
+        // Controlled fluid radius with 2.0x integer harmonic breathing wave
+        final double baseRadius = Tween<double>(begin: 3.0, end: 38.0).transform(morphProgress);
+        final double breathing = math.sin((animProgress * 2 * math.pi * 2.0) + (i * 1.3)) * 4.5 * morphProgress;
+        final double lobeRadius = baseRadius + breathing;
+
+        // Generate undulating organic fluid path (harmonic contour with integer wave cycles)
+        final Path lobePath = Path();
+        const int vertices = 16;
+        for (int v = 0; v <= vertices; v++) {
+          final double angle = (v / vertices) * 2 * math.pi;
+          final double wave1 = math.sin((angle * 2.0) + (animProgress * 2 * math.pi * 2.0) + i) * 0.16;
+          final double wave2 = math.cos((angle * 3.0) - (animProgress * 2 * math.pi * 1.0) + (i * 0.8)) * 0.10;
+          final double r = lobeRadius * (1.0 + (wave1 + wave2) * morphProgress);
+          final double vx = lobeCenter.dx + r * math.cos(angle);
+          final double vy = lobeCenter.dy + r * math.sin(angle);
+          if (v == 0) {
+            lobePath.moveTo(vx, vy);
+          } else {
+            lobePath.lineTo(vx, vy);
+          }
+        }
+        lobePath.close();
+
+        // Multi-stop radial gradient for silky fluid density
+        final lobePaint = Paint()
+          ..shader = RadialGradient(
+            center: Alignment(
+              -0.20 * math.cos(theta),
+              -0.20 * math.sin(theta),
+            ),
+            radius: 0.90,
+            colors: [
+              profile.highlight.withValues(alpha: 0.82 * morphProgress),
+              profile.core.withValues(alpha: 0.62 * morphProgress),
+              profile.ambient.withValues(alpha: 0.22 * morphProgress),
+              profile.core.withValues(alpha: 0.0),
+            ],
+            stops: const [0.0, 0.42, 0.75, 1.0],
+          ).createShader(Rect.fromCircle(center: lobeCenter, radius: lobeRadius * 1.2))
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10.0 * morphProgress);
+
+        canvas.drawPath(lobePath, lobePaint);
+      }
+
+      // 2. CURVING FLUID SILK RIBBONS (with 1.0x integer revolution and synchronous sweep)
+      final ribbonProgress = (morphProgress - 0.15).clamp(0.0, 0.85) / 0.85;
+      if (ribbonProgress > 0.02) {
+        final double ribbonAngle = animProgress * 2 * math.pi * 1.0;
+        final Path ribbon1 = Path();
+        ribbon1.moveTo(
+          center.dx + 42 * math.cos(ribbonAngle),
+          center.dy + 42 * math.sin(ribbonAngle),
+        );
+        ribbon1.quadraticBezierTo(
+          center.dx + 16 * math.cos(ribbonAngle + 1.8),
+          center.dy + 16 * math.sin(ribbonAngle + 1.8),
+          center.dx + 42 * math.cos(ribbonAngle + math.pi),
+          center.dy + 42 * math.sin(ribbonAngle + math.pi),
+        );
+
+        final ribbonPaint1 = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 9.0 * ribbonProgress
+          ..strokeCap = StrokeCap.round
+          ..shader = SweepGradient(
+            center: Alignment.center,
+            startAngle: ribbonAngle,
+            endAngle: ribbonAngle + (2 * math.pi),
+            colors: [
+              _profiles[0].highlight.withValues(alpha: 0.45 * ribbonProgress),
+              _profiles[2].highlight.withValues(alpha: 0.45 * ribbonProgress),
+              _profiles[3].highlight.withValues(alpha: 0.40 * ribbonProgress),
+              _profiles[0].highlight.withValues(alpha: 0.45 * ribbonProgress),
+            ],
+          ).createShader(Rect.fromCircle(center: center, radius: 46.0))
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6.0 * ribbonProgress);
+
+        canvas.drawPath(ribbon1, ribbonPaint1);
+      }
+
+      // 3. SPECULAR GLASS GLARE OVERLAY
+      final glarePaint = Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.35, -0.45),
+          radius: 0.70,
+          colors: [
+            Colors.white.withValues(alpha: 0.35 * morphProgress),
+            Colors.white.withValues(alpha: 0.08 * morphProgress),
+            Colors.white.withValues(alpha: 0.0),
+          ],
+          stops: const [0.0, 0.45, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: 54.0));
+      canvas.drawCircle(center, 52.0, glarePaint);
+    }
+
+    // 4. THE 5 EQUALIZER NODES (SMOOTHLY FADE OUT DURING THINKING FLUID STATE)
+    final double nodeOpacity = (1.0 - (morphProgress * 1.4)).clamp(0.0, 1.0);
+    if (nodeOpacity > 0.01) {
+      for (int i = 0; i < nodeCount; i++) {
+        final double lineX = center.dx + (i - 2) * lineSpacing;
+        final double lineY = center.dy;
+        final currentCenter = Offset(lineX, lineY);
+
+        final double targetHeight = barHeights[i];
+        final Color nodeColor = isMuted
+            ? const Color(0xFF94A3B8).withValues(alpha: nodeOpacity)
+            : _defaultIndigo.withValues(alpha: nodeOpacity);
+
+        final rRect = RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: currentCenter,
+            width: barWidth,
+            height: targetHeight.clamp(barWidth, 60.0),
+          ),
+          const Radius.circular(999),
+        );
+
+        final nodePaint = Paint()
+          ..color = nodeColor
+          ..style = PaintingStyle.fill;
+
+        canvas.drawRRect(rRect, nodePaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _VoiceNodesMorphPainter oldDelegate) {
+    return oldDelegate.morphProgress != morphProgress ||
+        oldDelegate.animProgress != animProgress ||
+        oldDelegate.barHeights != barHeights ||
+        oldDelegate.isThinking != isThinking ||
+        oldDelegate.isMuted != isMuted;
+  }
+}
+
+/// CustomPainter that renders radial frequency audio equalizer bars around the orb perimeter,
+/// matching the exact visual style from the reference video (istockphoto-2265409964).
+/// When silent, all radial bars shrink to zero / tiny baseline dots.
+class _RadialFrequencyBarsPainter extends CustomPainter {
+  final double animationProgress;
+  final double soundLevel;
+  final bool isAiSpeaking;
+  final bool isMuted;
+
+  _RadialFrequencyBarsPainter({
+    required this.animationProgress,
+    required this.soundLevel,
+    required this.isAiSpeaking,
+    required this.isMuted,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (isMuted || !isAiSpeaking) return;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    const baseRadius = 89.0; // Starts right at outer perimeter of the 174px orb
+    const totalPoints = 72; // High resolution points around 360 degrees for silky curves
+
+    final double masterIntensity = (soundLevel * 1.15).clamp(0.0, 1.0);
+    if (masterIntensity <= 0.01) return;
+
+    final points = <Offset>[];
+    final innerEchoPoints = <Offset>[];
+
+    for (int i = 0; i < totalPoints; i++) {
+      final double theta = (i / totalPoints) * 2 * math.pi;
+
+      final double harmonicCluster1 = math.sin(theta * 2.0 - 0.5);
+      final double harmonicCluster2 = math.cos(theta * 3.0 + 1.2);
+      final double clusterFactor = ((harmonicCluster1 * 0.7 + harmonicCluster2 * 0.3).abs()).clamp(0.0, 1.0);
+
+      final double freqJitter = ((math.sin((i * 7.7) + (animationProgress * 2 * math.pi * 5.0)) + 1.0) / 2.0);
+
+      final double spikeFactor = math.pow(clusterFactor, 2.2).toDouble();
+      final double dynamicHeight = (masterIntensity * 42.0 * (0.25 + (spikeFactor * 0.75))) * (0.6 + freqJitter * 0.4);
+
+      final double barLength = 2.0 + dynamicHeight;
+      final double currentRadius = baseRadius + barLength;
+
+      final double endX = center.dx + currentRadius * math.cos(theta);
+      final double endY = center.dy + currentRadius * math.sin(theta);
+      points.add(Offset(endX, endY));
+
+      // Subtle inner harmonic wave for depth
+      final double innerRadius = baseRadius + (barLength * 0.5);
+      final double innerX = center.dx + innerRadius * math.cos(theta);
+      final double innerY = center.dy + innerRadius * math.sin(theta);
+      innerEchoPoints.add(Offset(innerX, innerY));
+    }
+
+    // 1. Build Outer Wavy Path (Smooth closed quadratic bezier)
+    final outerPath = Path();
+    final n = points.length;
+    final firstMid = Offset(
+      (points[n - 1].dx + points[0].dx) / 2,
+      (points[n - 1].dy + points[0].dy) / 2,
+    );
+    outerPath.moveTo(firstMid.dx, firstMid.dy);
+
+    for (int i = 0; i < n; i++) {
+      final next = points[(i + 1) % n];
+      final mid = Offset(
+        (points[i].dx + next.dx) / 2,
+        (points[i].dy + next.dy) / 2,
+      );
+      outerPath.quadraticBezierTo(points[i].dx, points[i].dy, mid.dx, mid.dy);
+    }
+    outerPath.close();
+
+    // 2. Build Inner Echo Wavy Path
+    final innerPath = Path();
+    final innerFirstMid = Offset(
+      (innerEchoPoints[n - 1].dx + innerEchoPoints[0].dx) / 2,
+      (innerEchoPoints[n - 1].dy + innerEchoPoints[0].dy) / 2,
+    );
+    innerPath.moveTo(innerFirstMid.dx, innerFirstMid.dy);
+
+    for (int i = 0; i < n; i++) {
+      final next = innerEchoPoints[(i + 1) % n];
+      final mid = Offset(
+        (innerEchoPoints[i].dx + next.dx) / 2,
+        (innerEchoPoints[i].dy + next.dy) / 2,
+      );
+      innerPath.quadraticBezierTo(innerEchoPoints[i].dx, innerEchoPoints[i].dy, mid.dx, mid.dy);
+    }
+    innerPath.close();
+
+    final bounds = Rect.fromCircle(center: center, radius: baseRadius + 48.0);
+
+    // Render soft glowing backdrop for the wavy perimeter
+    final glowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.0
+      ..color = const Color(0xFFA855F7).withValues(alpha: (0.35 * masterIntensity).clamp(0.0, 0.6))
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0);
+    canvas.drawPath(outerPath, glowPaint);
+
+    // Render inner echo wave
+    final echoPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = const Color(0xFFC084FC).withValues(alpha: (0.35 * masterIntensity).clamp(0.0, 0.5));
+    canvas.drawPath(innerPath, echoPaint);
+
+    // Render crisp primary wavy outer line with sweeping gradient
+    final wavePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 2.4
+      ..shader = const SweepGradient(
+        colors: [
+          Color(0xFFA855F7), // Purple
+          Color(0xFFE879F9), // Fuchsia / Magenta
+          Color(0xFF818CF8), // Indigo / Violet
+          Color(0xFFA855F7), // Purple loop
+        ],
+      ).createShader(bounds);
+
+    canvas.drawPath(outerPath, wavePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RadialFrequencyBarsPainter oldDelegate) {
+    return oldDelegate.animationProgress != animationProgress ||
+        oldDelegate.soundLevel != soundLevel ||
+        oldDelegate.isAiSpeaking != isAiSpeaking ||
+        oldDelegate.isMuted != isMuted;
   }
 }

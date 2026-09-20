@@ -51,6 +51,7 @@ class DASSService:
                 "question_text": item["question_text"],
                 "score": 0,
                 "evidence": None,
+                "reason": None,
                 "confidence": 0.0,
                 "is_user_edited": False,
             }

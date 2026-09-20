@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,12 +28,14 @@ class AiCallController extends StateNotifier<AiCallViewState> {
   StreamSubscription? _finalSegmentSubscription;
   StreamSubscription? _statusSubscription;
   StreamSubscription? _soundLevelSubscription;
+  StreamSubscription? _aiAudioSoundSubscription;
   StreamSubscription? _playbackSubscription;
   StreamSubscription? _wsEventSubscription;
   StreamSubscription? _wsAudioSubscription;
   StreamSubscription? _errorSubscription;
   Timer? _durationTimer;
   Timer? _restartTimer;
+  Timer? _thinkingWatchdogTimer;
   bool _isDisposed = false;
   int _restartAttempts = 0;
 
@@ -49,7 +52,8 @@ class AiCallController extends StateNotifier<AiCallViewState> {
       currentTranscript: '',
       aiTranscript: '',
       callDurationSeconds: 0,
-      errorMessage: null,
+      clearError: true,
+      clearCrisis: true,
     );
 
     _initSubscriptions();
@@ -153,6 +157,13 @@ class AiCallController extends StateNotifier<AiCallViewState> {
       handlePlaybackFinished(turnId);
     });
 
+    // AI Audio Playback Sound Level (real-time envelope intonation)
+    _aiAudioSoundSubscription = _audioPlaybackService.soundLevelStream.listen((level) {
+      if (state.callState == CallState.aiSpeaking) {
+        state = state.copyWith(soundLevel: level);
+      }
+    });
+
     // WebSocket Incoming Audio Chunks
     _wsAudioSubscription = _wsClient.audioStream.listen((audioBytes) {
       if (state.callState != CallState.aiSpeaking) {
@@ -180,7 +191,12 @@ class AiCallController extends StateNotifier<AiCallViewState> {
     if (type == 'turn.keep_open') {
       final restart = event['restart_stt'] as bool? ?? false;
       final waitMs = (event['wait_ms'] as num?)?.toInt() ?? CallConfig.sttRestartDelayMs;
-      handleKeepOpen(restart, waitMs);
+      // If we were waiting in thinking (e.g. from empty force commit), recover to listening immediately
+      if (state.callState == CallState.thinking) {
+        enterListening();
+      } else {
+        handleKeepOpen(restart, waitMs);
+      }
     } else if (type == 'turn.committed') {
       final finalTranscript = event['final_transcript'] as String? ?? '';
       state = state.copyWith(currentTranscript: finalTranscript);
@@ -197,30 +213,80 @@ class AiCallController extends StateNotifier<AiCallViewState> {
       state = state.copyWith(
         aiTranscript: text.length >= state.aiTranscript.length ? text : (state.aiTranscript + text),
       );
+    } else if (type == 'ai.audio_chunk' || type == 'ai_audio_chunk') {
+      final turnId = (event['assistant_turn_id'] as num?)?.toInt() ?? state.assistantTurnId;
+      final seq = (event['sequence'] as num?)?.toInt() ?? 0;
+      final b64 = event['audio_base64'] as String?;
+      final envelope = (event['envelope'] as List<dynamic>?)
+          ?.map((e) => (e as num).toDouble())
+          .toList() ?? <double>[];
+
+      if (b64 != null && b64.isNotEmpty) {
+        try {
+          final audioBytes = base64Decode(b64);
+          if (state.callState != CallState.aiSpeaking) {
+            enterAiSpeaking(turnId);
+          }
+          _audioPlaybackService.enqueueChunk(
+            bytes: audioBytes,
+            assistantTurnId: turnId,
+            sequence: seq,
+            envelope: envelope,
+          );
+        } catch (e) {
+          debugPrint('⚠️ [AI AUDIO DECODE ERROR]: $e');
+        }
+      }
     } else if (type == 'ai.speech_finished' || type == 'ai_speech_finished') {
       final turnId = (event['assistant_turn_id'] as num?)?.toInt() ?? state.assistantTurnId;
-      _audioPlaybackService.markStreamFinished(turnId);
+      if (state.callState == CallState.thinking) {
+        // Backend finished generation but no audio was enqueued/played (TTS fallback/text-only)
+        _thinkingWatchdogTimer?.cancel();
+        Future.delayed(const Duration(milliseconds: 1500), () async {
+          if (state.callState == CallState.thinking && !_isDisposed) {
+            state = state.copyWith(userTurnId: state.userTurnId + 1);
+            await enterListening();
+          }
+        });
+      } else {
+        _audioPlaybackService.markStreamFinished(turnId);
+      }
     } else if (type == 'assistant.interrupted_ack' || type == 'interrupted_ack') {
       debugPrint('⚡ [AI CALL CONTROLLER] Interrupted ACK confirmed by server');
     } else if (type == 'call.sync_state') {
       final activeUserTurn = (event['active_user_turn_id'] as num?)?.toInt();
       final activeAssistantTurn = (event['active_assistant_turn_id'] as num?)?.toInt();
+      final serverState = event['state'] as String?;
       if (activeUserTurn != null) {
         state = state.copyWith(userTurnId: activeUserTurn);
       }
       if (activeAssistantTurn != null) {
         state = state.copyWith(assistantTurnId: activeAssistantTurn);
       }
-    } else if (type == 'crisis_alert' || type == 'emergency_triggered') {
-      state = state.copyWith(crisisHotline: event['hotline'] as String? ?? '119 ext 8');
+      if (serverState == 'listening' && state.callState == CallState.thinking) {
+        enterListening();
+      }
+    } else if (type == 'ai.crisis_escalation' || type == 'crisis_alert' || type == 'emergency_triggered') {
+      final hotline = event['hotline'] as String? ?? 'Hotline Dinkes (WhatsApp 0813-8007-3120) / Kemenkes 119 ext 8';
+      final hotlineUrl = event['hotline_url'] as String? ??
+          'https://api.whatsapp.com/send/?phone=6281380073120&text=halo%20kak%2C%20saya%20ingin%20bercerita%20mengenai...&type=phone_number&app_absent=0';
+      state = state.copyWith(
+        crisisHotline: hotline,
+        crisisHotlineUrl: hotlineUrl,
+        isCrisisSession: true,
+      );
     } else if (type == 'error') {
       state = state.copyWith(errorMessage: event['message'] as String? ?? 'Terjadi kesalahan sistem');
+      if (state.callState == CallState.thinking || state.callState == CallState.aiSpeaking) {
+        enterListening();
+      }
     }
   }
 
   /// Invariant: LISTENING -> STT ON, AI audio OFF
   Future<void> enterListening() async {
     _restartTimer?.cancel();
+    _thinkingWatchdogTimer?.cancel();
 
     // Guard: Audio must be completely stopped before mic opens
     await _audioPlaybackService.stop();
@@ -232,6 +298,8 @@ class AiCallController extends StateNotifier<AiCallViewState> {
       callState: CallState.listening,
       activeSttSessionId: nextSessionId,
       isUserSpeaking: false,
+      currentTranscript: '',
+      latestPartial: '',
       aiTranscript: '',
     );
 
@@ -243,17 +311,30 @@ class AiCallController extends StateNotifier<AiCallViewState> {
   /// Invariant: THINKING -> STT OFF, AI audio OFF
   Future<void> enterThinking() async {
     _restartTimer?.cancel();
+    _thinkingWatchdogTimer?.cancel();
     state = state.copyWith(
       callState: CallState.thinking,
       isUserSpeaking: false,
       soundLevel: 0.05,
     );
     await _speechService.stopListening();
+
+    // Watchdog Timer: Guard against stuck thinking if backend stalls or drops connection
+    _thinkingWatchdogTimer = Timer(const Duration(seconds: 15), () async {
+      if (state.callState == CallState.thinking && !_isDisposed) {
+        debugPrint('⚠️ [THINKING WATCHDOG TIMEOUT]: No AI response within 15s. Recovering to listening.');
+        state = state.copyWith(
+          errorMessage: 'Respons Luna membutuhkan waktu lebih lama. Silakan coba bicara lagi.',
+        );
+        await enterListening();
+      }
+    });
   }
 
   /// Invariant: AI_SPEAKING -> STT OFF, AI audio ON
   Future<void> enterAiSpeaking(int assistantTurnId) async {
     _restartTimer?.cancel();
+    _thinkingWatchdogTimer?.cancel();
     state = state.copyWith(
       callState: CallState.aiSpeaking,
       assistantTurnId: assistantTurnId,
@@ -318,6 +399,7 @@ class AiCallController extends StateNotifier<AiCallViewState> {
 
     debugPrint('⚡ [MANUAL BARGE-IN TRIGGERED] State: ${state.callState}');
 
+    _thinkingWatchdogTimer?.cancel();
     state = state.copyWith(callState: CallState.interrupting);
 
     // 1. Instantly stop audio player locally and flush queue
@@ -395,6 +477,7 @@ class AiCallController extends StateNotifier<AiCallViewState> {
   Future<void> endCall() async {
     _durationTimer?.cancel();
     _restartTimer?.cancel();
+    _thinkingWatchdogTimer?.cancel();
 
     await _speechService.stopListening();
     await _audioPlaybackService.stop();
@@ -410,6 +493,7 @@ class AiCallController extends StateNotifier<AiCallViewState> {
     _finalSegmentSubscription?.cancel();
     _statusSubscription?.cancel();
     _soundLevelSubscription?.cancel();
+    _aiAudioSoundSubscription?.cancel();
     _playbackSubscription?.cancel();
     _wsAudioSubscription?.cancel();
     _wsEventSubscription?.cancel();
@@ -422,9 +506,10 @@ class AiCallController extends StateNotifier<AiCallViewState> {
     _cancelSubscriptions();
     _durationTimer?.cancel();
     _restartTimer?.cancel();
-    _speechService.dispose();
-    _audioPlaybackService.dispose();
-    _wsClient.dispose();
+    _thinkingWatchdogTimer?.cancel();
+    _speechService.stopListening();
+    _audioPlaybackService.stop();
+    _wsClient.disconnect();
     super.dispose();
   }
 }
