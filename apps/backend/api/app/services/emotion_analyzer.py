@@ -35,8 +35,8 @@ class EmotionAnalyzerService:
                 '  "calm_score": "<contoh: 85%>",\n'
                 '  "stress_level": "<contoh: Rendah | Sedang | Tinggi>",\n'
                 '  "empathy_level": "Sangat Tinggi",\n'
-                '  "ai_insight": "<1-2 kalimat wawasan evaluasi emosi pengguna>",\n'
-                '  "emotional_reflection": "<1-2 kalimat refleksi konseling>",\n'
+                '  "ai_insight": "<2-3 kalimat wawasan konseling yang reflektif, empatik, dan suportif tanpa mengutip langsung kata-kata pengguna>",\n'
+                '  "emotional_reflection": "<1-2 kalimat refleksi konseling yang menenangkan>",\n'
                 '  "emotions_breakdown": [\n'
                 '    {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.85, "color": "#4ECDC4"},\n'
                 '    {"label": "Bahagia & Puas", "emoji": "😃", "percent": 0.60, "color": "#FFE6A7"},\n'
@@ -44,14 +44,16 @@ class EmotionAnalyzerService:
                 '    {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.15, "color": "#FF8B94"}\n'
                 "  ],\n"
                 '  "important_events": ["<peristiwa atau masalah penting 1>", "<peristiwa 2>"],\n'
-                '  "diary_summary": "<ringkasan jurnal 1-2 kalimat>"\n'
+                '  "diary_summary": "<ringkasan konseling 2-3 kalimat hangat dan empatik mengenai esensi topik yang dibahas serta dukungan LUNA, tanpa tanda kutip mentah>"\n'
                 "}"
             ),
         )
 
         user_prompt = LLMMessage(
             role="user",
-            content=f"Analisislah transkrip percakapan berikut secara mendalam dan buatlah judul 3-7 kata:\n\n{transcript_text}",
+            content=(
+                f"Analisislah transkrip percakapan berikut secara mendalam. Rangkum esensi emosi dan buatlah ringkasan 2-3 kalimat konseling yang empatik:\n\n{transcript_text}"
+            ),
         )
 
         try:
@@ -79,18 +81,18 @@ class EmotionAnalyzerService:
     @staticmethod
     def _default_fallback_analysis() -> dict[str, Any]:
         return {
-            "session_title": "Sesi Panggilan Suara LUNA",
+            "session_title": "Sesi Curhat Bersama LUNA",
             "dominant_emotion": "Tenang & Nyaman 🌿",
             "calm_score": "85%",
             "stress_level": "Rendah",
             "empathy_level": "Sangat Tinggi",
-            "ai_insight": "Pengguna merasa didengarkan dan mulai merasa lebih rileks selama percakapan suara.",
-            "emotional_reflection": "Refleksi emosi menunjukkan respon positif terhadap konseling LUNA.",
+            "ai_insight": "Pengguna meluangkan waktu untuk mengekspresikan perasaannya dalam suasana yang aman dan penuh penerimaan.",
+            "emotional_reflection": "Sesi curhat membantu meredakan ketegangan dan memberikan ruang refleksi diri.",
             "emotions_breakdown": [
                 {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.85, "color": "#4ECDC4"},
                 {"label": "Bahagia & Puas", "emoji": "😃", "percent": 0.60, "color": "#FFE6A7"},
                 {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.15, "color": "#FF8B94"},
             ],
             "important_events": ["Panggilan suara konseling LUNA AI"],
-            "diary_summary": "Sesi percakapan suara hari ini berjalan dengan lancar dan memberikan ketenangan emosional.",
+            "diary_summary": "Sesi percakapan curhat bersama LUNA memberikan ruang aman untuk mengekspresikan emosi serta menemukan ketenangan batin.",
         }
