@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:luna_mobile/features/voice_call/data/datasources/voice_call_ws_client.dart';
@@ -77,13 +78,32 @@ class FakeAiAudioPlaybackService extends Fake implements AiAudioPlaybackService 
   int currentTurn = 0;
   final StreamController<int> playbackCompletedController =
       StreamController<int>.broadcast();
+  final StreamController<double> soundLevelController =
+      StreamController<double>.broadcast();
 
   @override
   Stream<int> get onPlaybackCompleted => playbackCompletedController.stream;
 
   @override
+  Stream<double> get soundLevelStream => soundLevelController.stream;
+
+  @override
   void prepareNewAssistantTurn(int assistantTurnId) {
     currentTurn = assistantTurnId;
+  }
+
+  List<double> lastEnqueuedEnvelope = [];
+  Uint8List? lastEnqueuedBytes;
+
+  @override
+  void enqueueChunk({
+    required Uint8List bytes,
+    required int assistantTurnId,
+    required int sequence,
+    List<double> envelope = const [],
+  }) {
+    lastEnqueuedBytes = bytes;
+    lastEnqueuedEnvelope = envelope;
   }
 
   @override
@@ -97,6 +117,7 @@ class FakeAiAudioPlaybackService extends Fake implements AiAudioPlaybackService 
   @override
   void dispose() {
     playbackCompletedController.close();
+    soundLevelController.close();
   }
 }
 
@@ -409,5 +430,127 @@ void main() {
     await controller.pushToTalkRelease();
     expect(controller.state.callState, CallState.thinking);
     expect(fakeWs.sentEvents.any((e) => e['type'] == 'user.force_commit'), isTrue);
+  });
+
+  test('ai.audio_chunk event enters aiSpeaking and delegates envelope', () async {
+    await controller.startCall();
+
+    fakeWs.eventController.add({
+      'type': 'ai.audio_chunk',
+      'assistant_turn_id': 1,
+      'sequence': 1,
+      'audio_base64': base64Encode([1, 2, 3, 4]),
+      'envelope': [0.1, 0.4, 0.8, 0.2],
+    });
+    await pumpEventQueue();
+
+    expect(controller.state.callState, CallState.aiSpeaking);
+    expect(fakeAudio.lastEnqueuedEnvelope, [0.1, 0.4, 0.8, 0.2]);
+  });
+
+  test('soundLevelStream updates state.soundLevel when aiSpeaking', () async {
+    await controller.startCall();
+    await controller.enterAiSpeaking(1);
+
+    fakeAudio.soundLevelController.add(0.78);
+    await pumpEventQueue();
+
+    expect(controller.state.soundLevel, 0.78);
+  });
+
+  test('ai.crisis_escalation event flags isCrisisSession and records hotline info', () async {
+    await controller.startCall();
+    expect(controller.state.isCrisisSession, isFalse);
+
+    fakeWs.eventController.add({
+      'type': 'ai.crisis_escalation',
+      'risk_level': 'critical',
+      'hotline': 'Hotline Dinkes (WhatsApp 0813-8007-3120)',
+      'hotline_url': 'https://api.whatsapp.com/send/?phone=6281380073120',
+    });
+    await pumpEventQueue();
+
+    expect(controller.state.isCrisisSession, isTrue);
+    expect(controller.state.crisisHotline, 'Hotline Dinkes (WhatsApp 0813-8007-3120)');
+    expect(controller.state.crisisHotlineUrl, 'https://api.whatsapp.com/send/?phone=6281380073120');
+  });
+
+  test('startCall resets isCrisisSession to false', () async {
+    await controller.startCall();
+    fakeWs.eventController.add({
+      'type': 'ai.crisis_escalation',
+      'risk_level': 'critical',
+    });
+    await pumpEventQueue();
+    expect(controller.state.isCrisisSession, isTrue);
+
+    await controller.startCall();
+    expect(controller.state.isCrisisSession, isFalse);
+    expect(controller.state.crisisHotline, isNull);
+  });
+
+  test('turn.keep_open while in thinking recovers state to listening', () async {
+    await controller.startCall();
+    await controller.forceCommit();
+    expect(controller.state.callState, CallState.thinking);
+
+    fakeWs.eventController.add({
+      'type': 'turn.keep_open',
+      'restart_stt': true,
+      'reason': 'empty_force_commit',
+    });
+    await pumpEventQueue();
+
+    expect(controller.state.callState, CallState.listening);
+    expect(fakeSpeech.isListening, isTrue);
+  });
+
+  test('error event while in thinking recovers state to listening', () async {
+    await controller.startCall();
+    await controller.enterThinking();
+    expect(controller.state.callState, CallState.thinking);
+
+    fakeWs.eventController.add({
+      'type': 'error',
+      'message': 'AI service timeout',
+    });
+    await pumpEventQueue();
+
+    expect(controller.state.callState, CallState.listening);
+    expect(controller.state.errorMessage, 'AI service timeout');
+    expect(fakeSpeech.isListening, isTrue);
+  });
+
+  test('call.sync_state with listening recovers thinking state', () async {
+    await controller.startCall();
+    await controller.enterThinking();
+    expect(controller.state.callState, CallState.thinking);
+
+    fakeWs.eventController.add({
+      'type': 'call.sync_state',
+      'state': 'listening',
+      'active_user_turn_id': 1,
+    });
+    await pumpEventQueue();
+
+    expect(controller.state.callState, CallState.listening);
+  });
+
+  test('ai.speech_finished without audio recovers state to listening', () async {
+    await controller.startCall();
+    await controller.enterThinking();
+    expect(controller.state.callState, CallState.thinking);
+
+    fakeWs.eventController.add({
+      'type': 'ai.speech_finished',
+      'assistant_turn_id': 1,
+    });
+    await pumpEventQueue();
+
+    // Fast-forward delayed reading timer
+    await Future.delayed(const Duration(milliseconds: 1600));
+
+    expect(controller.state.callState, CallState.listening);
+    expect(controller.state.userTurnId, 2);
   });
 }

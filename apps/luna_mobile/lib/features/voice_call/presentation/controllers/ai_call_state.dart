@@ -16,6 +16,8 @@ class AiCallViewState {
   final bool isUserSpeaking;
   final String? errorMessage;
   final String? crisisHotline;
+  final String? crisisHotlineUrl;
+  final bool isCrisisSession;
 
   const AiCallViewState({
     this.callState = CallState.idle,
@@ -33,6 +35,8 @@ class AiCallViewState {
     this.isUserSpeaking = false,
     this.errorMessage,
     this.crisisHotline,
+    this.crisisHotlineUrl,
+    this.isCrisisSession = false,
   });
 
   AiCallViewState copyWith({
@@ -51,6 +55,10 @@ class AiCallViewState {
     bool? isUserSpeaking,
     String? errorMessage,
     String? crisisHotline,
+    String? crisisHotlineUrl,
+    bool? isCrisisSession,
+    bool clearCrisis = false,
+    bool clearError = false,
   }) {
     return AiCallViewState(
       callState: callState ?? this.callState,
@@ -66,8 +74,10 @@ class AiCallViewState {
       callDurationSeconds: callDurationSeconds ?? this.callDurationSeconds,
       isMuted: isMuted ?? this.isMuted,
       isUserSpeaking: isUserSpeaking ?? this.isUserSpeaking,
-      errorMessage: errorMessage,
-      crisisHotline: crisisHotline ?? this.crisisHotline,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      crisisHotline: clearCrisis ? null : (crisisHotline ?? this.crisisHotline),
+      crisisHotlineUrl: clearCrisis ? null : (crisisHotlineUrl ?? this.crisisHotlineUrl),
+      isCrisisSession: clearCrisis ? false : (isCrisisSession ?? this.isCrisisSession),
     );
   }
 }

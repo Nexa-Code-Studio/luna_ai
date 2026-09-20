@@ -78,14 +78,22 @@ class SpeechRecognitionService {
       _isInitialized = await _speech.initialize(
         onStatus: (status) {
           debugPrint('🎙️ [STT STATUS]: $status (active session: $_activeSttSessionId)');
-          _statusController.add(SttStatusEvent(
-            status: status,
-            sttSessionId: _activeSttSessionId,
-          ));
+          if (!_statusController.isClosed) {
+            _statusController.add(SttStatusEvent(
+              status: status,
+              sttSessionId: _activeSttSessionId,
+            ));
+          }
         },
         onError: (SpeechRecognitionError error) {
           debugPrint('⚠️ [STT ERROR]: ${error.errorMsg} (permanent: ${error.permanent})');
-          _errorController.add(error.errorMsg);
+          // Filter out normal silence timeouts to avoid treating natural pauses as crashes
+          if (error.errorMsg == 'error_speech_timeout' || error.errorMsg == 'error_no_match') {
+            return;
+          }
+          if (!_errorController.isClosed) {
+            _errorController.add(error.errorMsg);
+          }
         },
       );
       debugPrint('🎙️ [STT INITIALIZED]: $_isInitialized');
@@ -120,6 +128,8 @@ class SpeechRecognitionService {
     if (_speech.isListening) {
       try {
         await _speech.stop();
+        // Give native Android SpeechRecognizer audio hardware time to release
+        await Future.delayed(const Duration(milliseconds: 150));
       } catch (_) {}
     }
 
@@ -139,22 +149,26 @@ class SpeechRecognitionService {
 
           if (result.finalResult) {
             debugPrint('🎙️ [STT FINAL SEGMENT]: "$words" (session $sttSessionId, seq $_sequenceCounter)');
-            _finalSegmentController.add(SttFinalResult(
-              text: words,
-              sttSessionId: sttSessionId,
-              sequence: _sequenceCounter,
-            ));
+            if (!_finalSegmentController.isClosed) {
+              _finalSegmentController.add(SttFinalResult(
+                text: words,
+                sttSessionId: sttSessionId,
+                sequence: _sequenceCounter,
+              ));
+            }
           } else {
             debugPrint('🎙️ [STT PARTIAL]: "$words" (session $sttSessionId, seq $_sequenceCounter)');
-            _partialController.add(SttPartialResult(
-              text: words,
-              sttSessionId: sttSessionId,
-              sequence: _sequenceCounter,
-            ));
+            if (!_partialController.isClosed) {
+              _partialController.add(SttPartialResult(
+                text: words,
+                sttSessionId: sttSessionId,
+                sequence: _sequenceCounter,
+              ));
+            }
           }
         },
         onSoundLevelChange: (double level) {
-          if (!_isMuted) {
+          if (!_isMuted && !_soundLevelController.isClosed) {
             // Normalize level between 0.0 and 1.0 for visual equalizer
             final normalized = ((level + 10.0) / 30.0).clamp(0.05, 1.0);
             _soundLevelController.add(normalized);
