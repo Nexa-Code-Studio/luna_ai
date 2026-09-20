@@ -18,7 +18,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController =
-      TextEditingController(text: 'user.luna@gmail.com');
+      TextEditingController(text: 'samsul@gmail.com');
   final TextEditingController _passwordController =
       TextEditingController(text: 'password123');
   bool _isLoading = false;
@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    final email = _emailController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
@@ -87,22 +87,13 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      await AppConfig.setUserInfo(
-        name: email.split('@').first,
-        email: email,
-      );
-      if (!mounted) return;
-      // If network unreachable, allow fallback with warning
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: Colors.orange.shade800,
-          content: Text('Koneksi ke backend (${AppConfig.host}) gagal. Melanjutkan dalam mode offline...'),
-          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red.shade700,
+          content: Text('Gagal terhubung ke server (${AppConfig.host}): $e'),
+          duration: const Duration(seconds: 3),
         ),
       );
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted) Navigator.pushReplacementNamed(context, '/home');
-      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

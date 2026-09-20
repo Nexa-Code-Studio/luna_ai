@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
+ import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../theme/app_colors.dart';
@@ -23,22 +24,142 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _agreeTerms = false;
   bool _isLoading = false;
 
+  Timer? _debounceTimer;
+  bool _isCheckingEmail = false;
+  bool? _isEmailAvailable;
+  String? _emailStatusMessage;
+
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  void _onEmailChanged(String val) {
+    _debounceTimer?.cancel();
+    final cleanEmail = val.trim().toLowerCase();
+
+    if (cleanEmail.isEmpty) {
+      setState(() {
+        _isCheckingEmail = false;
+        _isEmailAvailable = null;
+        _emailStatusMessage = null;
+      });
+      return;
+    }
+
+    final emailRegExp = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    if (!emailRegExp.hasMatch(cleanEmail)) {
+      setState(() {
+        _isCheckingEmail = false;
+        _isEmailAvailable = false;
+        _emailStatusMessage = 'Format email belum valid';
+      });
+      return;
+    }
+
+    setState(() {
+      _isCheckingEmail = true;
+      _isEmailAvailable = null;
+      _emailStatusMessage = 'Memeriksa ketersediaan email...';
+    });
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        final uri = Uri.parse('${AppConfig.baseUrl}/auth/check-email').replace(
+          queryParameters: {'email': cleanEmail},
+        );
+        final res = await http.get(uri).timeout(const Duration(seconds: 4));
+        if (!mounted) return;
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body) as Map<String, dynamic>;
+          final available = data['available'] == true;
+          final msg = data['message']?.toString() ??
+              (available ? 'Email tersedia' : 'Email sudah terdaftar');
+          setState(() {
+            _isCheckingEmail = false;
+            _isEmailAvailable = available;
+            _emailStatusMessage = msg;
+          });
+        } else {
+          setState(() {
+            _isCheckingEmail = false;
+            _isEmailAvailable = null;
+            _emailStatusMessage = null;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _isCheckingEmail = false;
+            _isEmailAvailable = null;
+            _emailStatusMessage = null;
+          });
+        }
+      }
+    });
+  }
+
+  Widget? _buildEmailSuffixIcon() {
+    if (_isCheckingEmail) {
+      return const Padding(
+        padding: EdgeInsets.all(12.0),
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primary,
+          ),
+        ),
+      );
+    }
+    if (_isEmailAvailable == true) {
+      return const Icon(
+        Icons.check_circle_rounded,
+        color: Color(0xFF2E7D32),
+        size: 20,
+      );
+    }
+    if (_isEmailAvailable == false) {
+      return const Icon(
+        Icons.cancel_rounded,
+        color: Color(0xFFD32F2F),
+        size: 20,
+      );
+    }
+    return null;
+  }
+
   Future<void> _handleRegister() async {
     final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text.trim();
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Silakan lengkapi semua data formulir')),
+      );
+      return;
+    }
+
+    if (_isCheckingEmail) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sedang memeriksa email, mohon tunggu...')),
+      );
+      return;
+    }
+
+    if (_isEmailAvailable == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade700,
+          content: Text(_emailStatusMessage ?? 'Email sudah terdaftar atau tidak valid'),
+        ),
       );
       return;
     }
@@ -103,18 +224,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      await AppConfig.setUserInfo(name: name, email: email);
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: Colors.orange.shade800,
-          content: Text('Gagal menghubungi backend (${AppConfig.host}). Melanjutkan mode demo...'),
-          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red.shade700,
+          content: Text('Gagal menghubungi server (${AppConfig.host}): $e'),
+          duration: const Duration(seconds: 3),
         ),
       );
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted) Navigator.pushReplacementNamed(context, '/home');
-      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -199,7 +315,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: 'Alamat Email',
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
+                      suffixIcon: _buildEmailSuffixIcon(),
+                      onChanged: _onEmailChanged,
                     ),
+                    if (_emailStatusMessage != null) ...[
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: Text(
+                            _emailStatusMessage!,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: _isEmailAvailable == true
+                                  ? const Color(0xFF2E7D32)
+                                  : (_isEmailAvailable == false
+                                      ? const Color(0xFFD32F2F)
+                                      : AppColors.textSecondary),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 14),
 
                     // Password Field
