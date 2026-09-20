@@ -16,3 +16,10 @@ class BaseTTSProvider(ABC):
     ) -> AsyncGenerator[bytes, None]:
         """Stream text tokens into real-time audio chunks."""
         pass
+
+    async def synthesize_with_envelope(
+        self, text: str, voice_id: str | None = None
+    ) -> tuple[bytes, list[float]]:
+        """Synthesize text into complete audio bytes and an amplitude envelope list."""
+        audio = await self.synthesize(text, voice_id)
+        return audio, []
