@@ -7,6 +7,7 @@ class DASSItemModel extends DASSItemEntity {
     required super.questionText,
     required super.score,
     super.evidence,
+    super.reason,
     required super.confidence,
     required super.isUserEdited,
   });
@@ -18,6 +19,7 @@ class DASSItemModel extends DASSItemEntity {
       questionText: json['question_text']?.toString() ?? '',
       score: json['score'] is int ? json['score'] : int.tryParse(json['score']?.toString() ?? '0') ?? 0,
       evidence: json['evidence']?.toString(),
+      reason: json['reason']?.toString(),
       confidence: (json['confidence'] is num)
           ? (json['confidence'] as num).toDouble()
           : double.tryParse(json['confidence']?.toString() ?? '0.0') ?? 0.0,
@@ -32,6 +34,7 @@ class DASSItemModel extends DASSItemEntity {
       'question_text': questionText,
       'score': score,
       'evidence': evidence,
+      'reason': reason,
       'confidence': confidence,
       'is_user_edited': isUserEdited,
     };

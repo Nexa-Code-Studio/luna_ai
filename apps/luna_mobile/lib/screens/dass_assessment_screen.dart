@@ -22,6 +22,7 @@ class DASSAssessmentScreen extends ConsumerStatefulWidget {
 class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
   late String _currentPeriod;
   String _selectedFilter = 'all'; // 'all', 'stress', 'anxiety', 'depression'
+  final Set<int> _expandedItemIds = {};
 
   @override
   void initState() {
@@ -51,6 +52,24 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
       default:
         return 'Stres';
     }
+  }
+
+  Color _getConfidenceColor(double conf) {
+    if (conf >= 0.80) return const Color(0xFF059669); // Emerald
+    if (conf >= 0.50) return const Color(0xFFD97706); // Amber
+    return const Color(0xFF6366F1); // Indigo / Slate
+  }
+
+  Color _getConfidenceBg(double conf) {
+    if (conf >= 0.80) return const Color(0xFFECFDF5);
+    if (conf >= 0.50) return const Color(0xFFFFFBEB);
+    return const Color(0xFFF5F3FF);
+  }
+
+  String _getConfidenceLabel(double conf) {
+    if (conf >= 0.80) return 'Keyakinan Tinggi';
+    if (conf >= 0.50) return 'Keyakinan Cukup';
+    return 'Indikasi Awal';
   }
 
   @override
@@ -649,7 +668,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                 ),
               ),
               const Spacer(),
-              if (item.isUserEdited)
+              if (item.isUserEdited || (isEditable && item.score != currentScore))
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
@@ -662,6 +681,34 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF4F46E5),
+                    ),
+                  ),
+                ),
+              if (isEditable && item.score != currentScore)
+                GestureDetector(
+                  onTap: () => notifier.updateScore(item.itemId, item.score),
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFD1D5DB)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.undo_rounded, size: 10, color: Color(0xFF4B5563)),
+                        const SizedBox(width: 3),
+                        Text(
+                          'Saran AI (${item.score})',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF4B5563),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -680,35 +727,9 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
             ),
           ),
 
-          // AI Evidence Quote
-          if (item.evidence != null && item.evidence!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.format_quote_rounded, size: 16, color: Color(0xFF9CA3AF)),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Bukti Obrolan: "${item.evidence}"',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        fontStyle: FontStyle.italic,
-                        color: const Color(0xFF4B5563),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          // Explainable AI Accordion (Evidence, Confidence, Reason)
+          _buildAIAnalysisSection(item),
+
           const SizedBox(height: 12),
 
           // Likert Selector Options (0 - 3)
@@ -725,6 +746,261 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAIAnalysisSection(DASSItemEntity item) {
+    final isExpanded = _expandedItemIds.contains(item.itemId);
+    final hasEvidence = item.evidence != null && item.evidence!.trim().isNotEmpty;
+    final hasReason = item.reason != null && item.reason!.trim().isNotEmpty;
+    final conf = item.confidence;
+    final confPercent = (conf * 100).round();
+    final confColor = _getConfidenceColor(conf);
+    final confBg = _getConfidenceBg(conf);
+    final confLabel = _getConfidenceLabel(conf);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        // Collapsed Trigger Pill
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              if (isExpanded) {
+                _expandedItemIds.remove(item.itemId);
+              } else {
+                _expandedItemIds.add(item.itemId);
+              }
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: isExpanded ? confBg : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isExpanded ? confColor.withValues(alpha: 0.35) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 13,
+                  color: isExpanded ? confColor : const Color(0xFF6366F1),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  conf > 0
+                      ? 'Analisis Luna • $confPercent% Yakin'
+                      : 'Analisis Luna',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isExpanded ? confColor : const Color(0xFF475569),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                  size: 15,
+                  color: isExpanded ? confColor : const Color(0xFF64748B),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Smooth Expanded Container
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 240),
+          crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          firstChild: const SizedBox.shrink(),
+          secondChild: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Confidence Meter Bar
+                Row(
+                  children: [
+                    Text(
+                      'Tingkat Keyakinan AI',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF334155),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: confBg,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: confColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        '$confPercent% • $confLabel',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: confColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Container(
+                    height: 5,
+                    width: double.infinity,
+                    color: const Color(0xFFE2E8F0),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: conf.clamp(0.0, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: confColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // 2. AI Evidence Quote (if present)
+                if (hasEvidence) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.format_quote_rounded, size: 16, color: Color(0xFF6366F1)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Bukti Obrolan Pengguna:',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '"${item.evidence}"',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                  color: const Color(0xFF1E293B),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // 3. AI Rationale / Reason (if present)
+                if (hasReason) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F3FF),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFDDD6FE)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.psychology_alt_rounded, size: 16, color: Color(0xFF7C3AED)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Penalaran AI Luna:',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF6D28D9),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                item.reason!,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  color: const Color(0xFF334155),
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else if (!hasEvidence) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tidak ditemukan indikasi keluhan pada transkrip obrolan hari ini (Skor 0).',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10.5,
+                      fontStyle: FontStyle.italic,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 12, color: Color(0xFF94A3B8)),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Pilihan ini dianalisis otomatis. Kamu dapat mengoreksi skor kapan saja di bawah.',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 9.5,
+                          color: const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
