@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.dass import DASSAssessment
 from app.schemas.dass import (
@@ -196,6 +197,7 @@ class DASSService:
                 record.anxiety_severity = scores["anxiety_severity"]
                 record.stress_severity = scores["stress_severity"]
                 record.items = complete_items
+                flag_modified(record, "items")
                 if conversation_id:
                     record.conversation_id = conversation_id
         else:
@@ -261,6 +263,7 @@ class DASSService:
         scores = DASSService.calculate_scores(new_items)
 
         record.items = new_items
+        flag_modified(record, "items")
         record.depression_score = scores["depression_score"]
         record.anxiety_score = scores["anxiety_score"]
         record.stress_score = scores["stress_score"]

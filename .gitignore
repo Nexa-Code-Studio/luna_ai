@@ -53,3 +53,6 @@ apps/luna_mobile/.idea/
 apps/luna_mobile/.pub-cache/
 apps/luna_mobile/.pub/
 apps/luna_mobile/build/
+
+# Agents logs
+.agents/logs/

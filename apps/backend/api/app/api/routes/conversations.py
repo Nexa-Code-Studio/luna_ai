@@ -1,10 +1,14 @@
+import json
+import math
 import uuid
+from collections import Counter
 from datetime import UTC, datetime, date, time, timezone
 
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,13 +16,15 @@ from sqlalchemy.orm import selectinload
 
 from app.core.security import decode_access_token
 from app.core.tz import get_wib_day_range_utc, get_wib_today, to_wib
-from app.db.session import get_db_session
-from app.models.conversation import Conversation, Message
+from app.db.session import AsyncSessionLocal, get_db_session
+from app.models.conversation import Conversation, Message, ConversationSummary
 from app.models.diary import DiaryEntry
 from app.models.enums import ConversationStatus, MessageType
 from app.models.safety import EmotionAnalysis
 from app.models.user import User
 from app.services.ml_emotion_detector import MLEmotionDetectorService
+from packages.ai.factories.llm_factory import LLMFactory
+from packages.ai.interfaces.llm import LLMMessage
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +38,20 @@ class SendMessageRequest(BaseModel):
 
 async def _get_current_user(
     authorization: str | None = Header(None),
+    token_query: str | None = Query(None, alias="token"),
     db: AsyncSession = Depends(get_db_session),
 ) -> User:
-    if not authorization or not authorization.startswith("Bearer "):
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ")[1].strip()
+    elif token_query:
+        token = token_query.strip()
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Header Authorization Bearer diperlukan",
+            detail="Header Authorization Bearer atau token query diperlukan",
         )
-
-    token = authorization.split("Bearer ")[1].strip()
     decoded = decode_access_token(token)
     if not decoded or "sub" not in decoded:
         raise HTTPException(
@@ -80,15 +91,19 @@ def _format_time_local(dt: datetime | None) -> str:
 
 
 def _format_duration_str(started_at: datetime | None, last_message_at: datetime | None) -> str:
-    if not started_at:
+    if not started_at or not last_message_at:
         return "00:00"
-    end_time = last_message_at or datetime.now(timezone.utc)
-    diff = int((end_time - started_at).total_seconds())
-    if diff < 0:
-        diff = 0
-    mins = diff // 60
-    secs = diff % 60
-    return f"{mins:02d}:{secs:02d}"
+    try:
+        t1 = started_at if started_at.tzinfo else started_at.replace(tzinfo=timezone.utc)
+        t2 = last_message_at if last_message_at.tzinfo else last_message_at.replace(tzinfo=timezone.utc)
+        diff = int((t2 - t1).total_seconds())
+        if diff < 0:
+            diff = 0
+        mins = diff // 60
+        secs = diff % 60
+        return f"{mins:02d}:{secs:02d}"
+    except Exception:
+        return "00:00"
 
 
 def _analyze_message_emotion_fallback(text: str) -> tuple[str, str]:
@@ -153,8 +168,11 @@ def _format_conversation(
     msgs = sorted(c.messages, key=lambda m: m.sequence_number) if c.messages else []
     last_msg = msgs[-1].content if msgs else ""
     formatted_msgs = []
+    user_emotions: list[tuple[str, str]] = []
     for m in msgs:
         emo_tag, emo_emoji = _get_message_emotion(m, emotion_map)
+        if m.role in ("user",) and emo_tag:
+            user_emotions.append((emo_tag, emo_emoji))
         formatted_msgs.append({
             "id": str(m.id),
             "sender": "luna" if m.role in ("assistant", "luna") else "user",
@@ -165,26 +183,96 @@ def _format_conversation(
             "emotionEmoji": emo_emoji,
         })
 
+    dominant_label = "Tenang & Nyaman"
+    dominant_emoji = "😌"
+    if user_emotions:
+        counts: Counter[str] = Counter()
+        emoji_by_name: dict[str, str] = {}
+        for tag, emoji in user_emotions:
+            name = tag.split()[0].lower() if tag else "netral"
+            counts[name] += 1
+            if emoji:
+                emoji_by_name[name] = emoji
+
+        most_common_name, _ = counts.most_common(1)[0]
+        name_map = {
+            "happy": "Lega & Senang",
+            "joy": "Lega & Senang",
+            "calm": "Tenang & Damai",
+            "fear": "Cemas & Takut",
+            "fearful": "Cemas & Takut",
+            "anxiety": "Cemas & Gelisah",
+            "sadness": "Sedih & Hampa",
+            "sad": "Sedih & Hampa",
+            "depression": "Sedih & Tertekan",
+            "stress": "Stres & Lelah",
+            "anger": "Marah & Kesal",
+            "angry": "Marah & Kesal",
+            "neutral": "Netral & Rileks",
+            "netral": "Netral & Rileks",
+        }
+        dominant_label = name_map.get(most_common_name, most_common_name.capitalize())
+        dominant_emoji = emoji_by_name.get(most_common_name, "😌")
+
+    # Safety/Crisis Override: Jangan pernah kategorikan krisis atau niat menyakiti diri sebagai Netral & Rileks
+    CRISIS_KEYWORDS = (
+        "bunuh diri", "capek hidup", "mati saja", "ingin mati", "putus asa",
+        "menyakiti diri", "gantung diri", "akhiri hidup", "tak sanggup lagi",
+        "tidak sanggup hidup"
+    )
+    all_user_text = " ".join([m.content.lower() for m in msgs if m.role == "user" and m.content])
+    if any(kw in all_user_text for kw in CRISIS_KEYWORDS):
+        dominant_label = "Krisis / Sangat Tertekan"
+        dominant_emoji = "🆘"
+
+    end_time = c.last_message_at or (msgs[-1].created_at if msgs else c.started_at)
+    duration_str = _format_duration_str(c.started_at, end_time)
+
+    # Return summary from DB if exists; otherwise None to trigger client-side skeleton & stream
+    summary_text = None
+    if hasattr(c, "summaries") and c.summaries:
+        summary_text = c.summaries[-1].summary
+
     return {
         "id": str(c.id),
         "title": c.title or "Sesi Percakapan",
         "is_title_generating": "$skeleton" in (c.title or ""),
         "lastMessage": last_msg,
         "lastMessageTime": _format_time_local(c.started_at),
+        "duration": duration_str,
+        "dominant_emotion": dominant_label,
+        "dominant_emoji": dominant_emoji,
+        "summary": summary_text,
         "messages": formatted_msgs,
     }
 
 
 @router.get("")
 async def get_conversations(
+    page: int = Query(1, ge=1, description="Page number for pagination"),
+    limit: int = Query(10, ge=1, le=100, description="Items per page"),
     user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(get_db_session),
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
+    count_query = (
+        select(func.count())
+        .select_from(Conversation)
+        .where(Conversation.user_id == user.id)
+    )
+    total_res = await db.execute(count_query)
+    total_items = total_res.scalar() or 0
+
+    offset = (page - 1) * limit
     query = (
         select(Conversation)
-        .options(selectinload(Conversation.messages))
+        .options(
+            selectinload(Conversation.messages),
+            selectinload(Conversation.summaries),
+        )
         .where(Conversation.user_id == user.id)
         .order_by(Conversation.started_at.desc())
+        .offset(offset)
+        .limit(limit)
     )
     res = await db.execute(query)
     convs = res.scalars().all()
@@ -197,7 +285,24 @@ async def get_conversations(
         for emo in emo_res.scalars().all():
             emotion_map[emo.message_id] = emo
 
-    return [_format_conversation(c, emotion_map) for c in convs]
+    formatted_items = [_format_conversation(c, emotion_map) for c in convs]
+    total_pages = max(1, math.ceil(total_items / limit)) if total_items > 0 else 1
+    has_more = (offset + len(convs)) < total_items
+
+    return {
+        "items": formatted_items,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "has_more": has_more,
+        },
+        "total": total_items,
+        "page": page,
+        "limit": limit,
+        "has_more": has_more,
+    }
 
 
 @router.get("/today")
@@ -386,7 +491,10 @@ async def get_conversation_by_id(conversation_id: str, db: AsyncSession = Depend
 
     query = (
         select(Conversation)
-        .options(selectinload(Conversation.messages))
+        .options(
+            selectinload(Conversation.messages),
+            selectinload(Conversation.summaries),
+        )
         .where(Conversation.id == c_uuid)
     )
     res = await db.execute(query)
@@ -453,3 +561,151 @@ async def send_message(
         "time": "Sekarang",
         "isAudio": False,
     }
+
+
+@router.get("/{conversation_id}/summary/stream")
+async def stream_conversation_summary(
+    conversation_id: uuid.UUID,
+    user: User = Depends(_get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Stream 2-3 sentence empathetic counseling summary token-by-token using SSE and persist upon completion."""
+    query = (
+        select(Conversation)
+        .options(
+            selectinload(Conversation.messages),
+            selectinload(Conversation.summaries),
+        )
+        .where(Conversation.id == conversation_id, Conversation.user_id == user.id)
+    )
+    res = await db.execute(query)
+    conv = res.scalar_one_or_none()
+    if not conv:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Percakapan tidak ditemukan",
+        )
+
+    # 1. If already persisted in DB, yield cached summary immediately
+    if conv.summaries and conv.summaries[-1].summary:
+        existing_summary = conv.summaries[-1].summary
+
+        async def cached_stream():
+            yield f"data: {json.dumps({'token': existing_summary})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'summary': existing_summary})}\n\n"
+
+        return StreamingResponse(
+            cached_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    # 2. Extract user and assistant messages for transcript
+    msgs = sorted(conv.messages, key=lambda m: m.created_at) if conv.messages else []
+    user_assistant_msgs = [
+        m for m in msgs if m.role in ("user", "assistant") and m.content and m.content.strip()
+    ]
+
+    CRISIS_KEYWORDS = (
+        "bunuh diri", "capek hidup", "mati saja", "ingin mati", "putus asa",
+        "menyakiti diri", "gantung diri", "akhiri hidup", "tak sanggup lagi",
+        "tidak sanggup hidup"
+    )
+    transcript_text = "\n".join([f"{m.role.upper()}: {m.content}" for m in user_assistant_msgs])
+    full_lower = transcript_text.lower()
+    has_crisis = any(kw in full_lower for kw in CRISIS_KEYWORDS)
+
+    if not user_assistant_msgs:
+        fallback_summary = "Sesi percakapan curhat bersama LUNA berjalan dengan tenang dan aman."
+
+        async def empty_stream():
+            yield f"data: {json.dumps({'token': fallback_summary})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'summary': fallback_summary})}\n\n"
+
+        return StreamingResponse(
+            empty_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    system_prompt = LLMMessage(
+        role="system",
+        content=(
+            "Anda adalah konselor psikologis profesional LUNA AI. "
+            "Tugas Anda adalah membuat ringkasan percakapan konseling yang sangat ringkas, padat, dan menenangkan (tepat 2-3 kalimat Bahasa Indonesia).\n"
+            "Pedoman wajib:\n"
+            "1. Fokus pada esensi perasaan yang dicurahkan pengguna dan pendampingan reflektif dari LUNA.\n"
+            "2. Gunakan nada bicara hangat, empatik, tenang, dan suportif.\n"
+            "3. DILARANG KERAS mengutip mentah kata-kata pengguna dalam tanda kutip.\n"
+            "4. Jika terdeteksi kondisi krisis berat, berikan narasi suportif yang menekankan ruang aman dan pentingnya pertolongan profesional.\n"
+            "5. Hasilkan HANYA teks ringkasan langsung tanpa judul, tanpa pembuka/penutup, dan tanpa format markdown."
+        ),
+    )
+    user_prompt = LLMMessage(
+        role="user",
+        content=f"Berikut transkrip percakapan suara:\n\n{transcript_text}\n\nBuat ringkasan konseling 2-3 kalimat:",
+    )
+
+    async def generate_stream():
+        full_tokens: list[str] = []
+        try:
+            llm_provider = LLMFactory.get_provider()
+            async for token in llm_provider.stream_response([system_prompt, user_prompt]):
+                full_tokens.append(token)
+                yield f"data: {json.dumps({'token': token})}\n\n"
+        except Exception as e:
+            logger.error(f"⚠️ [SUMMARY STREAM LLM EXCEPTION]: {e}")
+            fallback_text = (
+                "Pengguna meluangkan waktu untuk mengekspresikan beban emosional yang berat dalam sesi ini. "
+                "LUNA hadir mendampingi secara suportif, memberikan ruang aman untuk bercerita, "
+                "dan menegaskan bahwa setiap perasaan berharga serta bantuan selalu tersedia."
+                if has_crisis
+                else "Pengguna berbagi refleksi harian dan tantangan perasaan secara terbuka. "
+                "LUNA memberikan tanggapan yang menenangkan serta ruang aman untuk meredakan ketegangan."
+            )
+            if not full_tokens:
+                yield f"data: {json.dumps({'token': fallback_text})}\n\n"
+                full_tokens.append(fallback_text)
+
+        full_summary = "".join(full_tokens).strip()
+        # Clean any stray wrapping quotes
+        if full_summary.startswith('"') and full_summary.endswith('"') and len(full_summary) > 2:
+            full_summary = full_summary[1:-1].strip()
+
+        # Persist summary to database so subsequent calls are instantaneous
+        if full_summary:
+            try:
+                async with AsyncSessionLocal() as db_stream:
+                    new_summary = ConversationSummary(
+                        conversation_id=conversation_id,
+                        summary=full_summary,
+                    )
+                    db_stream.add(new_summary)
+                    await db_stream.commit()
+                    logger.info(f"✅ [SUMMARY STREAM PERSISTED]: Conversation {conversation_id}")
+            except Exception as db_err:
+                logger.error(f"⚠️ [FAILED TO PERSIST STREAM SUMMARY]: {db_err}")
+
+        dominant_emotion = "Krisis / Sangat Tertekan" if has_crisis else None
+        dominant_emoji = "🆘" if has_crisis else None
+
+        yield f"data: {json.dumps({'done': True, 'summary': full_summary, 'dominant_emotion': dominant_emotion, 'dominant_emoji': dominant_emoji})}\n\n"
+
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
