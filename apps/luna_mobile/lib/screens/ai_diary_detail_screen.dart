@@ -1,84 +1,91 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import '../theme/app_colors.dart';
-
 import '../widgets/custom_button.dart';
-
 import '../widgets/glass_card.dart';
 
-
+Color _parseColor(dynamic colorVal, Color fallback) {
+  if (colorVal is Color) return colorVal;
+  if (colorVal is String && colorVal.startsWith('#')) {
+    final hex = colorVal.replaceAll('#', '');
+    if (hex.length == 6) {
+      try {
+        return Color(int.parse('FF$hex', radix: 16));
+      } catch (_) {}
+    }
+  }
+  return fallback;
+}
 
 class AiDiaryDetailScreen extends StatefulWidget {
-
   final Map<String, dynamic>? journalData;
-
-
 
   const AiDiaryDetailScreen({super.key, this.journalData});
 
-
-
   @override
-
   State<AiDiaryDetailScreen> createState() => _AiDiaryDetailScreenState();
-
 }
 
-
-
 class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
-
   late String _selectedSessionId;
-
   bool _isInitialized = false;
-
-
+  Map<String, dynamic>? _diaryData;
+  bool _isTranscriptExpanded = false;
 
   @override
-
   void didChangeDependencies() {
-
     super.didChangeDependencies();
-
     if (!_isInitialized) {
-
       final args = widget.journalData ??
-
           (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?);
-
-      if (args != null && args['selectedSessionId'] != null) {
-
-        _selectedSessionId = args['selectedSessionId'].toString();
-
+      if (args != null) {
+        _diaryData = Map<String, dynamic>.from(args);
+        if (args['selectedSessionId'] != null) {
+          _selectedSessionId = args['selectedSessionId'].toString();
+        } else {
+          _selectedSessionId = 'all';
+        }
+        final dId = _diaryData!['id'];
+        if (dId != null) {
+          _fetchDiaryDetail(dId.toString());
+        }
       } else {
-
         _selectedSessionId = 'all';
-
       }
-
       _isInitialized = true;
-
     }
-
   }
 
-
+  Future<void> _fetchDiaryDetail(String diaryId) async {
+    if (AppConfig.useMockData) return;
+    try {
+      final headers = await AppConfig.getAuthHeaders();
+      final response = await http
+          .get(Uri.parse('${AppConfig.baseUrl}/diaries/$diaryId'), headers: headers)
+          .timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            _diaryData = data;
+          });
+        }
+      }
+    } catch (_) {
+      // Keep existing data
+    }
+  }
 
   @override
-
   Widget build(BuildContext context) {
-
     // Default fallback data if passed data is null
-
     final args = widget.journalData ??
-
         (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?);
 
-
-
-    final data = args ?? {
+    final data = _diaryData ?? args ?? {
 
       'title': 'Refleksi Harian & Evaluasi Ujian',
 
@@ -305,59 +312,56 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
 
     final List<Map<String, dynamic>> sessions = (data['sessions'] is List && (data['sessions'] as List).isNotEmpty)
         ? (data['sessions'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList()
-        : [
-            {
-              'id': 's1',
-              'title': 'Sesi #1: Refleksi Harian',
-              'time': data['lastSessionTime']?.toString() ?? 'Hari ini',
-              'moodTag': data['moodTag']?.toString() ?? 'Netral',
-              'moodEmoji': data['moodEmoji']?.toString() ?? '😌',
-              'emotionsBreakdown': [
-                {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.60, 'color': const Color(0xFFA7E6FF)},
-                {'name': 'happy', 'label': 'Tenang', 'emoji': '😌', 'percent': 0.40, 'color': const Color(0xFFFFE6A7)},
-              ],
-              'transcripts': [
-                {
-                  'isUser': true,
-                  'time': 'Hari ini',
-                  'text': data['summary']?.toString() ?? 'Sesi refleksi emosional bersama LUNA.',
-                  'emotionTag': 'Refleksi',
-                  'emotionEmoji': '😌',
-                },
-                {
-                  'isUser': false,
-                  'time': 'Hari ini',
-                  'text': data['aiInsight']?.toString() ?? 'LUNA siap mendampingi setiap langkah pemulihanmu.',
-                }
-              ]
-            }
-          ];
+        : [];
+
+    // Ensure _selectedSessionId is valid
+    if (_selectedSessionId != 'all' && sessions.isNotEmpty) {
+      final exists = sessions.any((s) => s['id'].toString() == _selectedSessionId);
+      if (!exists) {
+        _selectedSessionId = 'all';
+      }
+    }
 
     // Compute active 7-emotion breakdown list based on selected session
     List<Map<String, dynamic>> activeEmotions = [];
     if (_selectedSessionId == 'all') {
-      activeEmotions = [
-        {'name': 'fear', 'label': 'Takut / Gelisah', 'emoji': '😨', 'percent': 0.45, 'color': const Color(0xFF6C63FF)},
-        {'name': 'sadness', 'label': 'Sedih / Haru', 'emoji': '😔', 'percent': 0.25, 'color': const Color(0xFF8B93FF)},
-        {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.15, 'color': const Color(0xFFA7E6FF)},
-        {'name': 'happy', 'label': 'Bahagia', 'emoji': '😃', 'percent': 0.10, 'color': const Color(0xFFFFE6A7)},
-        {'name': 'surprise', 'label': 'Terkejut', 'emoji': '😲', 'percent': 0.03, 'color': const Color(0xFFC3B8FF)},
-        {'name': 'anger', 'label': 'Marah', 'emoji': '😡', 'percent': 0.01, 'color': const Color(0xFFFFB6C1)},
-        {'name': 'disgusted', 'label': 'Jijik / Muak', 'emoji': '🤢', 'percent': 0.01, 'color': const Color(0xFFB8C2FC)},
-      ];
+      if (data['emotionsBreakdown'] is List && (data['emotionsBreakdown'] as List).isNotEmpty) {
+        activeEmotions = (data['emotionsBreakdown'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      } else {
+        activeEmotions = [
+          {'name': 'fear', 'label': 'Takut / Gelisah', 'emoji': '😨', 'percent': 0.45, 'color': const Color(0xFF6C63FF)},
+          {'name': 'sadness', 'label': 'Sedih / Haru', 'emoji': '😔', 'percent': 0.25, 'color': const Color(0xFF8B93FF)},
+          {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.15, 'color': const Color(0xFFA7E6FF)},
+          {'name': 'happy', 'label': 'Bahagia', 'emoji': '😃', 'percent': 0.10, 'color': const Color(0xFFFFE6A7)},
+          {'name': 'surprise', 'label': 'Terkejut', 'emoji': '😲', 'percent': 0.03, 'color': const Color(0xFFC3B8FF)},
+          {'name': 'anger', 'label': 'Marah', 'emoji': '😡', 'percent': 0.01, 'color': const Color(0xFFFFB6C1)},
+          {'name': 'disgusted', 'label': 'Jijik / Muak', 'emoji': '🤢', 'percent': 0.01, 'color': const Color(0xFFB8C2FC)},
+        ];
+      }
     } else {
-      final selectedSessData = sessions.firstWhere(
-        (s) => s['id'] == _selectedSessionId,
-        orElse: () => sessions.first,
-      );
-      if (selectedSessData['emotionsBreakdown'] is List && (selectedSessData['emotionsBreakdown'] as List).isNotEmpty) {
+      Map<String, dynamic>? selectedSessData;
+      for (var s in sessions) {
+        if (s['id'].toString() == _selectedSessionId) {
+          selectedSessData = s;
+          break;
+        }
+      }
+      if (selectedSessData == null && sessions.isNotEmpty) {
+        selectedSessData = sessions.first;
+      }
+
+      if (selectedSessData != null &&
+          selectedSessData['emotionsBreakdown'] is List &&
+          (selectedSessData['emotionsBreakdown'] as List).isNotEmpty) {
         activeEmotions = (selectedSessData['emotionsBreakdown'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
       } else {
         activeEmotions = [
-          {'name': 'netral', 'label': 'Netral', 'emoji': '😐', 'percent': 0.60, 'color': const Color(0xFFA7E6FF)},
-          {'name': 'happy', 'label': 'Lega & Tenang', 'emoji': '😌', 'percent': 0.40, 'color': const Color(0xFFFFE6A7)},
+          {'name': 'netral', 'label': 'Ketenangan & Refleksi', 'emoji': '😌', 'percent': 0.60, 'color': const Color(0xFFA7E6FF)},
+          {'name': 'happy', 'label': 'Lega & Nyaman', 'emoji': '😃', 'percent': 0.40, 'color': const Color(0xFFFFE6A7)},
         ];
       }
     }
@@ -379,24 +383,36 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
         }
       }
     } else {
-      final selectedSessData = sessions.firstWhere(
-        (s) => s['id'] == _selectedSessionId,
-        orElse: () => sessions.first,
-      );
-      final rawTrans = selectedSessData['transcripts'];
-      if (rawTrans is List) {
-        for (var t in rawTrans) {
-          if (t is Map) {
-            activeTranscripts.add({
-              ...Map<String, dynamic>.from(t),
-              'sessionTitle': selectedSessData['title'] ?? 'Sesi',
-            });
+      Map<String, dynamic>? selectedSessData;
+      for (var s in sessions) {
+        if (s['id'].toString() == _selectedSessionId) {
+          selectedSessData = s;
+          break;
+        }
+      }
+      if (selectedSessData == null && sessions.isNotEmpty) {
+        selectedSessData = sessions.first;
+      }
+      if (selectedSessData != null) {
+        final rawTrans = selectedSessData['transcripts'];
+        if (rawTrans is List) {
+          for (var t in rawTrans) {
+            if (t is Map) {
+              activeTranscripts.add({
+                ...Map<String, dynamic>.from(t),
+                'sessionTitle': selectedSessData['title'] ?? 'Sesi',
+              });
+            }
           }
         }
       }
     }
 
-
+    const int initialTranscriptLimit = 6;
+    final bool canExpand = activeTranscripts.length > initialTranscriptLimit;
+    final int displayCount = (_isTranscriptExpanded || !canExpand)
+        ? activeTranscripts.length
+        : initialTranscriptLimit;
 
     return Scaffold(
 
@@ -1058,228 +1074,135 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                 color: AppColors.textPrimary,
 
                                 height: 1.5,
-
                               ),
-
                             ),
-
                           ],
-
                         ),
-
                       ),
-
                       const SizedBox(height: 24),
 
-
-
                       // SESSION SELECTOR CHIPS SECTION
-
-                      Text(
-
-                        'PILIH SESI UNTUK PENGURAIAN SPESIFIK',
-
-                        style: GoogleFonts.inter(
-
-                          fontSize: 11,
-
-                          fontWeight: FontWeight.w700,
-
-                          color: AppColors.textLight,
-
-                          letterSpacing: 0.8,
-
+                      if (sessions.isNotEmpty) ...[
+                        Text(
+                          'PILIH SESI UNTUK PENGURAIAN SPESIFIK',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textLight,
+                            letterSpacing: 0.8,
+                          ),
                         ),
-
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      SizedBox(
-
-                        height: 38,
-
-                        child: ListView(
-
-                          scrollDirection: Axis.horizontal,
-
-                          children: [
-
-                            ChoiceChip(
-
-                              showCheckmark: false,
-
-                              label: Text('Semua Sesi (${sessions.length})'),
-
-                              selected: _selectedSessionId == 'all',
-
-                              selectedColor: AppColors.primaryContainer,
-
-                              backgroundColor: Colors.white.withValues(alpha: 0.9),
-
-                              labelStyle: GoogleFonts.inter(
-
-                                fontSize: 12,
-
-                                fontWeight: _selectedSessionId == 'all' ? FontWeight.w700 : FontWeight.w500,
-
-                                color: _selectedSessionId == 'all' ? AppColors.primary : AppColors.textSecondary,
-
-                              ),
-
-                              shape: RoundedRectangleBorder(
-
-                                borderRadius: BorderRadius.circular(999),
-
-                                side: BorderSide(
-
-                                  color: _selectedSessionId == 'all' ? AppColors.primary : Colors.transparent,
-
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 38,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              ChoiceChip(
+                                showCheckmark: false,
+                                label: Text('Semua Sesi (${sessions.length})'),
+                                selected: _selectedSessionId == 'all',
+                                selectedColor: AppColors.primaryContainer,
+                                backgroundColor: Colors.white.withValues(alpha: 0.9),
+                                labelStyle: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: _selectedSessionId == 'all' ? FontWeight.w700 : FontWeight.w500,
+                                  color: _selectedSessionId == 'all' ? AppColors.primary : AppColors.textSecondary,
                                 ),
-
-                              ),
-
-                              onSelected: (_) => setState(() => _selectedSessionId = 'all'),
-
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            ...sessions.map((sess) {
-
-                              final isSel = sess['id'] == _selectedSessionId;
-
-                              return Padding(
-
-                                padding: const EdgeInsets.only(right: 8.0),
-
-                                child: ChoiceChip(
-
-                                  showCheckmark: false,
-
-                                  label: Text('${sess['moodEmoji'] ?? '✨'} ${sess['time'] ?? 'Sesi'}'),
-
-                                  selected: isSel,
-
-                                  selectedColor: AppColors.primaryContainer,
-
-                                  backgroundColor: Colors.white.withValues(alpha: 0.9),
-
-                                  labelStyle: GoogleFonts.inter(
-
-                                    fontSize: 12,
-
-                                    fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-
-                                    color: isSel ? AppColors.primary : AppColors.textSecondary,
-
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(999),
+                                  side: BorderSide(
+                                    color: _selectedSessionId == 'all' ? AppColors.primary : Colors.transparent,
                                   ),
-
-                                  shape: RoundedRectangleBorder(
-
-                                    borderRadius: BorderRadius.circular(999),
-
-                                    side: BorderSide(
-
-                                      color: isSel ? AppColors.primary : Colors.transparent,
-
+                                ),
+                                onSelected: (_) => setState(() {
+                                  _selectedSessionId = 'all';
+                                  _isTranscriptExpanded = false;
+                                }),
+                              ),
+                              const SizedBox(width: 8),
+                              ...sessions.asMap().entries.map((entry) {
+                                final idx = entry.key;
+                                final sess = entry.value;
+                                final isSel = sess['id'].toString() == _selectedSessionId;
+                                final rawTime = sess['time']?.toString().trim();
+                                final timeStr = (rawTime != null && rawTime != '-' && rawTime.isNotEmpty)
+                                    ? rawTime
+                                    : 'Sesi #${idx + 1}';
+                                final emoji = (sess['moodEmoji'] != null && sess['moodEmoji'].toString().isNotEmpty)
+                                    ? sess['moodEmoji'].toString()
+                                    : '🎙️';
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: ChoiceChip(
+                                    showCheckmark: false,
+                                    label: Text('$emoji $timeStr'),
+                                    selected: isSel,
+                                    selectedColor: AppColors.primaryContainer,
+                                    backgroundColor: Colors.white.withValues(alpha: 0.9),
+                                    labelStyle: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                                      color: isSel ? AppColors.primary : AppColors.textSecondary,
                                     ),
-
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(999),
+                                      side: BorderSide(
+                                        color: isSel ? AppColors.primary : Colors.transparent,
+                                      ),
+                                    ),
+                                    onSelected: (_) => setState(() {
+                                      _selectedSessionId = sess['id'].toString();
+                                      _isTranscriptExpanded = false;
+                                    }),
                                   ),
-
-                                  onSelected: (_) => setState(() => _selectedSessionId = sess['id']),
-
-                                ),
-
-                              );
-
-                            }),
-
-                          ],
-
+                                );
+                              }),
+                            ],
+                          ),
                         ),
-
-                      ),
-
-                      const SizedBox(height: 20),
-
-
+                        const SizedBox(height: 20),
+                      ],
 
                       // 4. ANALISIS EMOSI PER SESI (7 Parameter Emosi Filtered)
-
                       Row(
-
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                         children: [
-
                           Text(
-
                             'ANALISIS 7 PARAMETER EMOSI',
-
                             style: GoogleFonts.inter(
-
                               fontSize: 11,
-
                               fontWeight: FontWeight.w700,
-
                               color: AppColors.textLight,
-
                               letterSpacing: 0.8,
-
                             ),
-
                           ),
-
                           Container(
-
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-
                             decoration: BoxDecoration(
-
                               color: const Color(0xFFEADBFF),
-
                               borderRadius: BorderRadius.circular(999),
-
                             ),
-
                             child: Text(
-
                               _selectedSessionId == 'all' ? 'KUMULATIF' : 'SESI SPESIFIK',
-
                               style: GoogleFonts.inter(
-
                                 fontSize: 9,
-
                                 fontWeight: FontWeight.w800,
-
                                 color: AppColors.primary,
-
                               ),
-
                             ),
-
                           ),
-
                         ],
-
                       ),
-
                       const SizedBox(height: 10),
-
                       GlassCard(
-
                         width: double.infinity,
-
                         padding: const EdgeInsets.all(20),
-
                         child: Column(
-
                           children: activeEmotions.map((emo) {
-
                             final double pct = ((emo['percent'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
                             final int pctInt = (pct * 100).round();
-                            final Color emoColor = emo['color'] is Color ? (emo['color'] as Color) : AppColors.primary;
+                            final Color emoColor = _parseColor(emo['color'], AppColors.primary);
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12.0),
                               child: Column(
@@ -1341,199 +1264,221 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                       // 5. TRANSKRIP PERCAKAPAN SUARA (Voice-to-Text Filtered with overflow protection)
 
                       Row(
-
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                         children: [
-
                           Text(
-
                             'TRANSKRIP PERCAKAPAN SUARA',
-
                             style: GoogleFonts.inter(
-
                               fontSize: 11,
-
                               fontWeight: FontWeight.w700,
-
                               color: AppColors.textLight,
-
                               letterSpacing: 0.8,
-
                             ),
-
                           ),
-
                           Text(
-
-                            '${activeTranscripts.length} Percakapan',
-
+                            canExpand && !_isTranscriptExpanded
+                                ? 'Menampilkan $displayCount dari ${activeTranscripts.length}'
+                                : '${activeTranscripts.length} Percakapan',
                             style: GoogleFonts.inter(
-
                               fontSize: 11,
-
                               color: AppColors.textSecondary,
-
                             ),
-
                           ),
-
                         ],
-
                       ),
-
                       const SizedBox(height: 10),
 
-                      ListView.builder(
-
-                        shrinkWrap: true,
-
-                        physics: const NeverScrollableScrollPhysics(),
-
-                        itemCount: activeTranscripts.length,
-
-                        itemBuilder: (context, index) {
-
-                          final item = activeTranscripts[index];
-
-                          final bool isUser = item['isUser'] as bool;
-
-                          return Container(
-
-                            margin: const EdgeInsets.only(bottom: 12),
-
-                            padding: const EdgeInsets.all(16),
-
-                            decoration: BoxDecoration(
-
-                              color: isUser
-
-                                  ? const Color(0xFFF0F2FF)
-
-                                  : Colors.white.withValues(alpha: 0.9),
-
-                              borderRadius: BorderRadius.circular(16),
-
-                              border: Border.all(
-
-                                color: isUser
-
-                                    ? AppColors.primary.withValues(alpha: 0.2)
-
-                                    : Colors.grey.shade200,
-
+                      if (activeTranscripts.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.forum_outlined, size: 36, color: Color(0xFFB0B7C3)),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tidak ada transkrip rekaman suara tersimpan untuk sesi ini',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
-
-                            ),
-
-                            child: Column(
-
-                              crossAxisAlignment: CrossAxisAlignment.start,
-
-                              children: [
-
-                                Row(
-
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                                  children: [
-
-                                    Text(
-
-                                      isUser ? 'Pengguna' : 'LUNA AI',
-
-                                      style: GoogleFonts.inter(
-
-                                        fontSize: 12,
-
-                                        fontWeight: FontWeight.w700,
-
-                                        color: isUser ? AppColors.primary : const Color(0xFF20667B),
-
-                                      ),
-
-                                    ),
-
-                                    const SizedBox(width: 8),
-
-                                    Expanded(
-
-                                      child: Row(
-
-                                        mainAxisAlignment: MainAxisAlignment.end,
-
+                            ],
+                          ),
+                        )
+                      else ...[
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: displayCount,
+                          itemBuilder: (context, index) {
+                            final item = activeTranscripts[index];
+                            final bool isUser = item['isUser'] as bool;
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: isUser
+                                    ? const Color(0xFFF0F2FF)
+                                    : Colors.white.withValues(alpha: 0.9),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isUser
+                                      ? AppColors.primary.withValues(alpha: 0.2)
+                                      : Colors.grey.shade200,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-
-                                          if (isUser && item['emotionTag'] != null) ...[
-
-                                            Text(item['emotionEmoji'] ?? '', style: const TextStyle(fontSize: 12)),
-
-                                            const SizedBox(width: 4),
-
-                                            Flexible(
-
-                                              child: Container(
-
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-
-                                                decoration: BoxDecoration(
-
-                                                  color: const Color(0xFFEADBFF),
-
-                                                  borderRadius: BorderRadius.circular(999),
-
-                                                ),
-
-                                                child: Text(
-                                                  item['emotionTag']?.toString() ?? '',
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: AppColors.primary,
+                                          Text(
+                                            isUser ? 'Pengguna' : 'LUNA AI',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: isUser ? AppColors.primary : const Color(0xFF20667B),
+                                            ),
+                                          ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (isUser && item['emotionTag'] != null) ...[
+                                                Text(item['emotionEmoji'] ?? '', style: const TextStyle(fontSize: 12)),
+                                                const SizedBox(width: 4),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFEADBFF),
+                                                    borderRadius: BorderRadius.circular(999),
+                                                  ),
+                                                  child: Text(
+                                                    item['emotionTag']?.toString() ?? '',
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: AppColors.primary,
+                                                    ),
                                                   ),
                                                 ),
+                                                const SizedBox(width: 6),
+                                              ],
+                                              Text(
+                                                item['time']?.toString() ?? '',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 11,
+                                                  color: AppColors.textLight,
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                          ],
-                                          Text(
-                                            item['time']?.toString() ?? '',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 11,
-                                              color: AppColors.textLight,
-                                            ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  item['text']?.toString() ?? '',
-                                  style: GoogleFonts.inter(
-
-                                    fontSize: 13,
-
-                                    color: AppColors.textPrimary,
-
-                                    height: 1.4,
-
+                                      if (_selectedSessionId == 'all' && sessions.length > 1 && item['sessionTitle'] != null) ...[
+                                        const SizedBox(height: 5),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: Colors.grey.shade300, width: 0.8),
+                                          ),
+                                          child: Text(
+                                            '🎙️ ${item['sessionTitle']}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
-
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    item['text']?.toString() ?? '',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      color: AppColors.textPrimary,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        if (canExpand) ...[
+                          const SizedBox(height: 4),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isTranscriptExpanded = !_isTranscriptExpanded;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.95),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(alpha: 0.25),
+                                  width: 1.2,
                                 ),
-
-                              ],
-
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(alpha: 0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _isTranscriptExpanded
+                                        ? Icons.keyboard_arrow_up_rounded
+                                        : Icons.keyboard_arrow_down_rounded,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _isTranscriptExpanded
+                                        ? 'Tampilkan Lebih Sedikit'
+                                        : 'Lihat Selengkapnya (${activeTranscripts.length - initialTranscriptLimit} pesan lainnya)',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-
-                          );
-
-                        },
-
-                      ),
+                          ),
+                        ],
+                      ],
 
                       const SizedBox(height: 24),
 

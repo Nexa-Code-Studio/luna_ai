@@ -186,6 +186,7 @@ class AIOrchestrator:
         emotion: EmotionDetectionResult,
         safety_decision: SafetyPolicyDecision,
         rag_items: list[dict[str, Any]],
+        dass_scores: Optional[dict[str, Any]] = None,
     ) -> str:
         """Menyusun system prompt empati konseling dinamis berdasarkan hasil observasi multi-agent."""
         prompt = (
@@ -193,6 +194,16 @@ class AIOrchestrator:
             f"Kondisi emosi pengguna yang terobservasi: '{emotion.primary_emotion}' (confidence: {int(emotion.confidence * 100)}%).\n"
             f"Tingkat risiko keselamatan: '{safety_decision.risk_level}'. Kebijakan respon: '{safety_decision.response_policy}'.\n"
         )
+
+        if dass_scores:
+            dep = dass_scores.get("depression", 0)
+            anx = dass_scores.get("anxiety", 0)
+            st = dass_scores.get("stress", 0)
+            if dep > 0 or anx > 0 or st > 0:
+                prompt += (
+                    f"Profil Psikometris Terkini Pengguna (DASS-21): Depresi (skor {dep}), Kecemasan (skor {anx}), Stres (skor {st}). "
+                    f"Selaraskan empati dan kehangatanmu sesuai kondisi kerentanan emosional ini.\n"
+                )
 
         if rag_items:
             knowledge_blocks = []
@@ -207,9 +218,10 @@ class AIOrchestrator:
             "1. Berbicaralah dalam Bahasa Indonesia yang santun, akrab, dan hangat (seperti teman bicara yang penuh pengertian).\n"
             "2. Berikan respon yang ringkas dan nyaman didengar (1-3 kalimat) karena ini adalah percakapan suara real-time.\n"
             "3. Validasi perasaan pengguna terlebih dahulu sebelum memberikan pandangan menenangkan atau pertanyaan terbuka ringan.\n"
-            "4. Format Teks untuk Suara (TTS): Tulis dalam teks lisan murni. DILARANG menggunakan tanda bintang markdown (* atau **), simbol garis bawah, tanda pagar (#), bullet points (-), atau emoji. Tulis kata secara lengkap tanpa singkatan (misal: tulis 'dan lain-lain', bukan 'dll.').\n"
-            "5. Gunakan tanda koma (,) dan titik (.) secara teratur dan wajar untuk mengatur jeda napas pelafalan suara.\n"
-            "6. Jangan mendiagnosis penyakit mental secara klinis."
+            "4. Eksplorasi DASS-21 Non-Frontal: Saat pengguna mengungkapkan stres, cemas, atau sedih, ajukan pertanyaan terbuka reflektif yang mengeksplorasi sensasi fisik/otonomik (napas, detak jantung, ketegangan fisik) atau suasana hati (hilang antusias, rasa hampa) secara alami. DILARANG menyebut angka atau nomor butir kuesioner.\n"
+            "5. Format Teks untuk Suara (TTS): Tulis dalam teks lisan murni. DILARANG menggunakan tanda bintang markdown (* atau **), simbol garis bawah, tanda pagar (#), bullet points (-), atau emoji. Tulis kata secara lengkap tanpa singkatan (misal: tulis 'dan lain-lain', bukan 'dll.').\n"
+            "6. Gunakan tanda koma (,) dan titik (.) secara teratur dan wajar untuk mengatur jeda napas pelafalan suara.\n"
+            "7. Jangan mendiagnosis penyakit mental secara klinis."
         )
         return prompt
 
@@ -218,6 +230,7 @@ class AIOrchestrator:
         user_text: str,
         conversation_history: Optional[list[LLMMessage]] = None,
         audio_path: Optional[str] = None,
+        dass_scores: Optional[dict[str, Any]] = None,
     ) -> OrchestratedTurnResult:
         """Memproses seluruh evaluasi orkestrasi (Emosi -> Gejala -> Risiko -> RAG)
 
@@ -232,11 +245,12 @@ class AIOrchestrator:
         # 2. Ekstraksi Gejala
         symptom_res = self.symptom_service.extract_symptoms(user_text)
 
-        # 3. Penilaian Risiko & Gerbang Keamanan
+        # 3. Penilaian Risiko & Gerbang Keamanan (Memperhitungkan Profil DASS-21)
         risk_input = RiskAssessmentInput(
             user_text=user_text,
             symptom_result=symptom_res,
             emotion_result=emotion_res,
+            dass_scores=dass_scores,
         )
         risk_output = self.risk_service.assess(risk_input)
 
@@ -286,7 +300,9 @@ class AIOrchestrator:
             rag_items = await self._fetch_rag_context(user_text)
 
         # 6. Formulasi Dynamic Empathetic Prompt
-        system_prompt = self._compose_system_prompt(emotion_res, safety_decision, rag_items)
+        system_prompt = self._compose_system_prompt(
+            emotion_res, safety_decision, rag_items, dass_scores=dass_scores
+        )
 
         # 7. Siapkan Message History
         messages: list[LLMMessage] = [LLMMessage(role="system", content=system_prompt)]

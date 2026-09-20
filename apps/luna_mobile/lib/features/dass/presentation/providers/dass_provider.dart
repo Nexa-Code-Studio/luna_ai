@@ -106,6 +106,31 @@ class DASSAssessmentNotifier extends StateNotifier<DASSAssessmentState> {
       return false;
     }
   }
+
+  Future<bool> extractTodayAssessment() async {
+    state = state.copyWith(
+      assessment: const AsyncValue.loading(),
+      errorMessage: null,
+      successMessage: null,
+    );
+    try {
+      final result = await _repository.extractTodayAssessment();
+      final initialStaged = {for (var it in result.items) it.itemId: it.score};
+      state = state.copyWith(
+        assessment: AsyncValue.data(result),
+        stagedScores: initialStaged,
+        successMessage: 'Hasil DASS-21 berhasil diekstrak dari percakapan hari ini!',
+      );
+      _ref.invalidate(monitoringDataProvider);
+      return true;
+    } catch (e, st) {
+      state = state.copyWith(
+        assessment: AsyncValue.error(e, st),
+        errorMessage: 'Gagal mengekstrak DASS: $e',
+      );
+      return false;
+    }
+  }
 }
 
 final dassAssessmentNotifierProvider =
