@@ -192,7 +192,7 @@ Aplikasi Flutter `luna_mobile` dapat dijalankan di **Perangkat Fisik (HP Android
 
 #### **2. Menjalankan Aplikasi Flutter (Mode Lokal vs Production):**
 
-Secara default, jika dijalankan dengan `flutter run`, aplikasi akan terhubung ke server production (`172.93.219.133:8888`). Untuk menghubungkannya ke **server backend lokal laptop**:
+Secara default, jika dijalankan dengan `flutter run`, aplikasi akan terhubung ke server production (`https://luna.nexacode.dev`). Untuk menghubungkannya ke **server backend lokal laptop**:
 
 ##### **A. Perangkat Fisik Android (Physical Device via USB) & Desktop / Web:**
 1. Lakukan reverse port ADB agar port di dalam HP meneruskan request ke laptop via kabel USB:
