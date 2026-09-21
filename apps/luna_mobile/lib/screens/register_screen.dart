@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/social_auth_dev_sheet.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -304,7 +305,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Full Name Field
                     CustomPillTextField(
                       controller: _nameController,
-                      hintText: 'Nama Lengkap',
+                      hintText: 'Nama Panggilan',
                       prefixIcon: Icons.person_outline,
                     ),
                     const SizedBox(height: 14),
@@ -348,19 +349,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: Icons.lock_outline,
                       isPassword: true,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
-                    // Terms & Conditions Checkbox
+                    // Terms and Conditions Checkbox
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(
-                          width: 24,
                           height: 24,
+                          width: 24,
                           child: Checkbox(
                             value: _agreeTerms,
                             activeColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),
+                            ),
+                            side: const BorderSide(
+                              color: Color(0xFFC7D2FE),
+                              width: 1.5,
                             ),
                             onChanged: (val) {
                               setState(() {
@@ -371,17 +377,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            'Saya menyetujui Syarat & Ketentuan Layanan',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
+                          child: Text.rich(
+                            TextSpan(
+                              text: 'Saya menyetujui ',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Syarat & Ketentuan',
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const TextSpan(text: ' serta '),
+                                TextSpan(
+                                  text: 'Kebijakan Privasi',
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // Register Button
                     _isLoading
@@ -389,10 +414,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: CircularProgressIndicator(color: AppColors.primary),
                           )
                         : CustomPillButton(
-                            text: 'Daftar Akun',
+                            text: 'Daftar Sekarang',
                             onPressed: _handleRegister,
                           ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
                     // Or Divider
                     const Row(
@@ -419,14 +444,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Expanded(
                           child: SocialPillButton(
                             type: 'google',
-                            onPressed: () {},
+                            onPressed: () {
+                              showSocialAuthDevSheet(context, provider: 'Google');
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: SocialPillButton(
                             type: 'apple',
-                            onPressed: () {},
+                            onPressed: () {
+                              showSocialAuthDevSheet(context, provider: 'Apple');
+                            },
                           ),
                         ),
                       ],
