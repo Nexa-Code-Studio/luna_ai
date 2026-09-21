@@ -231,6 +231,37 @@ class AiAudioPlaybackService {
     }
   }
 
+  /// Toggle or set speakerphone / earpiece routing
+  Future<void> setSpeakerphoneOn(bool enabled) async {
+    try {
+      await AudioPlayer.global.setAudioContext(
+        AudioContext(
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: enabled,
+            stayAwake: true,
+            contentType: AndroidContentType.speech,
+            usageType: AndroidUsageType.voiceCommunication,
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playAndRecord,
+            options: enabled
+                ? const {
+                    AVAudioSessionOptions.defaultToSpeaker,
+                    AVAudioSessionOptions.allowBluetooth,
+                  }
+                : const {
+                    AVAudioSessionOptions.allowBluetooth,
+                  },
+          ),
+        ),
+      );
+      debugPrint('🔊 [SPEAKERPHONE TOGGLED]: enabled = $enabled');
+    } catch (e) {
+      debugPrint('⚠️ [SET SPEAKERPHONE ERROR]: $e');
+    }
+  }
+
   void clearQueue() {
     _queue.clear();
   }

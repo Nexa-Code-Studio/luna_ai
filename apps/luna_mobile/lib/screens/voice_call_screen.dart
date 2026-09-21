@@ -812,7 +812,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
 
               const SizedBox(height: 24),
 
-              // Bottom Control Bar (Mute, End Call)
+              // Bottom Control Bar (Mute, End Call, Speaker)
               Padding(
                 padding: const EdgeInsets.fromLTRB(36.0, 0, 36.0, 32.0),
                 child: Row(
@@ -852,6 +852,26 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
                           Icons.call_end,
                           color: Colors.white,
                           size: 30,
+                        ),
+                      ),
+                    ),
+
+                    // Speakerphone Toggle Button
+                    GestureDetector(
+                      onTap: () => controller.toggleSpeaker(),
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: state.isSpeakerOn
+                              ? const Color(0xFF3F51B5)
+                              : Colors.white.withValues(alpha: 0.15),
+                        ),
+                        child: Icon(
+                          state.isSpeakerOn ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+                          color: Colors.white,
+                          size: 26,
                         ),
                       ),
                     ),
@@ -903,21 +923,30 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
 
     // Hybrid Auto Mode Dynamic Action Button
     if (state.callState == CallState.aiSpeaking) {
-      // Barge-in button (Only when AI is actively speaking)
+      // Barge-in / Jeda AI button (Simple & elegant, matching Selesai Bicara style)
       return ElevatedButton.icon(
         onPressed: () => controller.bargeIn(),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFB8C00),
+          backgroundColor: const Color(0xFFF59E0B),
+          foregroundColor: Colors.white,
+          elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 1,
+            ),
+          ),
         ),
-        icon: const Icon(Icons.bolt, color: Colors.white, size: 20),
+        icon: const Icon(Icons.pause_rounded, color: Colors.white, size: 20),
         label: Text(
-          '🎙 Bicara (Potong AI)',
+          'Jeda AI',
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: Colors.white,
+            letterSpacing: 0.2,
           ),
         ),
       );
