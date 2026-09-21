@@ -447,6 +447,13 @@ class AiCallController extends StateNotifier<AiCallViewState> {
     }
   }
 
+  /// Toggle speakerphone (Loudspeaker vs Earpiece)
+  void toggleSpeaker() {
+    final newSpeaker = !state.isSpeakerOn;
+    state = state.copyWith(isSpeakerOn: newSpeaker);
+    _audioPlaybackService.setSpeakerphoneOn(newSpeaker);
+  }
+
   /// Switch conversation mode (Hybrid Auto vs Push to Talk fallback)
   void setConversationMode(ConversationMode mode) {
     state = state.copyWith(conversationMode: mode);
