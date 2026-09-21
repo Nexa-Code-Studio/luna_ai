@@ -690,9 +690,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
           iconColor: Colors.white,
           title: 'Curhat ke LUNA',
           subtitle: 'Mulai dialog suara atau teks',
-          badgeText: _todayConversationsCount > 0
-              ? '$_todayConversationsCount Sesi'
-              : 'Siap Mendengar',
           onTap: () async {
             await Navigator.pushNamed(context, '/chat');
             refresh();
@@ -705,7 +702,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
           iconColor: const Color(0xFF5358CB),
           title: 'Jurnal Refleksi AI',
           subtitle: 'Lihat rangkuman emosi harimu',
-          badgeText: _hasTodayDiary ? 'Tersintesis 🌿' : 'Otomatis',
           onTap: () async {
             if (widget.onNavigateTab != null) {
               widget.onNavigateTab!(1);
@@ -726,21 +722,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
               : (_hasTodayDass && _dassStatus == 'auto_extracted'
                   ? 'Tersintesis AI • Ketuk untuk meninjau'
                   : 'Evaluasi & koreksi 21 butir emosi'),
-          badgeText: _dassVerifiedByUser
-              ? 'Terverifikasi ✓'
-              : (_hasTodayDass && _dassStatus == 'auto_extracted'
-                  ? 'Perlu Ditinjau ⚡'
-                  : 'Belum Diisi'),
-          badgeColor: _dassVerifiedByUser
-              ? const Color(0xFF059669)
-              : (_hasTodayDass && _dassStatus == 'auto_extracted'
-                  ? const Color(0xFFD97706)
-                  : AppColors.primary),
-          badgeBg: _dassVerifiedByUser
-              ? const Color(0xFFECFDF5)
-              : (_hasTodayDass && _dassStatus == 'auto_extracted'
-                  ? const Color(0xFFFEF3C7)
-                  : AppColors.primaryContainer.withValues(alpha: 0.6)),
+          showNotificationDot: _hasTodayDass && _dassStatus == 'auto_extracted' && !_dassVerifiedByUser,
           onTap: () async {
             await Navigator.pushNamed(context, '/dass_assessment');
             refresh();
@@ -756,9 +738,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
     required Color iconColor,
     required String title,
     required String subtitle,
-    required String badgeText,
-    Color? badgeColor,
-    Color? badgeBg,
+    bool showNotificationDot = false,
     required VoidCallback onTap,
   }) {
     return GlassCard(
@@ -781,15 +761,32 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (showNotificationDot) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF59E0B),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -804,25 +801,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: badgeBg ?? AppColors.primaryContainer.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              badgeText,
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: badgeColor ?? AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           const Icon(
             Icons.chevron_right,
-            size: 18,
+            size: 20,
             color: AppColors.textLight,
           ),
         ],
