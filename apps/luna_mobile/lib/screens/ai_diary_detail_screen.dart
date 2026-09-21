@@ -628,9 +628,7 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                             ),
                           ),
                           Text(
-                            isSingleSession
-                                ? '${data['date'] ?? 'Hari ini'} • ${data['moodTag'] ?? 'Tenang & Nyaman'}'
-                                : '${data['date'] ?? 'Hari ini'} • ${sessions.length} Sesi Suara',
+                            '${data['date'] ?? 'Hari ini'} • ${data['moodTag'] ?? 'Tenang & Nyaman'}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
@@ -641,32 +639,6 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                         ],
                       ),
                     ),
-                    if (!isSingleSession) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEADBFF),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(data['moodEmoji']?.toString() ?? '😌', style: const TextStyle(fontSize: 14)),
-                            const SizedBox(width: 4),
-                            Text(
-                              data['moodTag']?.toString() ?? 'Netral',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
                   ],
                 ),
               ),
@@ -1561,10 +1533,10 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                               color: isUser ? AppColors.primary : const Color(0xFF20667B),
                                             ),
                                           ),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (isUser && item['emotionTag'] != null) ...[
+                                          if (isUser && item['emotionTag'] != null)
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
                                                 Text(item['emotionEmoji'] ?? '', style: const TextStyle(fontSize: 12)),
                                                 const SizedBox(width: 4),
                                                 Container(
@@ -1584,19 +1556,8 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                                     ),
                                                   ),
                                                 ),
-                                                if (!isSingleSession)
-                                                  const SizedBox(width: 6),
                                               ],
-                                              if (!isSingleSession)
-                                                Text(
-                                                  item['time']?.toString() ?? '',
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 11,
-                                                    color: AppColors.textLight,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
+                                            ),
                                         ],
                                       ),
                                       if (_selectedSessionId == 'all' && sessions.length > 1 && item['sessionTitle'] != null) ...[
@@ -1631,6 +1592,19 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                       height: 1.4,
                                     ),
                                   ),
+                                  if (item['time'] != null && item['time'].toString().isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: Text(
+                                        item['time']?.toString() ?? '',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          color: AppColors.textLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             );
