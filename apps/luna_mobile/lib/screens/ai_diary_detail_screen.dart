@@ -641,32 +641,6 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                         ],
                       ),
                     ),
-                    if (!isSingleSession) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEADBFF),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(data['moodEmoji']?.toString() ?? '😌', style: const TextStyle(fontSize: 14)),
-                            const SizedBox(width: 4),
-                            Text(
-                              data['moodTag']?.toString() ?? 'Netral',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
                   ],
                 ),
               ),
@@ -1473,28 +1447,33 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'TRANSKRIP PERCAKAPAN SUARA',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textLight,
-                              letterSpacing: 0.8,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'TRANSKRIP SUARA',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textLight,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    canExpand && !_isTranscriptExpanded
+                                        ? '$displayCount dari ${activeTranscripts.length}'
+                                        : '${activeTranscripts.length} Dialog',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          Text(
-                            canExpand && !_isTranscriptExpanded
-                                ? 'Menampilkan $displayCount dari ${activeTranscripts.length}'
-                                : '${activeTranscripts.length} Percakapan',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 10),
 
                       if (activeTranscripts.isEmpty)
@@ -1561,10 +1540,10 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                               color: isUser ? AppColors.primary : const Color(0xFF20667B),
                                             ),
                                           ),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (isUser && item['emotionTag'] != null) ...[
+                                          if (isUser && item['emotionTag'] != null)
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
                                                 Text(item['emotionEmoji'] ?? '', style: const TextStyle(fontSize: 12)),
                                                 const SizedBox(width: 4),
                                                 Container(
@@ -1584,19 +1563,8 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                                     ),
                                                   ),
                                                 ),
-                                                if (!isSingleSession)
-                                                  const SizedBox(width: 6),
                                               ],
-                                              if (!isSingleSession)
-                                                Text(
-                                                  item['time']?.toString() ?? '',
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 11,
-                                                    color: AppColors.textLight,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
+                                            ),
                                         ],
                                       ),
                                       if (_selectedSessionId == 'all' && sessions.length > 1 && item['sessionTitle'] != null) ...[
@@ -1631,6 +1599,19 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                       height: 1.4,
                                     ),
                                   ),
+                                  if (!isSingleSession && item['time'] != null && item['time'].toString().isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: Text(
+                                        item['time']?.toString() ?? '',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          color: AppColors.textLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             );

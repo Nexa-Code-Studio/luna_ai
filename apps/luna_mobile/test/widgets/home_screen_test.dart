@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:luna_mobile/screens/home_screen.dart';
@@ -17,16 +18,18 @@ void main() {
     int navigatedTab = -1;
 
     await tester.pumpWidget(
-      MaterialApp(
-        routes: {
-          '/chat': (context) => const Scaffold(body: Text('Chat Screen')),
-          '/profile': (context) => const Scaffold(body: Text('Profile Screen')),
-          '/diary': (context) => const Scaffold(body: Text('Diary Screen')),
-          '/monitoring': (context) => const Scaffold(body: Text('Monitoring Screen')),
-          '/recommendation': (context) => const Scaffold(body: Text('Recommendation Screen')),
-        },
-        home: HomeScreen(
-          onNavigateTab: (tab) => navigatedTab = tab,
+      ProviderScope(
+        child: MaterialApp(
+          routes: {
+            '/chat': (context) => const Scaffold(body: Text('Chat Screen')),
+            '/profile': (context) => const Scaffold(body: Text('Profile Screen')),
+            '/diary': (context) => const Scaffold(body: Text('Diary Screen')),
+            '/monitoring': (context) => const Scaffold(body: Text('Monitoring Screen')),
+            '/recommendation': (context) => const Scaffold(body: Text('Recommendation Screen')),
+          },
+          home: HomeScreen(
+            onNavigateTab: (tab) => navigatedTab = tab,
+          ),
         ),
       ),
     );
@@ -48,7 +51,7 @@ void main() {
     expect(find.text('Asesmen DASS-21'), findsOneWidget);
 
     // 4. 3-Pillar Daily Therapeutic Progress
-    expect(find.text('Progres Perawatan Diri'), findsOneWidget);
+    expect(find.text('Perawatan Diri'), findsOneWidget);
     expect(find.text('Sesi Curhat Bersama Luna'), findsOneWidget);
     expect(find.text('Refleksi Jurnal Harian'), findsOneWidget);
     expect(find.text('Latihan Relaksasi & Koping'), findsOneWidget);
@@ -60,7 +63,7 @@ void main() {
     expect(find.text('Mulai Latihan'), findsOneWidget);
     expect(find.text('Tandai'), findsOneWidget);
     expect(find.text('Latihan Pernapasan 4-7-8'), findsOneWidget);
-    expect(find.text('0 / 3 Selesai'), findsOneWidget);
+    expect(find.text('0/3 Selesai'), findsOneWidget);
 
     // 6. Test toggling recommendation completion
     await tester.tap(find.text('Tandai'));
@@ -68,7 +71,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     // Verify progress updated (Pillar 3 now completed)
-    expect(find.text('1 / 3 Selesai'), findsOneWidget);
+    expect(find.text('1/3 Selesai'), findsOneWidget);
     // Verify it automatically advances to the next incomplete recommendation
     expect(find.text('Teknik Grounding 5-4-3-2-1'), findsOneWidget);
 
