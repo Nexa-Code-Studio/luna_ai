@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import '../core/utils/responsive_layout_helper.dart';
 import '../providers/daily_progress_provider.dart';
 import '../services/daily_progress_local_service.dart';
 import '../theme/app_colors.dart';
@@ -638,28 +639,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
                   color: AppColors.primary,
                 ),
               ),
-              const Spacer(),
-              // Mood Badge
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _moodTag,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -850,37 +829,43 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: completed == 3
-                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                        : AppColors.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: completed == 3
+                          ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                          : AppColors.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      completed == 3 ? Icons.stars_rounded : Icons.spa_rounded,
+                      size: 16,
+                      color: completed == 3
+                          ? const Color(0xFF10B981)
+                          : AppColors.primary,
+                    ),
                   ),
-                  child: Icon(
-                    completed == 3 ? Icons.stars_rounded : Icons.spa_rounded,
-                    size: 16,
-                    color: completed == 3
-                        ? const Color(0xFF10B981)
-                        : AppColors.primary,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Perawatan Diri',
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: context.responsiveFont(15),
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Progres Perawatan Diri',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
                 color: completed == 3
                     ? const Color(0xFFD1FAE5)
@@ -905,7 +890,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObser
                     const SizedBox(width: 4),
                   ],
                   Text(
-                    '$completed / 3 Selesai',
+                    '$completed/3 Selesai',
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,

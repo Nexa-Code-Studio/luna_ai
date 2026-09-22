@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/utils/responsive_layout_helper.dart';
 import '../features/dass/presentation/providers/dass_provider.dart';
 import '../features/monitoring/domain/entities/monitoring_data_entity.dart';
 import '../features/monitoring/presentation/providers/monitoring_provider.dart';
@@ -332,28 +333,32 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'STACKED BAR RITEM 7 EMOSI',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textLight,
-                          letterSpacing: 0.8,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Ritem 7 Emosi',
+                          style: GoogleFonts.inter(
+                            fontSize: context.responsiveFont(12),
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                            letterSpacing: 0.4,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Proporsi emosi per interval ${data.periodLabel}',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
+                        const SizedBox(height: 2),
+                        Text(
+                          'Proporsi emosi per interval ${data.periodLabel}',
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -679,7 +684,7 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
             ? (assessment.verifiedByUser
                 ? 'Skor DASS-21 telah diverifikasi ✓'
                 : 'Tersintesis otomatis • Ketuk untuk meninjau')
-            : 'Belum ada evaluasi hari ini • Ketuk untuk evaluasi mandiri atau bercerita dengan Luna';
+            : 'Belum ada evaluasi hari ini';
 
         final int? stressScore = hasValidAssessment ? assessment.stressScore : null;
         final String stressSeverity = hasValidAssessment ? assessment.stressSeverity : 'unassessed';
@@ -718,7 +723,7 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
       error: (_, _) => _buildDASSLauncherCardContainer(
         context: context,
         selectedPeriod: selectedPeriod,
-        subtitleText: 'Belum ada evaluasi hari ini • Ketuk untuk evaluasi mandiri atau bercerita dengan Luna',
+        subtitleText: 'Belum ada evaluasi hari ini',
         hasValidAssessment: false,
         stressScore: null,
         stressSeverity: 'unassessed',
@@ -871,9 +876,9 @@ class MonitoringScreenState extends ConsumerState<MonitoringScreen>
                 label: Text(
                   hasValidAssessment
                       ? (selectedPeriod == 'today'
-                          ? 'Buka & Tinjau Asesmen Hari Ini'
-                          : 'Buka Lembar Evaluasi Riwayat')
-                      : 'Mulai / Buka Lembar Evaluasi DASS-21',
+                          ? 'Tinjau Asesmen Hari Ini'
+                          : 'Buka Riwayat Asesmen')
+                      : 'Mulai Evaluasi DASS-21',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

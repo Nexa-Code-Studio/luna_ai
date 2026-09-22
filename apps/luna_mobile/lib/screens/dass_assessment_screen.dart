@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/utils/responsive_layout_helper.dart';
 import '../features/dass/domain/entities/dass_assessment_entity.dart';
 import '../features/dass/presentation/providers/dass_provider.dart';
 import '../theme/app_colors.dart';
@@ -263,14 +264,12 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
     DASSAssessmentNotifier notifier,
   ) {
     final String titleText = hasChanges
-        ? '$changedCount Butir Diperbarui'
-        : (isUnverified ? 'Sintesis AI Siap Dikonfirmasi' : 'Asesmen Tersimpan');
+        ? '$changedCount Butir Diubah'
+        : (isUnverified ? 'Sintesis AI Siap' : 'Asesmen Tersimpan');
     final String subtitleText = hasChanges
-        ? (isUnverified ? 'Simpan koreksi & verifikasi untuk hari ini' : 'Simpan koreksi skor DASS-21')
-        : (isUnverified ? 'Konfirmasi untuk simpan asesmen hari ini' : 'Skor hari ini telah terverifikasi');
-    final String buttonText = hasChanges
-        ? (isUnverified ? 'Simpan & Verifikasi' : 'Simpan')
-        : 'Konfirmasi & Simpan';
+        ? 'Simpan koreksi asesmen'
+        : (isUnverified ? 'Simpan asesmen hari ini' : 'Skor telah terverifikasi');
+    final String buttonText = 'Simpan';
     final IconData barIcon = hasChanges ? Icons.edit_note_rounded : Icons.check_circle_outline_rounded;
 
     return Positioned(
@@ -287,7 +286,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
             opacity: showSaveBar ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 250),
             child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             decoration: BoxDecoration(
               color: const Color(0xFF1E1B4B),
               borderRadius: BorderRadius.circular(16),
@@ -302,7 +301,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
@@ -310,10 +309,10 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                   child: Icon(
                     barIcon,
                     color: Colors.white,
-                    size: 20,
+                    size: 18,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -321,14 +320,19 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                     children: [
                       Text(
                         titleText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         subtitleText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.75),
@@ -337,6 +341,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: dassState.isSaving
                       ? null
@@ -360,7 +365,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -574,24 +579,25 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
   Widget _buildModeBanner(bool isEditable) {
     if (isEditable) {
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: const Color(0xFFE6F4EA),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFF34A853).withValues(alpha: 0.3)),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.edit_note_rounded, color: Color(0xFF137333), size: 22),
+            const Icon(Icons.edit_note_rounded, color: Color(0xFF137333), size: 20),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Mode Interaktif: Anda dapat meninjau kutipan bukti obrolan Luna hari ini dan mengoreksi skala nilai 0–3 jika diperlukan.',
+                'Tinjau bukti obrolan dan koreksi nilai (0–3) jika diperlukan.',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   color: const Color(0xFF137333),
-                  height: 1.35,
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
                 ),
               ),
             ),
@@ -655,7 +661,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
               Text(
                 'Skor 3 Dimensi DASS-21',
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
+                  fontSize: context.responsiveFont(14),
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF1E1B4B),
                 ),
@@ -674,22 +680,6 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                     Icons.info_outline,
                     size: 15,
                     color: AppColors.primary,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: assessment.verifiedByUser ? const Color(0xFFE6F4EA) : const Color(0xFFFFF0D4),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  assessment.verifiedByUser ? 'Terverifikasi User' : 'Deteksi AI',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: assessment.verifiedByUser ? const Color(0xFF137333) : const Color(0xFFB06000),
                   ),
                 ),
               ),
@@ -907,7 +897,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
         children: filters.map((f) {
           final isSelected = _selectedFilter == f['key'];
           return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: const EdgeInsets.only(right: 6.0),
             child: BouncingButton(
               onTap: () {
                 if (!isSelected) {
@@ -919,7 +909,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
               scaleFactor: 0.92,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primary : Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -939,7 +929,7 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                 child: Text(
                   f['label']!,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? Colors.white : const Color(0xFF4B5563),
                   ),
@@ -970,7 +960,11 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Item Number & Subscale Tag
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -987,56 +981,57 @@ class _DASSAssessmentScreenState extends ConsumerState<DASSAssessmentScreen> {
                   ),
                 ),
               ),
-              const Spacer(),
-              if (item.isUserEdited || (isEditable && item.score != currentScore))
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'Telah Dikoreksi',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF4F46E5),
-                    ),
-                  ),
-                ),
-              if (isEditable && item.score != currentScore && isAnsweredByAI)
-                GestureDetector(
-                  onTap: () => notifier.updateScore(item.itemId, item.score),
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFD1D5DB)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.undo_rounded, size: 10, color: Color(0xFF4B5563)),
-                        const SizedBox(width: 3),
-                        Text(
-                          'Saran AI (${item.score})',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF4B5563),
-                          ),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  if (item.isUserEdited || (isEditable && item.score != currentScore))
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Telah Dikoreksi',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4F46E5),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              if (isAnsweredByAI) ...[
-                if (item.isUserEdited || (isEditable && item.score != currentScore))
-                  const SizedBox(width: 8),
-                _buildAIAnalysisIconButton(item),
-              ],
+                  if (isEditable && item.score != currentScore && isAnsweredByAI)
+                    GestureDetector(
+                      onTap: () => notifier.updateScore(item.itemId, item.score),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFD1D5DB)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.undo_rounded, size: 10, color: Color(0xFF4B5563)),
+                            const SizedBox(width: 3),
+                            Text(
+                              'Saran AI (${item.score})',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF4B5563),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (isAnsweredByAI) _buildAIAnalysisIconButton(item),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 8),
