@@ -46,26 +46,26 @@ Penggunaan:
   $(basename "$0") [OPTIONS]
 
 Deskripsi:
-  Memicu workflow GitHub Actions untuk build Android APK dan iOS (unsigned)
+  Memicu workflow GitHub Actions untuk build Android APK dan iPhone iOS (.ipa)
   pada repositori ${REPO_SLUG}.
 
 Opsi:
-  -t, --target <all|android|ios>   Target platform yang akan di-build (default: all)
-  -c, --config <release|debug>    Konfigurasi build (default: release)
-  -b, --branch <nama_branch>      Branch referensi pemicu (default: current branch '$BRANCH')
-  -m, --mode <auto|api|tag>       Metode pemicu (default: auto)
-                                  - auto: Pilih API jika token ada, atau Git Tag jika tidak ada
-                                  - api : Pakai GitHub REST API / gh CLI (memerlukan GITHUB_TOKEN)
-                                  - tag : Buat dan push tag git 'build-*' (menggunakan kredensial Git/SSH)
-  -d, --dry-run                   Tampilkan aksi yang akan dijalankan tanpa mengeksekusinya
-  -h, --help                      Tampilkan pesan bantuan ini
+  -t, --target <all|android|ios|iphone>  Target platform yang akan di-build (default: all)
+  -c, --config <release|debug>          Konfigurasi build (default: release)
+  -b, --branch <nama_branch>            Branch referensi pemicu (default: current branch '$BRANCH')
+  -m, --mode <auto|api|tag>             Metode pemicu (default: auto)
+                                        - auto: Pilih API jika token ada, atau Git Tag jika tidak ada
+                                        - api : Pakai GitHub REST API / gh CLI (memerlukan GITHUB_TOKEN)
+                                        - tag : Buat dan push tag git 'build-*' (menggunakan kredensial Git/SSH)
+  -d, --dry-run                         Tampilkan aksi yang akan dijalankan tanpa mengeksekusinya
+  -h, --help                            Tampilkan pesan bantuan ini
 
 Contoh:
   # Build Android APK release via pemicu otomatis
   ./scripts/trigger-build.sh --target android
 
-  # Build iOS unsigned
-  ./scripts/trigger-build.sh --target ios
+  # Build iPhone (.ipa installer package)
+  ./scripts/trigger-build.sh --target iphone
 
   # Build keduanya (all) dengan dry-run untuk simulasi
   ./scripts/trigger-build.sh --target all --dry-run
@@ -110,9 +110,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Normalisasi alias iphone -> ios
+if [[ "$TARGET" == "iphone" ]]; then
+  TARGET="ios"
+fi
+
 # Validasi target dan config
 if [[ "$TARGET" != "all" && "$TARGET" != "android" && "$TARGET" != "ios" ]]; then
-  echo -e "${RED}Error: Target tidak valid '$TARGET'. Pilihan: all, android, ios${NC}" >&2
+  echo -e "${RED}Error: Target tidak valid '$TARGET'. Pilihan: all, android, ios (atau iphone)${NC}" >&2
   exit 1
 fi
 

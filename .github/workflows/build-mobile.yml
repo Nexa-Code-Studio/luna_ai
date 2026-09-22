@@ -81,7 +81,7 @@ jobs:
           retention-days: 14
 
   build-ios:
-    name: Build iOS (Unsigned)
+    name: Build iPhone iOS (.ipa Package)
     runs-on: macos-latest
     if: ${{ github.event_name == 'push' || github.event.inputs.target == 'all' || github.event.inputs.target == 'ios' || github.event.inputs.target == null }}
     defaults:
@@ -104,10 +104,10 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Build iOS App (Unsigned)
+      - name: Build iPhone App & Package (.ipa)
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'release' }}"
-          echo "Building iOS Application (${BUILD_TYPE}, no codesign)..."
+          echo "Building iPhone Application (${BUILD_TYPE}, no codesign)..."
           if [ "$BUILD_TYPE" = "debug" ]; then
             flutter build ios --debug --no-codesign
           else
@@ -115,19 +115,23 @@ jobs:
           fi
 
           BUILD_DIR="build/ios/iphoneos"
-          ZIP_NAME="LunaMobile-iOS-${BUILD_TYPE}-unsigned.zip"
+          IPA_NAME="LunaMobile-iPhone-${BUILD_TYPE}-unsigned.ipa"
 
-          echo "Packaging Runner.app into ${ZIP_NAME}..."
+          echo "Packaging Runner.app into standard iPhone installer (.ipa)..."
           cd "$BUILD_DIR"
-          zip -r "${ZIP_NAME}" Runner.app
+          rm -rf Payload "${IPA_NAME}"
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r "${IPA_NAME}" Payload
+          rm -rf Payload
           cd -
 
-          echo "ZIP_PATH=${BUILD_DIR}/${ZIP_NAME}" >> $GITHUB_ENV
+          echo "IPA_PATH=${BUILD_DIR}/${IPA_NAME}" >> $GITHUB_ENV
 
-      - name: Upload iOS Package
+      - name: Upload iPhone IPA
         uses: actions/upload-artifact@v4
         with:
-          name: luna-mobile-ios-${{ github.event.inputs.build_type || 'release' }}-unsigned
-          path: apps/luna_mobile/${{ env.ZIP_PATH }}
+          name: luna-mobile-iphone-${{ github.event.inputs.build_type || 'release' }}-ipa
+          path: apps/luna_mobile/${{ env.IPA_PATH }}
           if-no-files-found: error
           retention-days: 14
