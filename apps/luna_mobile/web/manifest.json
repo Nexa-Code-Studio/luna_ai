@@ -1,11 +1,11 @@
 {
-    "name": "Luna",
-    "short_name": "Luna",
+    "name": "LUNA AI — Sahabat Kesehatan Mental",
+    "short_name": "LUNA AI",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F6F8FF",
+    "theme_color": "#6C63FF",
+    "description": "Pendamping cerdas untuk refleksi emosi harian, evaluasi DASS-21 mandiri, dan konseling suara interaktif bersama Luna.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
