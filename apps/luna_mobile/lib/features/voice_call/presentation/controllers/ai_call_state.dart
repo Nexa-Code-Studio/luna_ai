@@ -13,6 +13,7 @@ class AiCallViewState {
   final double soundLevel;
   final int callDurationSeconds;
   final bool isMuted;
+  final bool isSpeakerOn;
   final bool isUserSpeaking;
   final String? errorMessage;
   final String? crisisHotline;
@@ -32,6 +33,7 @@ class AiCallViewState {
     this.soundLevel = 0.05,
     this.callDurationSeconds = 0,
     this.isMuted = false,
+    this.isSpeakerOn = true,
     this.isUserSpeaking = false,
     this.errorMessage,
     this.crisisHotline,
@@ -52,6 +54,7 @@ class AiCallViewState {
     double? soundLevel,
     int? callDurationSeconds,
     bool? isMuted,
+    bool? isSpeakerOn,
     bool? isUserSpeaking,
     String? errorMessage,
     String? crisisHotline,
@@ -73,6 +76,7 @@ class AiCallViewState {
       soundLevel: soundLevel ?? this.soundLevel,
       callDurationSeconds: callDurationSeconds ?? this.callDurationSeconds,
       isMuted: isMuted ?? this.isMuted,
+      isSpeakerOn: isSpeakerOn ?? this.isSpeakerOn,
       isUserSpeaking: isUserSpeaking ?? this.isUserSpeaking,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       crisisHotline: clearCrisis ? null : (crisisHotline ?? this.crisisHotline),

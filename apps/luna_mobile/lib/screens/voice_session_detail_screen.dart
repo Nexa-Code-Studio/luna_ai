@@ -560,44 +560,51 @@ class _VoiceSessionDetailScreenState extends State<VoiceSessionDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE0F4FB),
-                                  borderRadius: BorderRadius.circular(8),
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0F4FB),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.chat_bubble_outline_rounded,
+                                          color: Color(0xFF20667B),
+                                          size: 18,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          'TRANSKRIP SUARA',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                            color: const Color(0xFF20667B),
+                                            letterSpacing: 0.8,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                child: const Icon(
-                                  Icons.chat_bubble_outline_rounded,
-                                  color: Color(0xFF20667B),
-                                  size: 18,
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${transcriptList.length} Pesan',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'TRANSKRIP PERCAKAPAN SUARA',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF20667B),
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '${transcriptList.length} Pesan',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 12),
 
                       Builder(
@@ -642,50 +649,37 @@ class _VoiceSessionDetailScreenState extends State<VoiceSessionDetailScreen> {
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                  decoration: BoxDecoration(
-                                                    color: isUser ? AppColors.primaryContainer : const Color(0xFFE0F4FB),
-                                                    borderRadius: BorderRadius.circular(6),
-                                                  ),
-                                                  child: Text(
-                                                    speakerLabel,
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 11,
-                                                      fontWeight: FontWeight.w800,
-                                                      color: isUser ? AppColors.primary : const Color(0xFF20667B),
-                                                    ),
-                                                  ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: isUser ? AppColors.primaryContainer : const Color(0xFFE0F4FB),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                speakerLabel,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: isUser ? AppColors.primary : const Color(0xFF20667B),
                                                 ),
-                                                if (isUser && item['emotionTag'] != null) ...[
-                                                  const SizedBox(width: 8),
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFFFFF0F0),
-                                                      borderRadius: BorderRadius.circular(6),
-                                                    ),
-                                                    child: Text(
-                                                      '${item['emotionEmoji'] ?? '😟'} ${item['emotionTag']}',
-                                                      style: GoogleFonts.inter(
-                                                        fontSize: 11,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: const Color(0xFFD32F2F),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                            Text(
-                                              item['time'] ?? '',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 11,
-                                                color: AppColors.textSecondary,
                                               ),
                                             ),
+                                            if (isUser && item['emotionTag'] != null)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFFFF0F0),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  '${item['emotionEmoji'] ?? '😟'} ${item['emotionTag']}',
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: const Color(0xFFD32F2F),
+                                                  ),
+                                                ),
+                                              ),
                                           ],
                                         ),
                                         const SizedBox(height: 8),
@@ -697,6 +691,19 @@ class _VoiceSessionDetailScreenState extends State<VoiceSessionDetailScreen> {
                                             height: 1.45,
                                           ),
                                         ),
+                                        if (item['time'] != null && item['time'].toString().isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          Align(
+                                            alignment: Alignment.bottomRight,
+                                            child: Text(
+                                              item['time']?.toString() ?? '',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 11,
+                                                color: AppColors.textLight,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   );

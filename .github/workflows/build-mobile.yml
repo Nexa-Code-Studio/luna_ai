@@ -1,0 +1,133 @@
+name: Build Mobile (Android & iOS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'android'
+          - 'ios'
+      build_type:
+        description: 'Build configuration'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - 'release'
+          - 'debug'
+  push:
+    tags:
+      - 'build-*'
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event.inputs.target == 'all' || github.event.inputs.target == 'android' || github.event.inputs.target == null }}
+    defaults:
+      run:
+        working-directory: apps/luna_mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter & Environment
+        run: flutter doctor -v
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Android APK
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'release' }}"
+          echo "Building Android APK (${BUILD_TYPE})..."
+          if [ "$BUILD_TYPE" = "debug" ]; then
+            flutter build apk --debug
+            echo "APK_PATH=build/app/outputs/flutter-apk/app-debug.apk" >> $GITHUB_ENV
+          else
+            flutter build apk --release
+            echo "APK_PATH=build/app/outputs/flutter-apk/app-release.apk" >> $GITHUB_ENV
+          fi
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: luna-mobile-android-${{ github.event.inputs.build_type || 'release' }}-apk
+          path: apps/luna_mobile/${{ env.APK_PATH }}
+          if-no-files-found: error
+          retention-days: 14
+
+  build-ios:
+    name: Build iOS (Unsigned)
+    runs-on: macos-latest
+    if: ${{ github.event_name == 'push' || github.event.inputs.target == 'all' || github.event.inputs.target == 'ios' || github.event.inputs.target == null }}
+    defaults:
+      run:
+        working-directory: apps/luna_mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter & Xcode Environment
+        run: flutter doctor -v
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build iOS App (Unsigned)
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'release' }}"
+          echo "Building iOS Application (${BUILD_TYPE}, no codesign)..."
+          if [ "$BUILD_TYPE" = "debug" ]; then
+            flutter build ios --debug --no-codesign
+          else
+            flutter build ios --release --no-codesign
+          fi
+
+          BUILD_DIR="build/ios/iphoneos"
+          ZIP_NAME="LunaMobile-iOS-${BUILD_TYPE}-unsigned.zip"
+
+          echo "Packaging Runner.app into ${ZIP_NAME}..."
+          cd "$BUILD_DIR"
+          zip -r "${ZIP_NAME}" Runner.app
+          cd -
+
+          echo "ZIP_PATH=${BUILD_DIR}/${ZIP_NAME}" >> $GITHUB_ENV
+
+      - name: Upload iOS Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: luna-mobile-ios-${{ github.event.inputs.build_type || 'release' }}-unsigned
+          path: apps/luna_mobile/${{ env.ZIP_PATH }}
+          if-no-files-found: error
+          retention-days: 14

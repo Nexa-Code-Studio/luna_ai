@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import '../core/utils/responsive_layout_helper.dart';
+import '../providers/daily_progress_provider.dart';
 import '../services/daily_progress_local_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/staggered_entrance.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   final ValueChanged<int>? onNavigateTab;
 
   const HomeScreen({
@@ -19,10 +22,10 @@ class HomeScreen extends StatefulWidget {
   });
 
   @override
-  State<HomeScreen> createState() => HomeScreenState();
+  ConsumerState<HomeScreen> createState() => HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   String _userName = 'Sahabat LUNA';
   int _todayConversationsCount = 0;
   bool _hasTodayDiary = false;
@@ -137,13 +140,30 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _recommendations = List<Map<String, dynamic>>.from(
       _defaultRecommendations.map((item) => Map<String, dynamic>.from(item)),
     );
     _loadHomeScreenData();
   }
 
-  void refresh() => _loadHomeScreenData();
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      refresh();
+    }
+  }
+
+  void refresh() {
+    _loadHomeScreenData();
+    ref.read(dailyProgressProvider.notifier).refresh();
+  }
 
   Future<void> _loadHomeScreenData() async {
     // 1. Load cached user info first for instant display
@@ -428,6 +448,9 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final liveProgress = ref.watch(dailyProgressProvider);
+    _localProgress = liveProgress;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -616,28 +639,6 @@ class HomeScreenState extends State<HomeScreen> {
                   color: AppColors.primary,
                 ),
               ),
-              const Spacer(),
-              // Mood Badge
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _moodTag,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -668,11 +669,9 @@ class HomeScreenState extends State<HomeScreen> {
           iconColor: Colors.white,
           title: 'Curhat ke LUNA',
           subtitle: 'Mulai dialog suara atau teks',
-          badgeText: _todayConversationsCount > 0
-              ? '$_todayConversationsCount Sesi'
-              : 'Siap Mendengar',
-          onTap: () {
-            Navigator.pushNamed(context, '/chat');
+          onTap: () async {
+            await Navigator.pushNamed(context, '/chat');
+            refresh();
           },
         ),
         const SizedBox(height: 12),
@@ -682,12 +681,12 @@ class HomeScreenState extends State<HomeScreen> {
           iconColor: const Color(0xFF5358CB),
           title: 'Jurnal Refleksi AI',
           subtitle: 'Lihat rangkuman emosi harimu',
-          badgeText: _hasTodayDiary ? 'Tersintesis 🌿' : 'Otomatis',
-          onTap: () {
+          onTap: () async {
             if (widget.onNavigateTab != null) {
               widget.onNavigateTab!(1);
             } else {
-              Navigator.pushNamed(context, '/diary');
+              await Navigator.pushNamed(context, '/diary');
+              refresh();
             }
           },
         ),
@@ -702,24 +701,10 @@ class HomeScreenState extends State<HomeScreen> {
               : (_hasTodayDass && _dassStatus == 'auto_extracted'
                   ? 'Tersintesis AI • Ketuk untuk meninjau'
                   : 'Evaluasi & koreksi 21 butir emosi'),
-          badgeText: _dassVerifiedByUser
-              ? 'Terverifikasi ✓'
-              : (_hasTodayDass && _dassStatus == 'auto_extracted'
-                  ? 'Perlu Ditinjau ⚡'
-                  : 'Belum Diisi'),
-          badgeColor: _dassVerifiedByUser
-              ? const Color(0xFF059669)
-              : (_hasTodayDass && _dassStatus == 'auto_extracted'
-                  ? const Color(0xFFD97706)
-                  : AppColors.primary),
-          badgeBg: _dassVerifiedByUser
-              ? const Color(0xFFECFDF5)
-              : (_hasTodayDass && _dassStatus == 'auto_extracted'
-                  ? const Color(0xFFFEF3C7)
-                  : AppColors.primaryContainer.withValues(alpha: 0.6)),
+          showNotificationDot: _hasTodayDass && _dassStatus == 'auto_extracted' && !_dassVerifiedByUser,
           onTap: () async {
             await Navigator.pushNamed(context, '/dass_assessment');
-            _loadHomeScreenData();
+            refresh();
           },
         ),
       ],
@@ -732,9 +717,7 @@ class HomeScreenState extends State<HomeScreen> {
     required Color iconColor,
     required String title,
     required String subtitle,
-    required String badgeText,
-    Color? badgeColor,
-    Color? badgeBg,
+    bool showNotificationDot = false,
     required VoidCallback onTap,
   }) {
     return GlassCard(
@@ -757,15 +740,32 @@ class HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (showNotificationDot) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF59E0B),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -780,25 +780,10 @@ class HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: badgeBg ?? AppColors.primaryContainer.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              badgeText,
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: badgeColor ?? AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           const Icon(
             Icons.chevron_right,
-            size: 18,
+            size: 20,
             color: AppColors.textLight,
           ),
         ],
@@ -844,37 +829,43 @@ class HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: completed == 3
-                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                        : AppColors.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: completed == 3
+                          ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                          : AppColors.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      completed == 3 ? Icons.stars_rounded : Icons.spa_rounded,
+                      size: 16,
+                      color: completed == 3
+                          ? const Color(0xFF10B981)
+                          : AppColors.primary,
+                    ),
                   ),
-                  child: Icon(
-                    completed == 3 ? Icons.stars_rounded : Icons.spa_rounded,
-                    size: 16,
-                    color: completed == 3
-                        ? const Color(0xFF10B981)
-                        : AppColors.primary,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Perawatan Diri',
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: context.responsiveFont(15),
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Progres Perawatan Diri',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
                 color: completed == 3
                     ? const Color(0xFFD1FAE5)
@@ -899,7 +890,7 @@ class HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 4),
                   ],
                   Text(
-                    '$completed / 3 Selesai',
+                    '$completed/3 Selesai',
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -1014,7 +1005,10 @@ class HomeScreenState extends State<HomeScreen> {
                     : 'Ekspresikan perasaanmu lewat suara atau teks',
                 icon: Icons.chat_bubble_outline_rounded,
                 isCompleted: isConversationDone,
-                onTap: () => Navigator.pushNamed(context, '/chat'),
+                onTap: () async {
+                  await Navigator.pushNamed(context, '/chat');
+                  refresh();
+                },
               ),
               const SizedBox(height: 8),
 
@@ -1026,11 +1020,12 @@ class HomeScreenState extends State<HomeScreen> {
                     : 'Baca rangkuman & pola emosimu hari ini',
                 icon: Icons.menu_book_rounded,
                 isCompleted: isDiaryDone,
-                onTap: () {
+                onTap: () async {
                   if (widget.onNavigateTab != null) {
                     widget.onNavigateTab!(1);
                   } else {
-                    Navigator.pushNamed(context, '/diary');
+                    await Navigator.pushNamed(context, '/diary');
+                    refresh();
                   }
                 },
               ),
@@ -1044,7 +1039,10 @@ class HomeScreenState extends State<HomeScreen> {
                     : 'Coba 1 teknik pernapasan atau mindfulness',
                 icon: Icons.spa_rounded,
                 isCompleted: isExerciseDone,
-                onTap: () => Navigator.pushNamed(context, '/recommendation'),
+                onTap: () async {
+                  await Navigator.pushNamed(context, '/recommendation');
+                  refresh();
+                },
               ),
             ],
           ),

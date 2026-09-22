@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
@@ -158,13 +159,35 @@ class AiAudioPlaybackService {
   void _startEnvelopeTicker(List<double> envelope) {
     _envelopeTimer?.cancel();
     if (envelope.isEmpty) {
-      _envelopeTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
+      _envelopeTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
         if (!_isPlaying) {
           _stopEnvelopeTicker();
           return;
         }
+        final elapsedMs = _playbackStopwatch.elapsedMilliseconds;
+        final t = elapsedMs / 1000.0;
+
+        // Realistic speech cadence generator:
+        // 1. Syllable pulse (3.8 Hz - 4.2 Hz, average Indonesian syllable pace: ~4 per second)
+        final double syllablePhase = (t * 4.0 * 2 * math.pi);
+        final double syllableRaw = (math.sin(syllablePhase) + 1.0) / 2.0;
+        final double syllablePulse = math.pow(syllableRaw, 1.8).toDouble();
+
+        // 2. Prosodic intonation sweep (0.7 Hz macro-envelope, simulating sentence rise and fall)
+        final double intonationMacro = 0.55 + 0.45 * math.sin(t * 0.7 * 2 * math.pi);
+
+        // 3. Syllabic stress variation (micro-variation between accented & unaccented syllables)
+        final double stress = 0.75 + 0.25 * math.sin(t * 1.9 * 2 * math.pi);
+
+        // 4. Harmonic richness and micro-articulation jitter
+        final double jitter = 0.08 * math.sin(t * 9.5 * 2 * math.pi);
+
+        // Combined dynamic vocal amplitude envelope
+        final double dynamicLevel = ((syllablePulse * stress * intonationMacro) + jitter)
+            .clamp(0.08, 0.95);
+
         if (!_soundLevelController.isClosed) {
-          _soundLevelController.add(0.25);
+          _soundLevelController.add(dynamicLevel);
         }
       });
       return;
@@ -228,6 +251,37 @@ class AiAudioPlaybackService {
       await _player.stop();
     } catch (e) {
       debugPrint('⚠️ [AUDIO STOP EXCEPTION]: $e');
+    }
+  }
+
+  /// Toggle or set speakerphone / earpiece routing
+  Future<void> setSpeakerphoneOn(bool enabled) async {
+    try {
+      await AudioPlayer.global.setAudioContext(
+        AudioContext(
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: enabled,
+            stayAwake: true,
+            contentType: AndroidContentType.speech,
+            usageType: AndroidUsageType.voiceCommunication,
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playAndRecord,
+            options: enabled
+                ? const {
+                    AVAudioSessionOptions.defaultToSpeaker,
+                    AVAudioSessionOptions.allowBluetooth,
+                  }
+                : const {
+                    AVAudioSessionOptions.allowBluetooth,
+                  },
+          ),
+        ),
+      );
+      debugPrint('🔊 [SPEAKERPHONE TOGGLED]: enabled = $enabled');
+    } catch (e) {
+      debugPrint('⚠️ [SET SPEAKERPHONE ERROR]: $e');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -68,6 +69,13 @@ class DailyProgressData {
 class DailyProgressLocalService {
   static const String _keyPrefix = 'luna_daily_progress_';
 
+  static final StreamController<DailyProgressData> _progressStreamController =
+      StreamController<DailyProgressData>.broadcast();
+
+  /// Stream of daily progress updates emitted whenever progress changes.
+  static Stream<DailyProgressData> get progressStream =>
+      _progressStreamController.stream;
+
   /// Returns current WIB date string in format 'YYYY-MM-DD'
   static String getTodayWibDate([DateTime? dateTime]) {
     final now = dateTime ?? DateTime.now().toUtc().add(const Duration(hours: 7));
@@ -89,24 +97,31 @@ class DailyProgressLocalService {
     final raw = prefs.getString(_getStorageKey(todayStr));
 
     if (raw == null || raw.isEmpty) {
-      return DailyProgressData(date: todayStr);
+      final initial = DailyProgressData(date: todayStr);
+      _progressStreamController.add(initial);
+      return initial;
     }
 
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      return DailyProgressData.fromJson(decoded);
+      final loaded = DailyProgressData.fromJson(decoded);
+      _progressStreamController.add(loaded);
+      return loaded;
     } catch (_) {
-      return DailyProgressData(date: todayStr);
+      final fallback = DailyProgressData(date: todayStr);
+      _progressStreamController.add(fallback);
+      return fallback;
     }
   }
 
-  /// Save daily progress to local storage.
+  /// Save daily progress to local storage and broadcast to all listeners.
   static Future<void> saveProgress(DailyProgressData data) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _getStorageKey(data.date),
       jsonEncode(data.toJson()),
     );
+    _progressStreamController.add(data);
   }
 
   /// Record conversation check-in for today.

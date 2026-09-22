@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'core/routes/app_router.dart';
 import 'theme/app_theme.dart';
-
-import 'package:google_fonts/google_fonts.dart';
+import 'widgets/web_phone_frame_wrapper.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +27,11 @@ class LunaApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         initialRoute: '/',
         onGenerateRoute: AppRouter.onGenerateRoute,
+        builder: (context, child) {
+          return WebPhoneFrameWrapper(
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
       ),
     );
   }

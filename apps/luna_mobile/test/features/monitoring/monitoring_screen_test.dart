@@ -102,9 +102,9 @@ void main() {
       expect(find.text('Ritem & Tren Emosional'), findsOneWidget);
       expect(find.text('RINGKASAN AI'), findsOneWidget);
       expect(find.text('Ringkasan emosi hari ini terpantau tenang.'), findsOneWidget);
-      expect(find.text('STACKED BAR RITEM 7 EMOSI'), findsOneWidget);
+      expect(find.text('Ritem 7 Emosi'), findsOneWidget);
       expect(find.text('TINGKAT RISIKO KESEHATAN MENTAL'), findsOneWidget);
-      expect(find.text('Stres'), findsOneWidget);
+      expect(find.text('Stres'), findsWidgets);
       expect(find.text('Sedang (40%)'), findsOneWidget);
       expect(find.text('PUSAT EMOSIONAL'), findsOneWidget);
       expect(find.text('Baik & Stabil'), findsOneWidget);

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import '../services/daily_progress_local_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/skeleton_shimmer.dart';
@@ -77,6 +78,14 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
           setState(() {
             _entries = data.map((e) => Map<String, dynamic>.from(e)).toList();
           });
+        }
+        final todayStr = DailyProgressLocalService.getTodayWibDate();
+        final hasTodayEntry = _entries.any((e) {
+          final date = e['date']?.toString() ?? e['created_at']?.toString() ?? '';
+          return date.startsWith(todayStr);
+        });
+        if (hasTodayEntry) {
+          DailyProgressLocalService.recordDiaryCheckin(hasDiary: true);
         }
       }
     } catch (_) {
@@ -250,19 +259,12 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
                       const SizedBox(height: 4),
 
                       Text(
-
-                        'Hasil analisis kumulatif harian dan transkrip per sesi percakapan suara bersama LUNA.',
-
+                        'Rangkuman refleksi emosi dan transkrip suara.',
                         style: GoogleFonts.inter(
-
                           fontSize: 13,
-
                           color: AppColors.textSecondary,
-
                           height: 1.4,
-
                         ),
-
                       ),
 
                       const SizedBox(height: 20),
