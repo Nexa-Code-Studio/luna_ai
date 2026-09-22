@@ -259,19 +259,12 @@ class AiDiaryScreenState extends State<AiDiaryScreen> {
                       const SizedBox(height: 4),
 
                       Text(
-
-                        'Hasil analisis kumulatif harian dan transkrip per sesi percakapan suara bersama LUNA.',
-
+                        'Rangkuman refleksi emosi dan transkrip suara.',
                         style: GoogleFonts.inter(
-
                           fontSize: 13,
-
                           color: AppColors.textSecondary,
-
                           height: 1.4,
-
                         ),
-
                       ),
 
                       const SizedBox(height: 20),

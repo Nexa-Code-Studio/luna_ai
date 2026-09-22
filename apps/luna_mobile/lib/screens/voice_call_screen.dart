@@ -1229,10 +1229,23 @@ class _MorphingVoiceNodesVisualizerState extends State<_MorphingVoiceNodesVisual
         // Silence / Idle: Flat dots
         targetHeight = _dotSize;
       } else if (widget.isAiSpeaking) {
-        // AI Speaking: intonation follows real speech envelope in soundLevel
-        final multipliers = [0.70, 1.15, 1.40, 1.15, 0.70];
-        final variance = math.sin(widget.animValue * 2 * math.pi * 7.0 + (i * 1.4)) * 0.12;
-        final intonationScale = (sound * multipliers[i] + variance).clamp(0.0, 1.0);
+        // AI Speaking: Dynamic vocal formant distribution & intonation contours
+        // 5 nodes represent frequency bands across speech spectrum:
+        // Node 0: Chest resonance / low fundamental (100-250 Hz)
+        // Node 1: Pitch inflection / F0 contour (glide with Indonesian sentence intonation)
+        // Node 2: First Formant F1 / Vowel energy (500-1000 Hz, peak acoustic power)
+        // Node 3: Second Formant F2 / Articulation transitions (1.5-2.5 kHz)
+        // Node 4: Sibilance / High treble energy (3-5 kHz)
+        final double anim = widget.animValue;
+        final double band0 = sound * (0.85 + 0.20 * math.sin(anim * 2 * math.pi * 3.5));
+        final double band1 = sound * (1.15 + 0.28 * math.sin(anim * 2 * math.pi * 5.2 + 0.8));
+        final double band2 = sound * (1.45 + 0.35 * math.sin(anim * 2 * math.pi * 7.0 + 1.6));
+        final double band3 = sound * (1.15 + 0.26 * math.sin(anim * 2 * math.pi * 6.1 + 2.4));
+        final double band4 = sound * (0.80 + 0.22 * math.sin(anim * 2 * math.pi * 8.4 + 3.2));
+
+        final bands = [band0, band1, band2, band3, band4];
+        final intonationScale = bands[i].clamp(0.0, 1.0);
+
         targetHeight = sound > 0.02
             ? _minHeights[i] + (intonationScale * (_maxHeights[i] - _minHeights[i]))
             : _dotSize;
@@ -1245,7 +1258,9 @@ class _MorphingVoiceNodesVisualizerState extends State<_MorphingVoiceNodesVisual
       }
 
       final isRising = targetHeight > _currentHeights[i];
-      final factor = isRising ? 0.45 : 0.25;
+      final factor = isRising
+          ? (widget.isAiSpeaking ? 0.60 : 0.45)
+          : (widget.isAiSpeaking ? 0.22 : 0.25);
       _currentHeights[i] += (targetHeight - _currentHeights[i]) * factor;
     }
   }
@@ -1273,7 +1288,7 @@ class _MorphingVoiceNodesVisualizerState extends State<_MorphingVoiceNodesVisual
                 painter: _VoiceNodesMorphPainter(
                   morphProgress: morphValue,
                   animProgress: widget.animValue,
-                  barHeights: _currentHeights,
+                  barHeights: List<double>.from(_currentHeights),
                   isThinking: widget.callState == CallState.thinking,
                   isMuted: widget.isMuted,
                 ),
@@ -1484,11 +1499,19 @@ class _VoiceNodesMorphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _VoiceNodesMorphPainter oldDelegate) {
-    return oldDelegate.morphProgress != morphProgress ||
+    if (oldDelegate.morphProgress != morphProgress ||
         oldDelegate.animProgress != animProgress ||
-        oldDelegate.barHeights != barHeights ||
         oldDelegate.isThinking != isThinking ||
-        oldDelegate.isMuted != isMuted;
+        oldDelegate.isMuted != isMuted) {
+      return true;
+    }
+    if (oldDelegate.barHeights.length != barHeights.length) return true;
+    for (int i = 0; i < barHeights.length; i++) {
+      if ((oldDelegate.barHeights[i] - barHeights[i]).abs() > 0.1) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 

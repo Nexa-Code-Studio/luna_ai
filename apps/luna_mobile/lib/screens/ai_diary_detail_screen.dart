@@ -628,7 +628,9 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                             ),
                           ),
                           Text(
-                            '${data['date'] ?? 'Hari ini'} • ${data['moodTag'] ?? 'Tenang & Nyaman'}',
+                            isSingleSession
+                                ? '${data['date'] ?? 'Hari ini'} • ${data['moodTag'] ?? 'Tenang & Nyaman'}'
+                                : '${data['date'] ?? 'Hari ini'} • ${sessions.length} Sesi Suara',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
@@ -1445,28 +1447,33 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'TRANSKRIP PERCAKAPAN SUARA',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textLight,
-                              letterSpacing: 0.8,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'TRANSKRIP SUARA',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textLight,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    canExpand && !_isTranscriptExpanded
+                                        ? '$displayCount dari ${activeTranscripts.length}'
+                                        : '${activeTranscripts.length} Dialog',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          Text(
-                            canExpand && !_isTranscriptExpanded
-                                ? 'Menampilkan $displayCount dari ${activeTranscripts.length}'
-                                : '${activeTranscripts.length} Percakapan',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 10),
 
                       if (activeTranscripts.isEmpty)
@@ -1592,7 +1599,7 @@ class _AiDiaryDetailScreenState extends State<AiDiaryDetailScreen> {
                                       height: 1.4,
                                     ),
                                   ),
-                                  if (item['time'] != null && item['time'].toString().isNotEmpty) ...[
+                                  if (!isSingleSession && item['time'] != null && item['time'].toString().isNotEmpty) ...[
                                     const SizedBox(height: 4),
                                     Align(
                                       alignment: Alignment.bottomRight,
