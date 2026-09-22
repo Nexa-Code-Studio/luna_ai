@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/backend/api/Dockerfile
+    container_name: luna_api
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8888 --workers 2
+    ports:
+      - "127.0.0.1:8888:8888"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/workspace
+      - APP_ENV=production
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@luna_postgres:5432/luna_ai?ssl=disable
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - luna_network
+
+  mcp:
+    build:
+      context: .
+      dockerfile: apps/backend/mcp/Dockerfile
+    container_name: luna_mcp
+    restart: unless-stopped
+    command: python -m app.main
+    ports:
+      - "127.0.0.1:8889:8889"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/workspace
+      - APP_ENV=production
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - redis
+      - qdrant
+    networks:
+      - luna_network
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/backend/workers/Dockerfile
+    container_name: luna_worker
+    restart: unless-stopped
+    command: arq app.workers.settings.WorkerSettings
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/workspace
+      - APP_ENV=production
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@luna_postgres:5432/luna_ai?ssl=disable
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - luna_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: luna_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=luna_ai
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d luna_ai"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - luna_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: luna_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - luna_network
+
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    container_name: luna_qdrant
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - luna_network
+
+networks:
+  luna_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
