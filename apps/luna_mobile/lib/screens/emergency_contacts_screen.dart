@@ -935,13 +935,16 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'HOTLINE KRISIS & KONSELING RESMI (24 JAM)',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textLight,
-                                    letterSpacing: 0.8,
+                                Expanded(
+                                  child: Text(
+                                    'Hotline Resmi 24 Jam',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                      letterSpacing: 0.3,
+                                    ),
                                   ),
                                 ),
                               ],

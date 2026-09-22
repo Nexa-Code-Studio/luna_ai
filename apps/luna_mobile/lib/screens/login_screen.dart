@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/social_auth_dev_sheet.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,10 +18,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController =
-      TextEditingController(text: 'samsul@gmail.com');
-  final TextEditingController _passwordController =
-      TextEditingController(text: 'password123');
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -235,14 +234,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         Expanded(
                           child: SocialPillButton(
                             type: 'google',
-                            onPressed: () {},
+                            onPressed: () {
+                              showSocialAuthDevSheet(context, provider: 'Google');
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: SocialPillButton(
                             type: 'apple',
-                            onPressed: () {},
+                            onPressed: () {
+                              showSocialAuthDevSheet(context, provider: 'Apple');
+                            },
                           ),
                         ),
                       ],
