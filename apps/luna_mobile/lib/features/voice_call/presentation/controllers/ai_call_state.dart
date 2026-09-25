@@ -19,6 +19,7 @@ class AiCallViewState {
   final String? crisisHotline;
   final String? crisisHotlineUrl;
   final bool isCrisisSession;
+  final String voiceMode;
 
   const AiCallViewState({
     this.callState = CallState.idle,
@@ -39,6 +40,7 @@ class AiCallViewState {
     this.crisisHotline,
     this.crisisHotlineUrl,
     this.isCrisisSession = false,
+    this.voiceMode = 'mode_2',
   });
 
   AiCallViewState copyWith({
@@ -60,6 +62,7 @@ class AiCallViewState {
     String? crisisHotline,
     String? crisisHotlineUrl,
     bool? isCrisisSession,
+    String? voiceMode,
     bool clearCrisis = false,
     bool clearError = false,
   }) {
@@ -82,6 +85,7 @@ class AiCallViewState {
       crisisHotline: clearCrisis ? null : (crisisHotline ?? this.crisisHotline),
       crisisHotlineUrl: clearCrisis ? null : (crisisHotlineUrl ?? this.crisisHotlineUrl),
       isCrisisSession: clearCrisis ? false : (isCrisisSession ?? this.isCrisisSession),
+      voiceMode: voiceMode ?? this.voiceMode,
     );
   }
 }

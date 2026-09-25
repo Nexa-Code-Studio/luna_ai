@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../config/call_config.dart';
 import '../../data/datasources/voice_call_ws_client.dart';
@@ -39,12 +40,22 @@ class AiCallController extends StateNotifier<AiCallViewState> {
   bool _isDisposed = false;
   int _restartAttempts = 0;
 
-  Future<void> startCall({String? customCallId}) async {
+  Future<void> startCall({String? customCallId, String? voiceMode}) async {
     final callId = customCallId ?? 'call_${DateTime.now().millisecondsSinceEpoch}';
     debugPrint('🚀 [AI CALL CONTROLLER] Starting call: $callId');
 
+    // Load active voice character mode from SharedPreferences if not specified
+    String effectiveVoiceMode = voiceMode ?? 'mode_2';
+    if (voiceMode == null) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        effectiveVoiceMode = prefs.getString('settings_voice_mode') ?? 'mode_2';
+      } catch (_) {}
+    }
+
     state = state.copyWith(
       callId: callId,
+      voiceMode: effectiveVoiceMode,
       callState: CallState.idle,
       userTurnId: 1,
       assistantTurnId: 0,
@@ -63,7 +74,7 @@ class AiCallController extends StateNotifier<AiCallViewState> {
 
     // 2. Connect WebSocket
     await _wsClient.connect(callId);
-    _wsClient.sendStartCall();
+    _wsClient.sendStartCall(voiceMode: effectiveVoiceMode);
 
     // 3. Start Duration Timer
     _durationTimer?.cancel();
@@ -188,7 +199,12 @@ class AiCallController extends StateNotifier<AiCallViewState> {
 
     debugPrint('📩 [AI CALL CONTROLLER <- WS] $type');
 
-    if (type == 'turn.keep_open') {
+    if (type == 'call_started') {
+      final confirmedMode = event['voice_mode'] as String?;
+      if (confirmedMode != null && confirmedMode.isNotEmpty) {
+        state = state.copyWith(voiceMode: confirmedMode);
+      }
+    } else if (type == 'turn.keep_open') {
       final restart = event['restart_stt'] as bool? ?? false;
       final waitMs = (event['wait_ms'] as num?)?.toInt() ?? CallConfig.sttRestartDelayMs;
       // If we were waiting in thinking (e.g. from empty force commit), recover to listening immediately

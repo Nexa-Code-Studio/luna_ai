@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,9 +17,14 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   // Voice & AI Preferences
-  String _selectedVoice = 'Luna - Lembut & Tenang';
+  String _selectedVoice = 'Luna - Jessica Ceria (Default)';
+  String _selectedVoiceMode = 'mode_2';
   double _speechRate = 1.0;
   String _conversationMode = 'Hybrid (Deteksi Otomatis)';
+
+  // Audio Preview Player for Voice Character Cards
+  final AudioPlayer _previewPlayer = AudioPlayer();
+  String? _playingPreviewModeId;
 
   // Wellness Notifications & Reminders
   bool _dailyCheckInReminder = true;
@@ -40,7 +46,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
-        _selectedVoice = prefs.getString('settings_voice') ?? 'Luna - Lembut & Tenang';
+        _selectedVoiceMode = prefs.getString('settings_voice_mode') ?? 'mode_2';
+        _selectedVoice = prefs.getString('settings_voice_character') ?? 'Luna - Jessica Ceria (Default)';
         _speechRate = prefs.getDouble('settings_speech_rate') ?? 1.0;
         _conversationMode = prefs.getString('settings_conversation_mode') ?? 'Hybrid (Deteksi Otomatis)';
         _dailyCheckInReminder = prefs.getBool('settings_reminder_daily') ?? true;
@@ -62,6 +69,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await prefs.setDouble(key, value);
     } else if (value is bool) {
       await prefs.setBool(key, value);
+    }
+  }
+
+  @override
+  void dispose() {
+    _previewPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleAudioPreview(String modeId, String assetPath) async {
+    try {
+      if (_playingPreviewModeId == modeId) {
+        await _previewPlayer.stop();
+        setState(() => _playingPreviewModeId = null);
+        return;
+      }
+      await _previewPlayer.stop();
+      setState(() => _playingPreviewModeId = modeId);
+      final cleanPath = assetPath.startsWith('assets/') ? assetPath.substring(7) : assetPath;
+      await _previewPlayer.play(AssetSource(cleanPath));
+      _previewPlayer.onPlayerComplete.first.then((_) {
+        if (mounted && _playingPreviewModeId == modeId) {
+          setState(() => _playingPreviewModeId = null);
+        }
+      });
+    } catch (e) {
+      debugPrint('⚠️ [AUDIO PREVIEW ERROR] $e');
+      if (mounted) {
+        setState(() => _playingPreviewModeId = null);
+      }
     }
   }
 
@@ -240,24 +277,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                         const SizedBox(height: 12),
                                         _buildVoiceChoiceTile(
-                                          title: 'Luna - Lembut & Tenang (Default)',
-                                          subtitle: 'Suara hangat, empatik, dan menenangkan (id-ID-GadisNeural)',
-                                          icon: Icons.spa_rounded,
-                                          isSelected: _selectedVoice == 'Luna - Lembut & Tenang',
+                                          title: 'Luna - Jessica Ceria (Default)',
+                                          subtitle: 'Suara ramah, hangat, dan optimis dengan nada yang lebih ceria (Jessica + Happily)',
+                                          icon: Icons.sentiment_very_satisfied_rounded,
+                                          isSelected: _selectedVoiceMode == 'mode_2',
+                                          isDefault: true,
+                                          isPlayingPreview: _playingPreviewModeId == 'mode_2',
+                                          onPreviewTap: () => _toggleAudioPreview('mode_2', 'assets/audio/mode_2_jessica_ceria.mp3'),
                                           onTap: () {
-                                            setState(() => _selectedVoice = 'Luna - Lembut & Tenang');
-                                            _saveSetting('settings_voice_character', 'Luna - Lembut & Tenang');
+                                            setState(() => _selectedVoiceMode = 'mode_2');
+                                            _saveSetting('settings_voice_mode', 'mode_2');
+                                            _saveSetting('settings_voice_character', 'Luna - Jessica Ceria (Default)');
                                           },
                                         ),
                                         const SizedBox(height: 8),
                                         _buildVoiceChoiceTile(
-                                          title: 'Aris - Bijak & Netral',
-                                          subtitle: 'Suara maskulin yang suportif dan tegas (id-ID-ArdiNeural)',
-                                          icon: Icons.self_improvement_rounded,
-                                          isSelected: _selectedVoice == 'Aris - Bijak & Netral',
+                                          title: 'Luna - Jessica Playful',
+                                          subtitle: 'Suara lincah, ekspresif, manis, santai, dan akrab (Jessica + Playful)',
+                                          icon: Icons.mood_rounded,
+                                          isSelected: _selectedVoiceMode == 'mode_4',
+                                          isPlayingPreview: _playingPreviewModeId == 'mode_4',
+                                          onPreviewTap: () => _toggleAudioPreview('mode_4', 'assets/audio/mode_4_jessica_playful.mp3'),
                                           onTap: () {
-                                            setState(() => _selectedVoice = 'Aris - Bijak & Netral');
-                                            _saveSetting('settings_voice_character', 'Aris - Bijak & Netral');
+                                            setState(() => _selectedVoiceMode = 'mode_4');
+                                            _saveSetting('settings_voice_mode', 'mode_4');
+                                            _saveSetting('settings_voice_character', 'Luna - Jessica Playful');
+                                          },
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _buildVoiceChoiceTile(
+                                          title: 'Luna - Laura Muda & Enerjik',
+                                          subtitle: 'Suara perempuan muda, cerdas, artikulatif, dan dinamis (Laura + Happily)',
+                                          icon: Icons.bolt_rounded,
+                                          isSelected: _selectedVoiceMode == 'mode_7',
+                                          isPlayingPreview: _playingPreviewModeId == 'mode_7',
+                                          onPreviewTap: () => _toggleAudioPreview('mode_7', 'assets/audio/mode_7_laura_enerjik.mp3'),
+                                          onTap: () {
+                                            setState(() => _selectedVoiceMode = 'mode_7');
+                                            _saveSetting('settings_voice_mode', 'mode_7');
+                                            _saveSetting('settings_voice_character', 'Luna - Laura Muda & Enerjik');
                                           },
                                         ),
                                         const SizedBox(height: 16),
@@ -587,6 +645,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     required bool isSelected,
     required VoidCallback onTap,
+    bool isDefault = false,
+    bool isPlayingPreview = false,
+    VoidCallback? onPreviewTap,
   }) {
     return Material(
       color: Colors.transparent,
@@ -623,14 +684,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (isDefault) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD1FAE5),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'DEFAULT',
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF047857),
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: GoogleFonts.inter(
@@ -641,6 +728,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
+              if (onPreviewTap != null) ...[
+                IconButton(
+                  onPressed: onPreviewTap,
+                  icon: Icon(
+                    isPlayingPreview ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded,
+                    color: isPlayingPreview ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                    size: 26,
+                  ),
+                  tooltip: isPlayingPreview ? 'Hentikan sampel' : 'Dengarkan sampel',
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                ),
+              ],
               Icon(
                 isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded,
                 size: 20,
