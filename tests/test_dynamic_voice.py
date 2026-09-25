@@ -242,3 +242,24 @@ class TestCallSessionManagerDynamicVoiceIntegration:
             "session_id": "sess_mode_default",
             "voice_mode": "mode_2",
         })
+
+    async def test_voice_settings_resolution_contract(self):
+        """Verify that resolve_dynamic_voice_style resolves correct official ElevenLabs voice_settings."""
+        # 1. Mode 2 neutral uses baseline voice settings (stability=0.45, style=0.30)
+        res_neutral = resolve_dynamic_voice_style(mode_id="mode_2", detected_emotion="neutral")
+        assert res_neutral.voice_settings["stability"] == 0.45
+        assert res_neutral.voice_settings["style"] == 0.30
+
+        # 2. Sad user modulates to soft voice settings (stability=0.65, style=0.05, speed=0.92)
+        res_sad = resolve_dynamic_voice_style(mode_id="mode_2", detected_emotion="sad", confidence=0.85)
+        assert res_sad.voice_settings["stability"] == 0.65
+        assert res_sad.voice_settings["style"] == 0.05
+        assert res_sad.voice_settings["speed"] == 0.92
+
+        # 3. Crisis/high risk forces grounding voice settings (stability=0.80, style=0.0, speed=0.90)
+        res_crisis = resolve_dynamic_voice_style(
+            mode_id="mode_2", detected_emotion="angry", confidence=0.95, risk_level="critical"
+        )
+        assert res_crisis.voice_settings["stability"] == 0.80
+        assert res_crisis.voice_settings["style"] == 0.0
+        assert res_crisis.voice_settings["speed"] == 0.90

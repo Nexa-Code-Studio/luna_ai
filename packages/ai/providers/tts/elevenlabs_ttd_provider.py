@@ -34,6 +34,7 @@ class ElevenLabsTTDSession:
         model_id: str = "eleven_v3_conversational",
         output_format: str = "mp3_44100_128",
         keys: list[str] | None = None,
+        voice_settings: dict[str, float] | None = None,
     ) -> None:
         self.api_key = api_key
         self.keys = keys or ([api_key] if api_key else [])
@@ -44,6 +45,7 @@ class ElevenLabsTTDSession:
         else:
             self.model_id = model_id
         self.output_format = output_format
+        self.voice_settings = voice_settings
         self.ws: websockets.client.WebSocketClientProtocol | None = None
         self._event_queue: asyncio.Queue[tuple[str, Any] | None] = asyncio.Queue()
         self._recv_task: asyncio.Task[None] | None = None
@@ -79,10 +81,15 @@ class ElevenLabsTTDSession:
                     timeout=timeout,
                 )
 
-                # Step 1: Handshake frame registering the voice
-                init_frame = {"voices": [self.voice_id]}
+                # Step 1: Handshake frame registering the voice and voice_settings
+                init_frame: dict[str, Any] = {"voices": [self.voice_id]}
+                if self.voice_settings:
+                    init_frame["voice_settings"] = self.voice_settings
                 await self.ws.send(json.dumps(init_frame))
-                logger.info(f"✅ [ELEVENLABS TTD INITIALIZED] Registered voice '{self.voice_id}' with key ...{current_key[-6:]}")
+                logger.info(
+                    f"✅ [ELEVENLABS TTD INITIALIZED] Registered voice '{self.voice_id}' "
+                    f"with settings {self.voice_settings or 'default'} using key ...{current_key[-6:]}"
+                )
 
                 # Start receiver worker concurrently
                 self._recv_task = asyncio.create_task(self._receive_loop())
@@ -348,21 +355,31 @@ class ElevenLabsTTDProvider(BaseTTSProvider):
                 return candidate
         return keys[cls._shared_current_key_index % len(keys)]
 
-    def create_session(self, voice_id: str | None = None) -> ElevenLabsTTDSession:
+    def create_session(
+        self,
+        voice_id: str | None = None,
+        voice_settings: dict[str, float] | None = None,
+    ) -> ElevenLabsTTDSession:
         return ElevenLabsTTDSession(
             api_key=self.api_key,
             voice_id=voice_id or self.voice_id,
             model_id=self.model_id,
             output_format=self.output_format,
             keys=self.keys,
+            voice_settings=voice_settings,
         )
 
-    async def synthesize(self, text: str, voice_id: str | None = None) -> bytes:
+    async def synthesize(
+        self,
+        text: str,
+        voice_id: str | None = None,
+        voice_settings: dict[str, float] | None = None,
+    ) -> bytes:
         """Synthesize text into complete audio bytes using a turn-scoped TTD session with key retry."""
         candidate_keys = self.keys if self.keys else [self.api_key]
         last_error: Exception | None = None
         for _ in range(len(candidate_keys)):
-            session = self.create_session(voice_id=voice_id)
+            session = self.create_session(voice_id=voice_id, voice_settings=voice_settings)
             try:
                 await session.connect()
                 await session.send_text(text)
