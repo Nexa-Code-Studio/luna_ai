@@ -14,3 +14,8 @@ graphify-out/
 build/
 .dart_tool/
 .pub-cache/
+
+# Exclude heavy non-backend folders for super lean docker builds
+docs/
+tests/
+apps/luna_mobile/
