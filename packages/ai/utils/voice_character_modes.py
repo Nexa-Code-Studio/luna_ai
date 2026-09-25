@@ -21,6 +21,7 @@ class VoiceCharacterMode:
     baseline_style: str
     baseline_tag: str
     description: str
+    baseline_voice_settings: dict[str, float] | None = None
 
 
 VOICE_CHARACTER_MODES: dict[str, VoiceCharacterMode] = {
@@ -31,6 +32,12 @@ VOICE_CHARACTER_MODES: dict[str, VoiceCharacterMode] = {
         baseline_style="happy",
         baseline_tag="[happily]",
         description="Jessica dengan intonasi ceria, hangat, ramah, dan pitch lebih tinggi.",
+        baseline_voice_settings={
+            "stability": 0.45,
+            "similarity_boost": 0.80,
+            "style": 0.30,
+            "speed": 1.02,
+        },
     ),
     "mode_4": VoiceCharacterMode(
         id="mode_4",
@@ -39,6 +46,12 @@ VOICE_CHARACTER_MODES: dict[str, VoiceCharacterMode] = {
         baseline_style="playful",
         baseline_tag="[playful]",
         description="Jessica dengan intonasi lincah, ekspresif, manis, santai, dan akrab.",
+        baseline_voice_settings={
+            "stability": 0.45,
+            "similarity_boost": 0.80,
+            "style": 0.25,
+            "speed": 1.02,
+        },
     ),
     "mode_7": VoiceCharacterMode(
         id="mode_7",
@@ -47,6 +60,12 @@ VOICE_CHARACTER_MODES: dict[str, VoiceCharacterMode] = {
         baseline_style="happy",
         baseline_tag="[happily]",
         description="Laura dengan intonasi perempuan muda, cerdas, artikulatif, dan berenergi.",
+        baseline_voice_settings={
+            "stability": 0.45,
+            "similarity_boost": 0.80,
+            "style": 0.30,
+            "speed": 1.02,
+        },
     ),
 }
 

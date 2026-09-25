@@ -36,3 +36,10 @@ def test_sanitize_punctuation_and_pauses():
 def test_sanitize_empty_or_whitespace():
     assert sanitize_text_for_tts("") == ""
     assert sanitize_text_for_tts("   ") == ""
+
+
+def test_sanitize_audio_tags():
+    raw = "[happily] Halo Luna! Senang sekali bisa ngobrol lagi sama kamu."
+    cleaned = sanitize_text_for_tts(raw)
+    assert cleaned == "Halo Luna! Senang sekali bisa ngobrol lagi sama kamu."
+    assert "happily" not in cleaned.lower()
