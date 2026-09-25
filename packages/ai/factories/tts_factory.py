@@ -4,7 +4,6 @@ from typing import ClassVar
 from packages.ai.interfaces.tts import BaseTTSProvider
 from packages.ai.providers.tts.edge_tts_provider import EdgeTTSProvider
 from packages.ai.providers.tts.elevenlabs_tts import ElevenLabsTTSProvider
-from packages.ai.providers.tts.elevenlabs_ttd_provider import ElevenLabsTTDProvider
 from packages.ai.providers.tts.mock_tts import MockTTSProvider
 from packages.ai.providers.tts.openai_tts import OpenAITTSProvider
 from packages.shared.config import settings
@@ -42,7 +41,12 @@ class TTSFactory:
             elif getattr(settings, "TTS_MODE", "ttd") == "rest" or target == "elevenlabs_rest":
                 instance = ElevenLabsTTSProvider()
             else:
-                instance = ElevenLabsTTDProvider()
+                try:
+                    from packages.ai.providers.tts.elevenlabs_ttd_provider import ElevenLabsTTDProvider
+                    instance = ElevenLabsTTDProvider()
+                except Exception as ex:
+                    logger.warning(f"Failed to initialize ElevenLabsTTDProvider ({ex}), falling back to ElevenLabs REST.")
+                    instance = ElevenLabsTTSProvider()
         elif target == "elevenlabs_rest":
             instance = ElevenLabsTTSProvider()
         elif target == "openai":
