@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 import asyncio
 import base64
 import json
 import logging
-from typing import AsyncGenerator
-import websockets
-from websockets.exceptions import ConnectionClosed
+from typing import Any, AsyncGenerator
+
+try:
+    import websockets
+    from websockets.exceptions import ConnectionClosed
+except ImportError:
+    websockets = None  # type: ignore[assignment]
+    ConnectionClosed = Exception  # type: ignore[assignment,misc]
 
 from packages.ai.interfaces.tts import BaseTTSProvider
 from packages.ai.utils.tts_text_normalizer import sanitize_text_for_tts

@@ -214,22 +214,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         Navigator.pushReplacementNamed(context, '/home');
       } else {
-        final data = jsonDecode(response.body);
-        final msg = data['detail'] ?? 'Registrasi gagal. Coba lagi.';
+        String msg = 'Registrasi gagal. Silakan coba lagi.';
+        try {
+          final data = jsonDecode(response.body);
+          if (data is Map && data['detail'] != null) {
+            msg = data['detail'].toString();
+          }
+        } catch (_) {
+          if (response.statusCode >= 500) {
+            msg = 'Server sedang mengalami kendala atau pemeliharaan (HTTP ${response.statusCode}). Silakan coba beberapa saat lagi.';
+          } else {
+            msg = 'Terjadi kesalahan pada server (HTTP ${response.statusCode})';
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.red.shade700,
-            content: Text(msg.toString()),
+            content: Text(msg),
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
+      final errorMsg = e is FormatException
+          ? 'Respon server tidak valid. Server mungkin sedang dalam pemeliharaan.'
+          : '$e';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red.shade700,
-          content: Text('Gagal menghubungi server (${AppConfig.host}): $e'),
-          duration: const Duration(seconds: 3),
+          content: Text('Gagal menghubungi server (${AppConfig.host}): $errorMsg'),
+          duration: const Duration(seconds: 4),
         ),
       );
     } finally {
