@@ -38,14 +38,16 @@ class EmotionAnalyzerService:
                 '  "ai_insight": "<2-3 kalimat wawasan konseling yang reflektif, empatik, dan suportif tanpa mengutip langsung kata-kata pengguna>",\n'
                 '  "emotional_reflection": "<1-2 kalimat refleksi konseling yang menenangkan>",\n'
                 '  "emotions_breakdown": [\n'
-                '    {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.85, "color": "#4ECDC4"},\n'
-                '    {"label": "Bahagia & Puas", "emoji": "😃", "percent": 0.60, "color": "#FFE6A7"},\n'
-                '    {"label": "Takut & Gelisah", "emoji": "😨", "percent": 0.20, "color": "#6C63FF"},\n'
-                '    {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.15, "color": "#FF8B94"}\n'
+                '    {"label": "<Nama Emosi 1, misal Ketenangan>", "emoji": "😌", "percent": <float 0.00-1.00 dihitung dinamis dari transkrip>, "color": "#4ECDC4"},\n'
+                '    {"label": "<Nama Emosi 2, misal Bahagia & Lega>", "emoji": "😃", "percent": <float 0.00-1.00 dihitung dinamis dari transkrip>, "color": "#FFE6A7"},\n'
+                '    {"label": "<Nama Emosi 3, misal Tingkat Stres>", "emoji": "😟", "percent": <float 0.00-1.00 dihitung dinamis dari transkrip>, "color": "#FF8B94"}\n'
                 "  ],\n"
                 '  "important_events": ["<peristiwa atau masalah penting 1>", "<peristiwa 2>"],\n'
                 '  "diary_summary": "<ringkasan konseling 2-3 kalimat hangat dan empatik mengenai esensi topik yang dibahas serta dukungan LUNA, tanpa tanda kutip mentah>"\n'
-                "}"
+                "}\n\n"
+                "ATURAN WAJIB:\n"
+                "- Nilai 'percent' pada 'emotions_breakdown' HARUS dihitung secara dinamis dan realistis sesuai sentimen transkrip nyata, TIDAK BOLEH bernilai statis.\n"
+                "- Total penjumlahan seluruh 'percent' pada 'emotions_breakdown' HARUS sama dengan 1.00.\n"
             ),
         )
 
@@ -89,9 +91,9 @@ class EmotionAnalyzerService:
             "ai_insight": "Pengguna meluangkan waktu untuk mengekspresikan perasaannya dalam suasana yang aman dan penuh penerimaan.",
             "emotional_reflection": "Sesi curhat membantu meredakan ketegangan dan memberikan ruang refleksi diri.",
             "emotions_breakdown": [
-                {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.85, "color": "#4ECDC4"},
-                {"label": "Bahagia & Puas", "emoji": "😃", "percent": 0.60, "color": "#FFE6A7"},
-                {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.15, "color": "#FF8B94"},
+                {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.65, "color": "#4ECDC4"},
+                {"label": "Bahagia & Lega", "emoji": "😃", "percent": 0.25, "color": "#FFE6A7"},
+                {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.10, "color": "#FF8B94"},
             ],
             "important_events": ["Panggilan suara konseling LUNA AI"],
             "diary_summary": "Sesi percakapan curhat bersama LUNA memberikan ruang aman untuk mengekspresikan emosi serta menemukan ketenangan batin.",

@@ -72,6 +72,9 @@ class SpeechRecognitionService {
   int get activeSttSessionId => _activeSttSessionId;
   bool get isMuted => _isMuted;
 
+  String _resolvedLocaleId = 'id-ID';
+  String get resolvedLocaleId => _resolvedLocaleId;
+
   Future<bool> initialize() async {
     if (_isInitialized) return true;
     try {
@@ -96,7 +99,30 @@ class SpeechRecognitionService {
           }
         },
       );
-      debugPrint('🎙️ [STT INITIALIZED]: $_isInitialized');
+      if (_isInitialized) {
+        try {
+          final locales = await _speech.locales();
+          stt.LocaleName? matchedLocale;
+          for (final loc in locales) {
+            final normalized = loc.localeId.toLowerCase().replaceAll('_', '-');
+            if (normalized == 'id-id' || normalized == 'id') {
+              matchedLocale = loc;
+              break;
+            }
+          }
+          if (matchedLocale != null) {
+            _resolvedLocaleId = matchedLocale.localeId;
+            debugPrint('🇮🇩 [STT LOCALE RESOLVED]: $_resolvedLocaleId (${matchedLocale.name})');
+          } else {
+            _resolvedLocaleId = 'id-ID';
+            debugPrint('🇮🇩 [STT LOCALE DEFAULT BCP-47]: $_resolvedLocaleId');
+          }
+        } catch (locErr) {
+          debugPrint('⚠️ [STT LOCALE QUERY ERROR]: $locErr');
+          _resolvedLocaleId = 'id-ID';
+        }
+      }
+      debugPrint('🎙️ [STT INITIALIZED]: $_isInitialized (Locale: $_resolvedLocaleId)');
     } catch (e) {
       debugPrint('❌ [STT INIT EXCEPTION]: $e');
       _isInitialized = false;
@@ -174,14 +200,19 @@ class SpeechRecognitionService {
             _soundLevelController.add(normalized);
           }
         },
+        localeId: _resolvedLocaleId,
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(milliseconds: 2500),
         listenOptions: stt.SpeechListenOptions(
-          localeId: 'id_ID',
+          localeId: _resolvedLocaleId,
           listenMode: stt.ListenMode.dictation,
           partialResults: true,
           cancelOnError: false,
+          listenFor: const Duration(seconds: 60),
+          pauseFor: const Duration(milliseconds: 2500),
         ),
       );
-      debugPrint('🎙️ [STT STARTED]: Session $sttSessionId');
+      debugPrint('🎙️ [STT STARTED]: Session $sttSessionId (Locale: $_resolvedLocaleId)');
     } catch (e) {
       debugPrint('❌ [STT LISTEN EXCEPTION]: $e');
       _errorController.add('Listen failed: $e');
