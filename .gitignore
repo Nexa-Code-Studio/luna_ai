@@ -56,3 +56,7 @@ apps/luna_mobile/build/
 
 # Agents logs
 .agents/logs/
+
+# Test audio outputs & pitch exploration
+tests/output_*.mp3
+tests/samples_pitch/
