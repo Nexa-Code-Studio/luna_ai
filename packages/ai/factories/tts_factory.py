@@ -4,6 +4,7 @@ from typing import ClassVar
 from packages.ai.interfaces.tts import BaseTTSProvider
 from packages.ai.providers.tts.edge_tts_provider import EdgeTTSProvider
 from packages.ai.providers.tts.elevenlabs_tts import ElevenLabsTTSProvider
+from packages.ai.providers.tts.elevenlabs_ttd_provider import ElevenLabsTTDProvider
 from packages.ai.providers.tts.mock_tts import MockTTSProvider
 from packages.ai.providers.tts.openai_tts import OpenAITTSProvider
 from packages.shared.config import settings
@@ -33,13 +34,17 @@ class TTSFactory:
 
         logger.info(f"Instantiating TTS Provider: '{target}'")
 
-        if target == "elevenlabs":
+        if target in ("elevenlabs", "elevenlabs_ttd", "eleven_v3"):
             eleven_keys = settings.get_elevenlabs_keys()
             if not eleven_keys or all(_is_placeholder(k) for k in eleven_keys):
                 logger.warning("No valid ElevenLabs API keys in .env. Falling back to EdgeTTSProvider (Free Indonesian Voice).")
                 instance = EdgeTTSProvider()
-            else:
+            elif getattr(settings, "TTS_MODE", "ttd") == "rest" or target == "elevenlabs_rest":
                 instance = ElevenLabsTTSProvider()
+            else:
+                instance = ElevenLabsTTDProvider()
+        elif target == "elevenlabs_rest":
+            instance = ElevenLabsTTSProvider()
         elif target == "openai":
             if _is_placeholder(settings.TTS_API_KEY) and _is_placeholder(settings.LLM_API_KEY):
                 logger.warning("TTS_API_KEY / LLM_API_KEY is placeholder in .env. Falling back to EdgeTTSProvider (Free Indonesian Voice).")

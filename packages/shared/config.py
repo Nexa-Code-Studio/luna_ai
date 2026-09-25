@@ -58,7 +58,11 @@ class BaseConfig(BaseSettings):
     TTS_API_KEY: str = ""
     ELEVENLABS_API_KEYS: str = ""
     TTS_VOICE_ID: str = "cgSgspJ2msm6clMCkdW9"  # ElevenLabs Jessica voice ID
-    TTS_MODEL: str = "eleven_multilingual_v2"
+    TTS_MODEL: str = "eleven_v3_conversational"
+    TTS_FALLBACK_MODEL: str = "eleven_multilingual_v2"
+    TTS_MODE: str = "ttd"  # ttd | rest
+    ELEVENLABS_TTD_URL: str = "wss://api.elevenlabs.io/v1/text-to-dialogue/stream-input"
+    ELEVENLABS_OUTPUT_FORMAT: str = "mp3_44100_128"
     EDGE_TTS_VOICE: str = "id-ID-GadisNeural"
 
     def get_elevenlabs_keys(self) -> list[str]:
