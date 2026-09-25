@@ -165,6 +165,9 @@ class ElevenLabsTTDSession:
                 if "error" in data:
                     err_msg = data.get("message") or str(data)
                     logger.error(f"❌ [ELEVENLABS TTD SERVER ERROR]: {err_msg}")
+                    err_lower = err_msg.lower()
+                    if "quota" in err_lower or "credit" in err_lower or "exceed" in err_lower or "limit" in err_lower:
+                        ElevenLabsTTDProvider.mark_key_exhausted(self.api_key)
                     self._error = RuntimeError(f"ElevenLabs error: {err_msg}")
                     await self._event_queue.put(("error", self._error))
                     break
@@ -355,23 +358,41 @@ class ElevenLabsTTDProvider(BaseTTSProvider):
         )
 
     async def synthesize(self, text: str, voice_id: str | None = None) -> bytes:
-        """Synthesize text into complete audio bytes using a turn-scoped TTD session."""
-        session = self.create_session(voice_id=voice_id)
-        try:
-            await session.connect()
-            await session.send_text(text)
-            await session.finish()
+        """Synthesize text into complete audio bytes using a turn-scoped TTD session with key retry."""
+        candidate_keys = self.keys if self.keys else [self.api_key]
+        last_error: Exception | None = None
+        for _ in range(len(candidate_keys)):
+            session = self.create_session(voice_id=voice_id)
+            try:
+                await session.connect()
+                await session.send_text(text)
+                await session.finish()
 
-            chunks: list[bytes] = []
-            async for chunk in session.receive_audio_chunks():
-                chunks.append(chunk)
+                chunks: list[bytes] = []
+                async for chunk in session.receive_audio_chunks():
+                    chunks.append(chunk)
 
-            if session._error and not chunks:
-                raise session._error
+                if session._error and not chunks:
+                    raise session._error
 
-            return b"".join(chunks)
-        finally:
-            await session.close()
+                if chunks:
+                    return b"".join(chunks)
+            except Exception as e:
+                last_error = e
+                err_str = str(e).lower()
+                if "quota" in err_str or "credit" in err_str or "exceed" in err_str or "403" in err_str:
+                    logger.warning(
+                        f"⚠️ [ELEVENLABS TTD SYNTHESIS QUOTA EXCEEDED] Key ...{session.api_key[-6:]} exhausted ({e}). Retrying with next key..."
+                    )
+                    self.mark_key_exhausted(session.api_key)
+                else:
+                    raise
+            finally:
+                await session.close()
+
+        if last_error:
+            raise last_error
+        return b""
 
     async def synthesize_stream(
         self, text_stream: AsyncGenerator[str, None], voice_id: str | None = None
