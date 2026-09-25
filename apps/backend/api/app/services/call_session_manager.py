@@ -23,6 +23,7 @@ from app.models.dass import DASSAssessment
 from app.models.diary import DiaryEntry
 from app.models.enums import MessageType
 from app.models.user import User
+from app.services.audio_stream_buffer import audio_buffer_service
 from app.services.dass_service import DASSService
 from app.services.diary_generator import DiaryGeneratorService
 from app.services.emotion_analyzer import EmotionAnalyzerService
@@ -266,7 +267,12 @@ class CallSessionManager:
 
                     if role == "user" and content and content.strip():
                         try:
-                            analysis_result = await MLEmotionDetectorService.predict_message_emotion(content)
+                            buf = audio_buffer_service.get_or_create_buffer(session.session_id)
+                            turn_audio_bytes = buf.get_full_audio() if buf.total_bytes > 0 else None
+                            buf.clear()
+                            analysis_result = await MLEmotionDetectorService.predict_message_emotion(
+                                content, audio_bytes=turn_audio_bytes
+                            )
                             await MLEmotionDetectorService.save_emotion_to_db(msg.id, analysis_result, db)
                             logger.info(f"🧠 [VOICE EMOTION PERSISTED]: Saved emotion for voice turn message {msg.id}")
                         except Exception as emo_err:
@@ -692,18 +698,21 @@ class CallSessionManager:
                 dominant = turn.emotion.primary_emotion.capitalize()
                 scores = turn.emotion.scores or {}
                 stress_level = "Tinggi" if turn.safety_decision.risk_level in ["high", "critical"] else ("Sedang" if turn.safety_decision.risk_level == "medium" else "Rendah")
+                calm_pct = round(scores.get("neutral", 0.70), 2)
+                happy_pct = round(scores.get("happy", 0.20), 2)
+                stress_pct = round(max(0.05, 1.0 - calm_pct - happy_pct), 2)
                 breakdown = [
-                    {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": round(scores.get("neutral", 0.70), 2), "color": "#4ECDC4"},
-                    {"label": "Bahagia & Puas", "emoji": "😃", "percent": round(scores.get("happy", 0.20), 2), "color": "#FFE6A7"},
-                    {"label": "Tingkat Stres / Cemas", "emoji": "😟", "percent": round(scores.get("fearful", 0.10), 2), "color": "#FF8B94"},
+                    {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": calm_pct, "color": "#4ECDC4"},
+                    {"label": "Bahagia & Puas", "emoji": "😃", "percent": happy_pct, "color": "#FFE6A7"},
+                    {"label": "Tingkat Stres / Cemas", "emoji": "😟", "percent": stress_pct, "color": "#FF8B94"},
                 ]
             else:
                 dominant = "Tenang 🌿"
                 stress_level = "Rendah"
                 breakdown = [
-                    {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.85, "color": "#4ECDC4"},
-                    {"label": "Bahagia & Puas", "emoji": "😃", "percent": 0.60, "color": "#FFE6A7"},
-                    {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.15, "color": "#FF8B94"},
+                    {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.70, "color": "#4ECDC4"},
+                    {"label": "Bahagia & Puas", "emoji": "😃", "percent": 0.20, "color": "#FFE6A7"},
+                    {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.10, "color": "#FF8B94"},
                 ]
 
             summary_payload = {

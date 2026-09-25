@@ -53,3 +53,6 @@ class AudioStreamBufferService:
     def clear_session(self, session_id: str) -> None:
         if session_id in self._buffers:
             del self._buffers[session_id]
+
+
+audio_buffer_service = AudioStreamBufferService()

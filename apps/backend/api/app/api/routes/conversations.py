@@ -370,17 +370,23 @@ async def get_today_conversations(
 
         time_formatted = _format_time_local(c.started_at)
 
+        c_emotions = [emotion_map[m.id].emotions for m in msgs if m.id in emotion_map and emotion_map[m.id].emotions]
+        if c_emotions:
+            breakdown = MLEmotionDetectorService.aggregate_session_emotions(c_emotions)
+        else:
+            breakdown = [
+                {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.70, "color": "#4ECDC4"},
+                {"label": "Bahagia & Puas", "emoji": "😃", "percent": 0.20, "color": "#FFE6A7"},
+                {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.10, "color": "#FF8B94"},
+            ]
+
         analysis = {
             "dominant_emotion": mood_tag,
             "calm_score": "85%",
             "stress_level": "Rendah",
             "empathy_level": "Sangat Tinggi",
             "ai_insight": ai_insight,
-            "emotions_breakdown": [
-                {"label": "Ketenangan & Kedamaian", "emoji": "😌", "percent": 0.85, "color": "#4ECDC4"},
-                {"label": "Bahagia & Puas", "emoji": "😃", "percent": 0.60, "color": "#FFE6A7"},
-                {"label": "Tingkat Stres", "emoji": "😟", "percent": 0.15, "color": "#FF8B94"},
-            ],
+            "emotions_breakdown": breakdown,
         }
 
         transcript_items = []
