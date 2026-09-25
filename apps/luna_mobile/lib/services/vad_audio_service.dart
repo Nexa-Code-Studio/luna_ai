@@ -81,9 +81,15 @@ class VadAudioService {
 
       if (_isSpeechInitialized) {
         await _speech.listen(
+          localeId: 'id-ID',
+          listenFor: const Duration(seconds: 60),
+          pauseFor: const Duration(milliseconds: 2500),
           listenOptions: stt.SpeechListenOptions(
+            localeId: 'id-ID',
             listenMode: stt.ListenMode.dictation,
             partialResults: true,
+            listenFor: const Duration(seconds: 60),
+            pauseFor: const Duration(milliseconds: 2500),
           ),
           onResult: (result) {
             if (result.recognizedWords.isNotEmpty) {
