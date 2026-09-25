@@ -4,7 +4,8 @@ import asyncio
 import base64
 import json
 import logging
-from typing import Any, AsyncGenerator
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, AsyncGenerator, ClassVar
 
 try:
     import websockets
@@ -19,6 +20,9 @@ from packages.shared.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Waktu Indonesia Barat (WIB = UTC+7)
+WIB = timezone(timedelta(hours=7))
+
 
 class ElevenLabsTTDSession:
     """Asynchronous bidirectional Text-to-Dialogue (TTD) streaming session for ElevenLabs v3."""
@@ -29,10 +33,16 @@ class ElevenLabsTTDSession:
         voice_id: str,
         model_id: str = "eleven_v3_conversational",
         output_format: str = "mp3_44100_128",
+        keys: list[str] | None = None,
     ) -> None:
         self.api_key = api_key
+        self.keys = keys or ([api_key] if api_key else [])
         self.voice_id = voice_id
-        self.model_id = model_id
+        # Text-to-Dialogue WebSocket API strictly requires an eleven_v3 model
+        if not model_id.startswith("eleven_v3"):
+            self.model_id = "eleven_v3_conversational"
+        else:
+            self.model_id = model_id
         self.output_format = output_format
         self.ws: websockets.client.WebSocketClientProtocol | None = None
         self._event_queue: asyncio.Queue[tuple[str, Any] | None] = asyncio.Queue()
@@ -47,21 +57,48 @@ class ElevenLabsTTDSession:
         return f"{base}?model_id={self.model_id}&output_format={self.output_format}"
 
     async def connect(self, timeout: float = 8.0) -> None:
-        headers = {"xi-api-key": self.api_key}
-        logger.info(f"🔌 [ELEVENLABS TTD CONNECTING] Model: {self.model_id} | Voice: {self.voice_id}")
+        if websockets is None:
+            raise RuntimeError("websockets package is not installed")
 
-        self.ws = await asyncio.wait_for(
-            websockets.connect(self.url, additional_headers=headers),
-            timeout=timeout,
-        )
+        candidate_keys = self.keys if self.keys else [self.api_key]
+        last_ex: Exception | None = None
 
-        # Step 1: Handshake frame registering the voice
-        init_frame = {"voices": [self.voice_id]}
-        await self.ws.send(json.dumps(init_frame))
-        logger.info(f"✅ [ELEVENLABS TTD INITIALIZED] Registered voice '{self.voice_id}'")
+        for attempt in range(len(candidate_keys)):
+            current_key = ElevenLabsTTDProvider.get_active_key(candidate_keys)
+            self.api_key = current_key
+            headers = {"xi-api-key": current_key}
+            logger.info(
+                f"🔌 [ELEVENLABS TTD CONNECTING] Attempt {attempt + 1}/{len(candidate_keys)} | "
+                f"Key: ...{current_key[-6:] if len(current_key) >= 6 else current_key} | "
+                f"Model: {self.model_id} | Voice: {self.voice_id}"
+            )
 
-        # Start receiver worker concurrently
-        self._recv_task = asyncio.create_task(self._receive_loop())
+            try:
+                self.ws = await asyncio.wait_for(
+                    websockets.connect(self.url, additional_headers=headers),
+                    timeout=timeout,
+                )
+
+                # Step 1: Handshake frame registering the voice
+                init_frame = {"voices": [self.voice_id]}
+                await self.ws.send(json.dumps(init_frame))
+                logger.info(f"✅ [ELEVENLABS TTD INITIALIZED] Registered voice '{self.voice_id}' with key ...{current_key[-6:]}")
+
+                # Start receiver worker concurrently
+                self._recv_task = asyncio.create_task(self._receive_loop())
+                return
+            except Exception as ex:
+                last_ex = ex
+                err_str = str(ex).lower()
+                if "401" in err_str or "403" in err_str or "429" in err_str or "policy violation" in err_str:
+                    logger.warning(f"⚠️ [ELEVENLABS TTD KEY FAILED] Key ...{current_key[-6:]} rejected ({ex}). Rotating to next key...")
+                    ElevenLabsTTDProvider.mark_key_exhausted(current_key)
+                else:
+                    logger.error(f"❌ [ELEVENLABS TTD CONNECT ERROR] {ex}")
+                    raise
+
+        if last_ex:
+            raise last_ex
 
     async def send_text(self, text: str, new_turn: bool = False) -> None:
         if not self.ws or self._is_closed:
@@ -239,20 +276,74 @@ class ElevenLabsTTDSession:
 class ElevenLabsTTDProvider(BaseTTSProvider):
     """Text-to-Speech provider using ElevenLabs Text-to-Dialogue (TTD) WebSocket API for Eleven v3."""
 
+    _shared_exhausted_keys: ClassVar[set[str]] = set()
+    _shared_current_key_index: ClassVar[int] = 0
+    _shared_last_reset_date: ClassVar[date | None] = None
+
     def __init__(
         self,
         api_key: str | None = None,
         voice_id: str | None = None,
         model_id: str | None = None,
     ) -> None:
-        self.api_key = api_key or settings.TTS_API_KEY
-        if not self.api_key:
-            keys = settings.get_elevenlabs_keys()
-            self.api_key = keys[0] if keys else ""
+        if api_key:
+            raw_keys = [k.strip() for k in api_key.split(",") if k.strip()]
+        else:
+            raw_keys = settings.get_elevenlabs_keys()
 
-        self.voice_id = voice_id or settings.TTS_VOICE_ID or "EXAVITQu4vr4xnSDxMaL"
-        self.model_id = model_id or getattr(settings, "TTS_MODEL", "eleven_v3_conversational")
+        self.keys: list[str] = [
+            k for k in raw_keys if k and not k.startswith("your-") and "placeholder" not in k.lower()
+        ]
+        self.voice_id = voice_id or settings.TTS_VOICE_ID or "cgSgspJ2msm6clMCkdW9"
+
+        # Enforce eleven_v3 model for TTD WebSocket
+        configured_model = model_id or getattr(settings, "TTS_MODEL", "eleven_v3_conversational")
+        if configured_model and configured_model.startswith("eleven_v3"):
+            self.model_id = configured_model
+        else:
+            self.model_id = "eleven_v3_conversational"
+
         self.output_format = getattr(settings, "ELEVENLABS_OUTPUT_FORMAT", "mp3_44100_128")
+        self._check_daily_reset()
+
+    @property
+    def api_key(self) -> str:
+        return self.get_active_key(self.keys)
+
+    @classmethod
+    def _check_daily_reset(cls) -> None:
+        today_wib = datetime.now(WIB).date()
+        if cls._shared_last_reset_date is None or today_wib > cls._shared_last_reset_date:
+            if cls._shared_exhausted_keys:
+                logger.info(
+                    f"🔄 [ELEVENLABS TTD RESET] New day {today_wib} (WIB): "
+                    f"Cleared {len(cls._shared_exhausted_keys)} exhausted API keys for fresh quota."
+                )
+            cls._shared_exhausted_keys.clear()
+            cls._shared_current_key_index = 0
+            cls._shared_last_reset_date = today_wib
+
+    @classmethod
+    def mark_key_exhausted(cls, key: str) -> None:
+        if key not in cls._shared_exhausted_keys:
+            cls._shared_exhausted_keys.add(key)
+            logger.warning(
+                f"⚠️ [ELEVENLABS TTD KEY EXHAUSTED] Marked key ...{key[-6:] if len(key) >= 6 else key} as exhausted. "
+                f"Total exhausted: {len(cls._shared_exhausted_keys)}"
+            )
+            cls._shared_current_key_index += 1
+
+    @classmethod
+    def get_active_key(cls, keys: list[str]) -> str:
+        if not keys:
+            return ""
+        for i in range(len(keys)):
+            idx = (cls._shared_current_key_index + i) % len(keys)
+            candidate = keys[idx]
+            if candidate not in cls._shared_exhausted_keys:
+                cls._shared_current_key_index = idx
+                return candidate
+        return keys[cls._shared_current_key_index % len(keys)]
 
     def create_session(self, voice_id: str | None = None) -> ElevenLabsTTDSession:
         return ElevenLabsTTDSession(
@@ -260,6 +351,7 @@ class ElevenLabsTTDProvider(BaseTTSProvider):
             voice_id=voice_id or self.voice_id,
             model_id=self.model_id,
             output_format=self.output_format,
+            keys=self.keys,
         )
 
     async def synthesize(self, text: str, voice_id: str | None = None) -> bytes:
