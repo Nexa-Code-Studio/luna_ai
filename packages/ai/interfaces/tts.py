@@ -6,7 +6,12 @@ class BaseTTSProvider(ABC):
     """Provider-agnostic interface for Text-To-Speech services."""
 
     @abstractmethod
-    async def synthesize(self, text: str, voice_id: str | None = None) -> bytes:
+    async def synthesize(
+        self,
+        text: str,
+        voice_id: str | None = None,
+        voice_settings: dict[str, float] | None = None,
+    ) -> bytes:
         """Synthesize text into complete audio bytes."""
         pass
 
@@ -18,8 +23,11 @@ class BaseTTSProvider(ABC):
         pass
 
     async def synthesize_with_envelope(
-        self, text: str, voice_id: str | None = None
+        self,
+        text: str,
+        voice_id: str | None = None,
+        voice_settings: dict[str, float] | None = None,
     ) -> tuple[bytes, list[float]]:
         """Synthesize text into complete audio bytes and an amplitude envelope list."""
-        audio = await self.synthesize(text, voice_id)
+        audio = await self.synthesize(text, voice_id, voice_settings=voice_settings)
         return audio, []

@@ -791,11 +791,13 @@ class CallSessionManager:
                 f"🎭 [DYNAMIC VOICE MAPPING] Session {session.session_id} | "
                 f"Mode: '{dyn_res.mode.id}' ({dyn_res.mode.name}) | "
                 f"User: '{detected_emo}' ({int(confidence*100)}%) -> "
-                f"Voice: '{effective_voice_id}' | Style: '{delivery_style}' | Tag: '{audio_tag or 'none'}' "
+                f"Voice: '{effective_voice_id}' | Style: '{delivery_style}' | Settings: {dyn_res.voice_settings} "
                 f"(Override: {dyn_res.is_emotion_override})"
             )
 
-            chunker = LatencyAwareSentenceChunker(delivery_style=delivery_style, audio_tag=audio_tag)
+            # LatencyAwareSentenceChunker buffers pure conversational text without text-tag pollution.
+            # Emotion is controlled via the official ElevenLabs voice_settings contract.
+            chunker = LatencyAwareSentenceChunker(delivery_style=delivery_style, audio_tag="")
             full_display_parts: list[str] = []
             total_audio_bytes = 0
             is_ttd = isinstance(tts_provider, ElevenLabsTTDProvider)
@@ -813,8 +815,11 @@ class CallSessionManager:
                     yield tok
 
             if is_ttd:
-                # Concurrent true streaming via ElevenLabs TTD WebSocket with dynamically resolved voice
-                ttd_session = tts_provider.create_session(voice_id=effective_voice_id)
+                # Concurrent true streaming via ElevenLabs TTD WebSocket with dynamically resolved voice and voice_settings
+                ttd_session = tts_provider.create_session(
+                    voice_id=effective_voice_id,
+                    voice_settings=dyn_res.voice_settings,
+                )
                 session._active_ttd_session = ttd_session
                 try:
                     await ttd_session.connect()
@@ -872,7 +877,11 @@ class CallSessionManager:
                         try:
                             logger.info(f"🔄 [FALLBACK TO ELEVENLABS REST] Session {session.session_id}: Synthesizing with voice {effective_voice_id}")
                             fallback_provider = TTSFactory.get_provider("elevenlabs_rest", force_new=True)
-                            audio_fb = await fallback_provider.synthesize(remaining_text, voice_id=effective_voice_id)
+                            audio_fb = await fallback_provider.synthesize(
+                                remaining_text,
+                                voice_id=effective_voice_id,
+                                voice_settings=dyn_res.voice_settings,
+                            )
                         except Exception as fb_err:
                             logger.error(f"⚠️ [ELEVENLABS REST FALLBACK ERROR] {fb_err}. Falling back to EdgeTTS...")
                             fallback_provider = TTSFactory.get_provider("edge_tts", force_new=True)

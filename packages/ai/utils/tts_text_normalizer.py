@@ -53,6 +53,10 @@ def sanitize_text_for_tts(text: str) -> str:
 
     cleaned = text
 
+    # 0. Hapus explicit audio/emotion tag (misal [happily], [softly], [playful], dll.)
+    # agar tidak tertinggal sebagai kata bahasa Inggris yang dibaca keras-keras oleh model vokal
+    cleaned = re.sub(r"\[[a-zA-Z_\s]+\]\s*", "", cleaned)
+
     # 1. Hapus emoji
     cleaned = EMOJI_PATTERN.sub(" ", cleaned)
 

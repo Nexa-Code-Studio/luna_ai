@@ -15,12 +15,20 @@ class EdgeTTSProvider(BaseTTSProvider):
     def __init__(self, default_voice: str | None = None) -> None:
         self.default_voice = default_voice or settings.EDGE_TTS_VOICE or "id-ID-GadisNeural"
 
-    async def synthesize(self, text: str, voice_id: str | None = None) -> bytes:
-        audio, _ = await self.synthesize_with_envelope(text, voice_id)
+    async def synthesize(
+        self,
+        text: str,
+        voice_id: str | None = None,
+        voice_settings: dict[str, float] | None = None,
+    ) -> bytes:
+        audio, _ = await self.synthesize_with_envelope(text, voice_id, voice_settings=voice_settings)
         return audio
 
     async def synthesize_with_envelope(
-        self, text: str, voice_id: str | None = None
+        self,
+        text: str,
+        voice_id: str | None = None,
+        voice_settings: dict[str, float] | None = None,
     ) -> tuple[bytes, list[float]]:
         voice = voice_id or self.default_voice
         try:
