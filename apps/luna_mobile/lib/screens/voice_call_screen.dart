@@ -770,6 +770,32 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
                 ),
               ),
               const SizedBox(height: 6),
+              // Active Voice Character Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.auto_awesome_rounded, size: 12, color: Color(0xFFFDE68A)),
+                    const SizedBox(width: 5),
+                    Text(
+                      _getVoiceModeLabel(state.voiceMode),
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.95),
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
               Text(
                 _getCleanStatusText(state),
                 textAlign: TextAlign.center,
@@ -1007,6 +1033,18 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen>
 
 
 
+
+  String _getVoiceModeLabel(String mode) {
+    switch (mode) {
+      case 'mode_4':
+        return 'Jessica Playful';
+      case 'mode_7':
+        return 'Laura Enerjik';
+      case 'mode_2':
+      default:
+        return 'Jessica Ceria';
+    }
+  }
 
   String _getCleanStatusText(AiCallViewState state) {
     if (state.isMuted) return 'Mikrofon Di-Mute';

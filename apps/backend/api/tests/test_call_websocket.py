@@ -1,3 +1,4 @@
+import json
 import pytest
 from app.main import app
 from app.services.audio_stream_buffer import AudioStreamBufferService, analyze_audio_placeholder
@@ -41,8 +42,12 @@ def test_call_websocket_lifecycle():
 
         # 5. Client sends user_transcript (uses Mock LLM / Ollama fallback in test)
         websocket.send_json({"type": "user_transcript", "text": "Halo Luna, selamat pagi!"})
-        thinking_data = websocket.receive_json()
-        assert thinking_data["type"] == "ai_thinking"
+        first_evt = websocket.receive_json()
+        if first_evt["type"] == "turn.committed":
+            thinking_data = websocket.receive_json()
+        else:
+            thinking_data = first_evt
+        assert thinking_data["type"] in ("ai_thinking", "ai.thinking")
 
         # 6. Receive AI transcript / binary TTS audio or finished signal
         received_types = []
@@ -52,7 +57,7 @@ def test_call_websocket_lifecycle():
                 if "bytes" in msg and msg["bytes"]:
                     received_types.append("binary_audio")
                 elif "text" in msg and msg["text"]:
-                    data = websocket.receive_json()
+                    data = json.loads(msg["text"])
                     received_types.append(data.get("type"))
             except Exception:
                 break

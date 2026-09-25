@@ -2,6 +2,7 @@ import asyncio
 from packages.ai import LLMFactory, TTSFactory, LLMMessage
 from packages.ai.providers.llm import MockLLMProvider, OpenAILLMProvider, GeminiLLMProvider
 from packages.ai.providers.tts import MockTTSProvider, OpenAITTSProvider, ElevenLabsTTSProvider
+from packages.ai.providers.tts.elevenlabs_ttd_provider import ElevenLabsTTDProvider
 
 
 async def test_factories():
@@ -37,8 +38,12 @@ async def test_factories():
     print("✅ Successfully instantiated OpenAITTSProvider")
 
     eleven_tts = TTSFactory.get_provider("elevenlabs")
-    assert isinstance(eleven_tts, ElevenLabsTTSProvider)
-    print("✅ Successfully instantiated ElevenLabsTTSProvider")
+    assert isinstance(eleven_tts, (ElevenLabsTTSProvider, ElevenLabsTTDProvider))
+    print(f"✅ Successfully instantiated {type(eleven_tts).__name__}")
+
+    eleven_rest_tts = TTSFactory.get_provider("elevenlabs_rest")
+    assert isinstance(eleven_rest_tts, ElevenLabsTTSProvider)
+    print("✅ Successfully instantiated ElevenLabsTTSProvider (REST rollback path)")
 
     print("\n🎉 ALL AI PROVIDER FACTORY TESTS PASSED SUCCESSFULLY!")
 
