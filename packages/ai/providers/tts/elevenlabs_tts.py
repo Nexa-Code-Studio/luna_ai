@@ -63,7 +63,12 @@ class ElevenLabsTTSProvider(BaseTTSProvider):
             return "***"
         return f"{key[:8]}...{key[-4:]}"
 
-    async def synthesize(self, text: str, voice_id: str | None = None) -> bytes:
+    async def synthesize(
+        self,
+        text: str,
+        voice_id: str | None = None,
+        voice_settings: dict[str, float] | None = None,
+    ) -> bytes:
         self._check_daily_reset()
 
         clean_text = sanitize_text_for_tts(text)
@@ -81,9 +86,10 @@ class ElevenLabsTTSProvider(BaseTTSProvider):
             "text": clean_text,
             "model_id": self.model_id,
             "language_code": "id",
-            "voice_settings": {
+            "voice_settings": voice_settings or {
                 "stability": 0.65,
                 "similarity_boost": 0.80,
+                "style": 0.15,
             },
         }
 

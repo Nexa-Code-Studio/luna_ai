@@ -13,6 +13,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "apps" / "backend" / "api"))
 from packages.ai.orchestration.orchestrator import AIOrchestrator
 from packages.ai.providers.tts.elevenlabs_ttd_provider import ElevenLabsTTDProvider
 from packages.ai.utils.emotion_style_mapper import (
+    get_voice_settings_for_style,
     map_emotion_to_delivery_style,
     strip_audio_tags,
 )
@@ -62,24 +63,25 @@ async def run_live_audio_test(
     print(f"   - Risk Level       : {turn_result.safety_decision.risk_level.upper()}")
     print(f"   - RAG Retrieved    : {len(turn_result.rag_items)} items")
 
-    # 3. Determine Delivery Style & Audio Tag
+    # 3. Determine Delivery Style & Voice Settings
     delivery_style, audio_tag = map_emotion_to_delivery_style(
         detected_emotion=turn_result.emotion.primary_emotion,
         confidence=turn_result.emotion.confidence,
         risk_level=turn_result.safety_decision.risk_level,
     )
+    voice_settings = get_voice_settings_for_style(delivery_style)
     print(f"   - Assistant Style  : {delivery_style.upper()}")
-    print(f"   - Audio Tag        : '{audio_tag}' (only on sentence 1, stripped from chat history)\n")
+    print(f"   - Voice Settings   : {voice_settings} (Official ElevenLabs Contract)\n")
 
     # 4. Stream LLM tokens through LatencyAwareSentenceChunker
     print("⏳ [2/4] Connecting to ElevenLabs TTD WebSocket ('eleven_v3_conversational')...")
     tts_provider: ElevenLabsTTDProvider = ElevenLabsTTDProvider()
-    ttd_session = tts_provider.create_session()
+    ttd_session = tts_provider.create_session(voice_settings=voice_settings)
     await ttd_session.connect()
     t_ttd_connected = time.perf_counter()
     print(f"✅ [TTD CONNECTED] WebSocket handshake completed in {(t_ttd_connected - t_orchestrator_ready)*1000:.1f}ms\n")
 
-    chunker = LatencyAwareSentenceChunker(delivery_style=delivery_style, audio_tag=audio_tag)
+    chunker = LatencyAwareSentenceChunker(delivery_style=delivery_style, audio_tag="")
 
     # Instrument LLM token stream
     llm_tokens: list[str] = []
