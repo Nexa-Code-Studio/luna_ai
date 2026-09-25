@@ -17,6 +17,9 @@ class SttService {
   bool get isListening => _speechToText.isListening;
   bool get isInitialized => _isInitialized;
 
+  String _resolvedLocaleId = 'id-ID';
+  String get resolvedLocaleId => _resolvedLocaleId;
+
   Future<bool> initialize() async {
     if (_isInitialized) return true;
     try {
@@ -34,7 +37,21 @@ class SttService {
           }
         },
       );
-      debugPrint('🎙️ [STT INIT SUCCESS]: $_isInitialized');
+      if (_isInitialized) {
+        try {
+          final locales = await _speechToText.locales();
+          for (final loc in locales) {
+            final normalized = loc.localeId.toLowerCase().replaceAll('_', '-');
+            if (normalized == 'id-id' || normalized == 'id') {
+              _resolvedLocaleId = loc.localeId;
+              break;
+            }
+          }
+        } catch (_) {
+          _resolvedLocaleId = 'id-ID';
+        }
+      }
+      debugPrint('🎙️ [STT INIT SUCCESS]: $_isInitialized (Locale: $_resolvedLocaleId)');
     } catch (e) {
       debugPrint('❌ [STT INIT EXCEPTION]: $e');
       _isInitialized = false;
@@ -77,8 +94,9 @@ class SttService {
             }
           }
         },
+        localeId: _resolvedLocaleId,
         listenOptions: SpeechListenOptions(
-          localeId: 'id_ID',
+          localeId: _resolvedLocaleId,
           listenFor: const Duration(seconds: 60),
           pauseFor: const Duration(seconds: 5),
           partialResults: true,
