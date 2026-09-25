@@ -867,9 +867,16 @@ class CallSessionManager:
                     # If failure happened before any audio reached Flutter, gracefully fallback to REST
                     if total_audio_bytes == 0:
                         logger.warning(f"🔄 [FALLBACK TO REST TTS] Session {session.session_id}: Attempting fallback synthesis...")
-                        fallback_provider = TTSFactory.get_provider("edge_tts", force_new=True)
                         remaining_text = "".join(full_display_parts).strip() or "Aku di sini mendengarkanmu. Ceritakan apa yang sedang kamu rasakan."
-                        audio_fb = await fallback_provider.synthesize(remaining_text)
+                        audio_fb = None
+                        try:
+                            logger.info(f"🔄 [FALLBACK TO ELEVENLABS REST] Session {session.session_id}: Synthesizing with voice {effective_voice_id}")
+                            fallback_provider = TTSFactory.get_provider("elevenlabs_rest", force_new=True)
+                            audio_fb = await fallback_provider.synthesize(remaining_text, voice_id=effective_voice_id)
+                        except Exception as fb_err:
+                            logger.error(f"⚠️ [ELEVENLABS REST FALLBACK ERROR] {fb_err}. Falling back to EdgeTTS...")
+                            fallback_provider = TTSFactory.get_provider("edge_tts", force_new=True)
+                            audio_fb = await fallback_provider.synthesize(remaining_text)
                         if audio_fb:
                             total_audio_bytes += len(audio_fb)
                             b64_fb = base64.b64encode(audio_fb).decode("ascii")
