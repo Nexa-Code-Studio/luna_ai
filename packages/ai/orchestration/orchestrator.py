@@ -187,6 +187,8 @@ class AIOrchestrator:
         safety_decision: SafetyPolicyDecision,
         rag_items: list[dict[str, Any]],
         dass_scores: Optional[dict[str, Any]] = None,
+        user_name: Optional[str] = None,
+        persisted_memory: Optional[str] = None,
     ) -> str:
         """Menyusun system prompt empati konseling dinamis berdasarkan hasil observasi multi-agent."""
         prompt = (
@@ -194,6 +196,20 @@ class AIOrchestrator:
             f"Kondisi emosi pengguna yang terobservasi: '{emotion.primary_emotion}' (confidence: {int(emotion.confidence * 100)}%).\n"
             f"Tingkat risiko keselamatan: '{safety_decision.risk_level}'. Kebijakan respon: '{safety_decision.response_policy}'.\n"
         )
+
+        if user_name and user_name.strip():
+            clean_name = user_name.strip()
+            prompt += (
+                f"\n[PROFIL PENGGUNA]\n"
+                f"Nama Pengguna: {clean_name}\n"
+                f"PANDUAN SAPAAN: Anda mengetahui bahwa nama pengguna adalah {clean_name}. "
+                f"Gunakan nama panggilannya secara wajar dan natural untuk membangun kehangatan emosional "
+                f"(misalnya di awal respon atau saat memvalidasi perasaannya). "
+                f"DILARANG menyebut nama pengguna berulang-ulang di setiap kalimat agar tidak terasa kaku atau aneh.\n"
+            )
+
+        if persisted_memory and persisted_memory.strip():
+            prompt += f"\n[Memori Percakapan Terdahulu Pengguna]:\n{persisted_memory.strip()}\n"
 
         if dass_scores:
             dep = dass_scores.get("depression", 0)
@@ -211,17 +227,20 @@ class AIOrchestrator:
                 title = item.get("title", "Pengetahuan Konseling")
                 content = item.get("content", "")[:180]
                 knowledge_blocks.append(f"- {title}: {content}")
-            prompt += f"\nGunakan referensi pengetahuan konseling berikut jika relevan secara alami (jangan membaca kaku):\n" + "\n".join(knowledge_blocks) + "\n"
+            prompt += (
+                f"\nGunakan referensi pengetahuan konseling berikut jika relevan secara alami sebagai bahan acuan (DILARANG membaca kaku atau mendikte isi artikel):\n"
+                + "\n".join(knowledge_blocks)
+                + "\n"
+            )
 
         prompt += (
-            "\nPedoman Respon:\n"
+            "\nPedoman Respon Suara (Voice Conversation Rules):\n"
             "1. Berbicaralah dalam Bahasa Indonesia yang santun, akrab, dan hangat (seperti teman bicara yang penuh pengertian).\n"
-            "2. Berikan respon yang ringkas dan nyaman didengar (1-3 kalimat) karena ini adalah percakapan suara real-time.\n"
-            "3. Validasi perasaan pengguna terlebih dahulu sebelum memberikan pandangan menenangkan atau pertanyaan terbuka ringan.\n"
-            "4. Eksplorasi DASS-21 Non-Frontal: Saat pengguna mengungkapkan stres, cemas, atau sedih, ajukan pertanyaan terbuka reflektif yang mengeksplorasi sensasi fisik/otonomik (napas, detak jantung, ketegangan fisik) atau suasana hati (hilang antusias, rasa hampa) secara alami. DILARANG menyebut angka atau nomor butir kuesioner.\n"
-            "5. Format Teks untuk Suara (TTS): Tulis dalam teks lisan murni. DILARANG menggunakan tanda bintang markdown (* atau **), simbol garis bawah, tanda pagar (#), bullet points (-), atau emoji. Tulis kata secara lengkap tanpa singkatan (misal: tulis 'dan lain-lain', bukan 'dll.').\n"
-            "6. Gunakan tanda koma (,) dan titik (.) secara teratur dan wajar untuk mengatur jeda napas pelafalan suara.\n"
-            "7. Jangan mendiagnosis penyakit mental secara klinis."
+            "2. Default Panjang Respon: 1 hingga 3 kalimat ringkas per giliran bicara. Ini adalah panggilan telepon suara interaktif, BUKAN penulisan artikel atau esai.\n"
+            "3. Validasi Emosi & Refleksi: Fokus utama adalah memvalidasi cerita pengguna dan mendengarkan dengan penuh perhatian. Boleh mengajukan SATU pertanyaan terbuka ringan untuk memperdalam pemahaman.\n"
+            "4. DILARANG KERAS: Membuat daftar berpoin (1, 2, 3), tanda pagar (#), simbol cetak tebal (* atau **), emoji dekoratif, atau penjelasan ensiklopedis panjang kecuali pengguna secara eksplisit meminta penjelasan teori atau langkah teknis.\n"
+            "5. Eksplorasi DASS-21 Non-Frontal: Saat pengguna mengungkapkan stres, cemas, atau sedih, ajukan pertanyaan terbuka reflektif yang menyentuh sensasi fisik atau suasana hati secara alami tanpa pernah menyebut istilah kuesioner psikologi.\n"
+            "6. Tulis kata secara lengkap tanpa singkatan (misal: tulis 'dan lain-lain', bukan 'dll.'). Gunakan tanda koma (,) dan titik (.) secara teratur untuk jeda nafas alami TTS."
         )
         return prompt
 
@@ -231,13 +250,14 @@ class AIOrchestrator:
         conversation_history: Optional[list[LLMMessage]] = None,
         audio_path: Optional[str] = None,
         dass_scores: Optional[dict[str, Any]] = None,
+        user_name: Optional[str] = None,
     ) -> OrchestratedTurnResult:
         """Memproses seluruh evaluasi orkestrasi (Emosi -> Gejala -> Risiko -> RAG)
 
         dan mengembalikan OrchestratedTurnResult yang siap di-stream.
         """
         start_t = time.perf_counter()
-        logger.info(f"🚀 [ORCHESTRATOR TURN START] User text: \"{user_text}\"")
+        logger.info(f"🚀 [ORCHESTRATOR TURN START] User text: \"{user_text}\" | User Name: {user_name or 'None'}")
 
         # 1. Deteksi Emosi (Voice atau Teks)
         emotion_res = self._detect_emotion(user_text, audio_path=audio_path)
@@ -294,22 +314,57 @@ class AIOrchestrator:
                 execution_time_ms=round(exec_time, 2),
             )
 
-        # 5. RAG Retrieval jika diizinkan oleh Safety Policy
+        # 5. RAG Retrieval jika diizinkan oleh Safety Policy DAN Intent Gating
+        from packages.ai.services.rag_gating import RAGGatingService
+        gating_res = RAGGatingService.evaluate_intent(user_text, is_crisis=is_crisis)
+
         rag_items: list[dict[str, Any]] = []
-        if safety_decision.allow_normal_rag:
+        if safety_decision.allow_normal_rag and gating_res.should_retrieve_rag:
+            logger.info(f"📚 [ORCHESTRATOR RAG ACTIVATED] Querying Qdrant for intent: {gating_res.intent.value}")
             rag_items = await self._fetch_rag_context(user_text)
+        else:
+            logger.info(f"📚 [ORCHESTRATOR RAG SKIPPED] Intent: {gating_res.intent.value} ({gating_res.reason})")
+
+        # Extract persisted memory if present in conversation_history system message
+        persisted_memory = None
+        if conversation_history:
+            for msg in conversation_history:
+                if msg.role == "system" and "[Memori Percakapan Terdahulu Pengguna]:" in msg.content:
+                    parts = msg.content.split("[Memori Percakapan Terdahulu Pengguna]:")
+                    if len(parts) > 1:
+                        persisted_memory = parts[1].strip()
+                        if "[Profil Asesmen Psikologis DASS-21 Terkini Pengguna]:" in persisted_memory:
+                            persisted_memory = persisted_memory.split("[Profil Asesmen Psikologis DASS-21 Terkini Pengguna]:")[0].strip()
 
         # 6. Formulasi Dynamic Empathetic Prompt
         system_prompt = self._compose_system_prompt(
-            emotion_res, safety_decision, rag_items, dass_scores=dass_scores
+            emotion_res,
+            safety_decision,
+            rag_items,
+            dass_scores=dass_scores,
+            user_name=user_name,
+            persisted_memory=persisted_memory,
         )
 
-        # 7. Siapkan Message History
+        # 7. Siapkan Message History dengan Adaptive History Budgeting
         messages: list[LLMMessage] = [LLMMessage(role="system", content=system_prompt)]
+        raw_turns: list[LLMMessage] = []
         if conversation_history:
             for msg in conversation_history:
-                if msg.role != "system":
-                    messages.append(msg)
+                if msg.role != "system" and msg.content and msg.content.strip():
+                    raw_turns.append(msg)
+
+        # Retain recent turns verbatim (sliding window last 8 turns), summarize older if long
+        if len(raw_turns) > 8:
+            messages.append(
+                LLMMessage(
+                    role="system",
+                    content=f"[Konteks Sesi Berjalan]: Sesi ini telah berlangsung {len(raw_turns)} giliran interaktif. Pertahankan kesinambungan cerita dan rujuk hal-hal yang telah dibicarakan sebelumnya secara konsisten.",
+                )
+            )
+            messages.extend(raw_turns[-8:])
+        else:
+            messages.extend(raw_turns)
 
         # Pastikan user message saat ini ada di akhir
         if not messages or messages[-1].role != "user" or messages[-1].content != user_text:

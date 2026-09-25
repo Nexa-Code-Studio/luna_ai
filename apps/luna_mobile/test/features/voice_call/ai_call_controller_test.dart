@@ -141,8 +141,12 @@ class FakeVoiceCallWsClient extends Fake implements VoiceCallWsClient {
   }
 
   @override
-  void sendStartCall() {
-    sentEvents.add({'type': 'start_call'});
+  void sendStartCall({String? voiceMode}) {
+    final payload = <String, dynamic>{'type': 'start_call'};
+    if (voiceMode != null) {
+      payload['voice_mode'] = voiceMode;
+    }
+    sentEvents.add(payload);
   }
 
   @override
@@ -285,6 +289,25 @@ void main() {
     expect(fakeSpeech.isListening, isTrue);
     expect(fakeWs.isConnected, isTrue);
     expect(fakeWs.sentEvents.any((e) => e['type'] == 'start_call'), isTrue);
+  });
+
+  test('startCall passes custom voiceMode and updates state', () async {
+    await controller.startCall(customCallId: 'test_call_mode_7', voiceMode: 'mode_7');
+
+    expect(controller.state.voiceMode, 'mode_7');
+    final startCallEvent = fakeWs.sentEvents.firstWhere((e) => e['type'] == 'start_call');
+    expect(startCallEvent['voice_mode'], 'mode_7');
+  });
+
+  test('call_started event confirms and updates state.voiceMode', () async {
+    await controller.startCall();
+    controller.handleSocketEvent({
+      'type': 'call_started',
+      'session_id': controller.state.callId,
+      'voice_mode': 'mode_4',
+    });
+
+    expect(controller.state.voiceMode, 'mode_4');
   });
 
   test('stale STT callback from old session is discarded', () async {

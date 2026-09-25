@@ -97,8 +97,12 @@ class VoiceCallWsClient {
     }
   }
 
-  void sendStartCall() {
-    _sendJson({'type': 'start_call'});
+  void sendStartCall({String? voiceMode}) {
+    final payload = <String, dynamic>{'type': 'start_call'};
+    if (voiceMode != null && voiceMode.isNotEmpty) {
+      payload['voice_mode'] = voiceMode;
+    }
+    _sendJson(payload);
   }
 
   void sendPartial({
