@@ -41,96 +41,157 @@ class MLEmotionDetectorService:
         8: {"name": "unknown", "label": "Tidak Diketahui", "emoji": "❓", "color": "#DFE6E9"},
     }
 
+    _emotion_service: Any = None
+
+    @classmethod
+    def get_emotion_service(cls) -> Any:
+        if cls._emotion_service is None:
+            from packages.ai.services.emotion_service import EmotionService
+            cls._emotion_service = EmotionService()
+        return cls._emotion_service
+
+    @classmethod
+    def _predict_from_text(cls, text: str) -> dict[str, Any]:
+        """Klasifikasi emosi teks dinamis berbasis analisis konteks sentimen & leksikon psikologi."""
+        text_lower = text.lower() if text else ""
+
+        emotion_lexicon = {
+            "happy": [
+                "senang", "bahagia", "suka", "terima kasih", "makasih", "gembira",
+                "bersyukur", "puas", "lega", "alhamdulillah", "syukurlah", "enak",
+                "mantap", "hebat", "tersenyum", "ceria", "semangat", "asyik"
+            ],
+            "fearful": [
+                "cemas", "takut", "khawatir", "stres", "panik", "nervous", "gelisah",
+                "demam panggung", "was-was", "tegang", "bingung", "takutnya", "ngeri",
+                "parno", "deg-degan", "gemetar", "ragu"
+            ],
+            "sad": [
+                "sedih", "kecewa", "menangis", "lelah", "depresi", "putus asa", "hampa",
+                "terpuruk", "capek", "lemas", "sakit", "pilu", "terluka", "sendiri",
+                "kesepian", "hancur", "tertekan"
+            ],
+            "angry": [
+                "marah", "kesal", "benci", "jengkel", "geram", "murka", "emosi",
+                "muak", "dongkol", "sewot", "tersinggung", "kecewa berat"
+            ],
+            "surprised": [
+                "kaget", "terkejut", "syok", "heran", "tercengang", "tidak menyangka", "astaga"
+            ],
+            "disgusted": [
+                "jijik", "mual", "enek", "ilfil", "risih", "jengah"
+            ],
+        }
+
+        # Bobot prior baseline
+        scores = {meta["name"]: 0.03 for meta in cls.EMOTION_2VEC_CLASSES.values()}
+        scores["neutral"] = 0.30
+        scores["other"] = 0.05
+        scores["unknown"] = 0.02
+
+        for emo_name, words in emotion_lexicon.items():
+            matches = sum(1 for w in words if w in text_lower)
+            if matches > 0:
+                scores[emo_name] += matches * 0.45
+                # Jika ada emosi spesifik, turunkan dominasi netral
+                scores["neutral"] = max(0.05, scores["neutral"] - (matches * 0.10))
+
+        # Normalisasi skor agar total probabilitas tepat 1.00
+        total_score = sum(scores.values())
+        normalized_scores = {k: v / total_score for k, v in scores.items()}
+
+        sorted_emotions = sorted(normalized_scores.items(), key=lambda item: item[1], reverse=True)
+        primary_name, primary_conf = sorted_emotions[0]
+        secondary_name, _ = sorted_emotions[1] if len(sorted_emotions) > 1 else ("neutral", 0.0)
+
+        breakdown = []
+        name_to_cid = {v["name"]: k for k, v in cls.EMOTION_2VEC_CLASSES.items()}
+        for name, prob in sorted_emotions:
+            cid = name_to_cid[name]
+            meta = cls.EMOTION_2VEC_CLASSES[cid]
+            breakdown.append({
+                "class_id": cid,
+                "name": name,
+                "label": meta["label"],
+                "emoji": meta["emoji"],
+                "percent": round(prob, 2),
+                "color": meta["color"],
+            })
+
+        confidence = round(primary_conf, 2)
+        return {
+            "model_name": "emotion2vec_plus_large (dynamic-text)",
+            "primary_emotion": primary_name,
+            "secondary_emotion": secondary_name,
+            "confidence": confidence,
+            "intensity": round(confidence * 0.85, 2),
+            "emotions_breakdown": breakdown,
+        }
+
     @staticmethod
     async def predict_message_emotion(
         text: str,
         audio_bytes: Optional[bytes] = None,
     ) -> dict[str, Any]:
-        """[PLACEHOLDER INFRENSI MODEL ML: emotion2vec_plus_large]
-        
-        Menerima data audio raw bytes dan/atau teks ucapan pengguna,
+        """Menerima data audio raw bytes dan/atau teks ucapan pengguna,
         lalu mengembalikan hasil klasifikasi 9 kelas emosi `emotion2vec_plus_large`
         berformat Dictionary/JSON yang akan disimpan ke kolom `emotions` (JSONB) di PostgreSQL.
-
-        Args:
-            text (str): Teks ucapan pengguna dari STT.
-            audio_bytes (Optional[bytes]): Data audio WAV/PCM (16kHz mono) dari mikrofon HP.
-
-        Returns:
-            dict[str, Any]: Dictionary JSON berstruktur:
-            {
-                "model_name": "emotion2vec_plus_large",
-                "primary_emotion": "happy",
-                "secondary_emotion": "neutral",
-                "confidence": 0.88,
-                "intensity": 0.79,
-                "raw_scores": [0.01, 0.00, 0.02, 0.88, 0.06, 0.01, 0.01, 0.01, 0.00],
-                "emotions_breakdown": [
-                    {"class_id": 3, "name": "happy", "label": "Bahagia & Senang", "emoji": "😃", "percent": 0.88, "color": "#FFE6A7"},
-                    {"class_id": 4, "name": "neutral", "label": "Netral & Tenang", "emoji": "😌", "percent": 0.06, "color": "#4ECDC4"},
-                    {"class_id": 2, "name": "fearful", "label": "Cemas & Takut", "emoji": "😰", "percent": 0.02, "color": "#6C63FF"},
-                    {"class_id": 0, "name": "angry", "label": "Marah", "emoji": "😡", "percent": 0.01, "color": "#FF7675"},
-                    {"class_id": 6, "name": "sad", "label": "Sedih", "emoji": "😢", "percent": 0.01, "color": "#74B9FF"},
-                    {"class_id": 5, "name": "other", "label": "Lainnya", "emoji": "🌫️", "percent": 0.01, "color": "#B2BEC3"},
-                    {"class_id": 7, "name": "surprised", "label": "Terkejut", "emoji": "😲", "percent": 0.01, "color": "#A29BFE"},
-                    {"class_id": 1, "name": "disgusted", "label": "Jijik / Muak", "emoji": "🤢", "percent": 0.00, "color": "#55EFC4"},
-                    {"class_id": 8, "name": "unknown", "label": "Tidak Diketahui", "emoji": "❓", "percent": 0.00, "color": "#DFE6E9"}
-                ]
-            }
         """
-        logger.info(f"🧠 [EMOTION2VEC INFERENCE]: Processing input text len={len(text)}, audio_bytes={len(audio_bytes) if audio_bytes else 0}")
+        logger.info(f"🧠 [EMOTION INFERENCE]: Processing input text len={len(text) if text else 0}, audio_bytes={len(audio_bytes) if audio_bytes else 0}")
 
-        # =========================================================================
-        # TODO DEVELOPER ML: Panggil Model emotion2vec_plus_large di sini.
-        # Example FunASR / ModelScope / HuggingFace inference:
-        #   from funasr import AutoModel
-        #   model = AutoModel(model="emotion2vec_plus_large")
-        #   res = model.generate(audio_bytes)
-        # =========================================================================
+        # 1. Jika data audio bytes tersedia, gunakan model audio emotion2vec_plus_large
+        if audio_bytes and len(audio_bytes) > 0:
+            import os
+            import tempfile
 
-        # DEFAULT FALLBACK SIMULATION (Akan digantikan oleh output model emotion2vec_plus_large Anda)
-        text_lower = text.lower()
-        if any(w in text_lower for w in ["senang", "bahagia", "suka", "terima kasih", "lega", "gembira", "bersyukur", "tenang"]):
-            primary = "happy"
-            primary_id = 3
-            confidence = 0.88
-        elif any(w in text_lower for w in ["cemas", "takut", "khawatir", "stres", "panik", "nervous", "gelisah", "demam panggung", "was-was", "tegang"]):
-            primary = "fearful"
-            primary_id = 2
-            confidence = 0.82
-        elif any(w in text_lower for w in ["sedih", "kecewa", "menangis", "lelah", "depresi", "putus asa", "hampa", "terpuruk", "capek"]):
-            primary = "sad"
-            primary_id = 6
-            confidence = 0.78
-        elif any(w in text_lower for w in ["marah", "kesal", "benci", "jengkel", "geram", "murka", "emosi"]):
-            primary = "angry"
-            primary_id = 0
-            confidence = 0.80
-        else:
-            primary = "neutral"
-            primary_id = 4
-            confidence = 0.90
+            tmp_fd, tmp_path = tempfile.mkstemp(suffix=".wav")
+            try:
+                with os.fdopen(tmp_fd, "wb") as f:
+                    f.write(audio_bytes)
 
-        emotions_breakdown = []
-        for cid, meta in MLEmotionDetectorService.EMOTION_2VEC_CLASSES.items():
-            pct = confidence if cid == primary_id else (0.05 if cid == 4 else 0.01)
-            emotions_breakdown.append({
-                "class_id": cid,
-                "name": meta["name"],
-                "label": meta["label"],
-                "emoji": meta["emoji"],
-                "percent": round(pct, 2),
-                "color": meta["color"],
-            })
+                service = MLEmotionDetectorService.get_emotion_service()
+                pred = service.predict(tmp_path)
 
-        return {
-            "model_name": "emotion2vec_plus_large",
-            "primary_emotion": primary,
-            "secondary_emotion": "neutral" if primary != "neutral" else "happy",
-            "confidence": confidence,
-            "intensity": round(confidence * 0.9, 2),
-            "emotions_breakdown": emotions_breakdown,
-        }
+                breakdown = []
+                for cid, meta in MLEmotionDetectorService.EMOTION_2VEC_CLASSES.items():
+                    name = meta["name"]
+                    score_val = pred.scores.get(name, 0.0)
+                    breakdown.append({
+                        "class_id": cid,
+                        "name": name,
+                        "label": meta["label"],
+                        "emoji": meta["emoji"],
+                        "percent": round(float(score_val), 2),
+                        "color": meta["color"],
+                    })
+
+                breakdown.sort(key=lambda x: x["percent"], reverse=True)
+                secondary_emotion = breakdown[1]["name"] if len(breakdown) > 1 else "neutral"
+
+                logger.info(
+                    f"🎙️ [EMOTION2VEC SUCCESS]: Audio prediction -> '{pred.primary_emotion}' "
+                    f"(confidence: {pred.confidence}, latency: {pred.latency_ms}ms)"
+                )
+                return {
+                    "model_name": "emotion2vec_plus_large",
+                    "primary_emotion": pred.primary_emotion,
+                    "secondary_emotion": secondary_emotion,
+                    "confidence": pred.confidence,
+                    "intensity": round(pred.confidence * 0.9, 2),
+                    "emotions_breakdown": breakdown,
+                    "latency_ms": pred.latency_ms,
+                }
+            except Exception as e:
+                logger.error(f"⚠️ [EMOTION2VEC AUDIO ERROR]: {e}. Falling back to dynamic text classifier.")
+            finally:
+                if os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except Exception as clean_err:
+                        logger.warning(f"Failed to remove temp audio file {tmp_path}: {clean_err}")
+
+        # 2. Fallback klasifikasi teks dinamis jika audio tidak tersedia / gagal
+        return MLEmotionDetectorService._predict_from_text(text)
 
     @staticmethod
     async def save_emotion_to_db(

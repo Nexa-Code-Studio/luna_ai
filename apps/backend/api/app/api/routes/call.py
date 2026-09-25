@@ -3,13 +3,12 @@ import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.services.audio_stream_buffer import AudioStreamBufferService
+from app.services.audio_stream_buffer import audio_buffer_service
 from app.services.call_session_manager import call_session_manager
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/call", tags=["Call"])
-audio_buffer_service = AudioStreamBufferService()
 
 
 @router.websocket("/ws/{session_id}")
