@@ -7,11 +7,11 @@ class CallTurnConfig:
     """Centralized configuration for Hybrid Half-Duplex AI Call system and Turn Endpointing."""
 
     # Adaptive Endpointing Timers (milliseconds)
-    complete_phrase_wait_ms: int = int(os.getenv("CALL_COMPLETE_PHRASE_WAIT_MS", "650"))
-    normal_phrase_wait_ms: int = int(os.getenv("CALL_NORMAL_PHRASE_WAIT_MS", "900"))
-    incomplete_phrase_wait_ms: int = int(os.getenv("CALL_INCOMPLETE_PHRASE_WAIT_MS", "1500"))
-    hesitation_wait_ms: int = int(os.getenv("CALL_HESITATION_WAIT_MS", "1400"))
-    hard_max_inactivity_ms: int = int(os.getenv("CALL_HARD_MAX_INACTIVITY_MS", "2200"))
+    complete_phrase_wait_ms: int = int(os.getenv("CALL_COMPLETE_PHRASE_WAIT_MS", "1500"))
+    normal_phrase_wait_ms: int = int(os.getenv("CALL_NORMAL_PHRASE_WAIT_MS", "2000"))
+    incomplete_phrase_wait_ms: int = int(os.getenv("CALL_INCOMPLETE_PHRASE_WAIT_MS", "2500"))
+    hesitation_wait_ms: int = int(os.getenv("CALL_HESITATION_WAIT_MS", "2500"))
+    hard_max_inactivity_ms: int = int(os.getenv("CALL_HARD_MAX_INACTIVITY_MS", "3800"))
 
     # Hardware and transition guards (milliseconds)
     stt_restart_delay_ms: int = int(os.getenv("CALL_STT_RESTART_DELAY_MS", "200"))
