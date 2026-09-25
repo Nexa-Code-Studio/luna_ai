@@ -17,6 +17,7 @@ async def websocket_call_endpoint(
     websocket: WebSocket,
     session_id: str,
     token: str | None = None,
+    voice_mode: str | None = None,
 ) -> None:
     """Bi-directional WebSocket endpoint for AI Phone Call sessions.
     
@@ -25,8 +26,8 @@ async def websocket_call_endpoint(
     - Text/JSON frames: Control events (`start_call`, `user_transcript`, `user_interrupted`, `end_call`, `ping`).
     """
     await websocket.accept()
-    session = call_session_manager.register_session(session_id, websocket, auth_token=token)
-    logger.info(f"🔌 [WEBSOCKET CONNECTED] Session: {session_id}")
+    session = call_session_manager.register_session(session_id, websocket, auth_token=token, voice_mode=voice_mode)
+    logger.info(f"🔌 [WEBSOCKET CONNECTED] Session: {session_id} (Voice Mode: {session.voice_mode})")
 
     try:
         # Pre-load previous conversation history from DB so DeepSeek LLM remembers past context

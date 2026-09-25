@@ -32,19 +32,38 @@ from packages.ai.factories.llm_factory import LLMFactory
 from packages.ai.factories.tts_factory import TTSFactory
 from packages.ai.interfaces.llm import LLMMessage
 from packages.ai.orchestration.orchestrator import AIOrchestrator, OrchestratedTurnResult
+from packages.ai.providers.tts.elevenlabs_ttd_provider import ElevenLabsTTDProvider, ElevenLabsTTDSession
+from packages.ai.utils.emotion_style_mapper import (
+    map_emotion_to_delivery_style,
+    resolve_dynamic_voice_style,
+    strip_audio_tags,
+)
+from packages.ai.utils.sentence_chunker import LatencyAwareSentenceChunker, SpeechChunk
 from packages.ai.utils.tts_text_normalizer import sanitize_text_for_tts
+from packages.ai.utils.voice_character_modes import (
+    DEFAULT_VOICE_MODE,
+    get_voice_character_mode,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class CallSession:
-    def __init__(self, session_id: str, websocket: WebSocket, auth_token: str | None = None) -> None:
+    def __init__(
+        self,
+        session_id: str,
+        websocket: WebSocket,
+        auth_token: str | None = None,
+        voice_mode: str | None = None,
+    ) -> None:
         self.session_id = session_id
         self.websocket = websocket
         self.auth_token = auth_token
+        self.voice_mode: str = voice_mode or DEFAULT_VOICE_MODE
         self.state: str = "idle"  # idle | listening | user_speaking | ai_thinking | ai_speaking | interrupted
         self.db_conversation_id: Any | None = None
         self.user_id: Any | None = None
+        self.user_name: str | None = None
         self.is_history_loaded: bool = False
         self.conversation_history: list[LLMMessage] = [
             LLMMessage(role="system", content=LUNA_SYSTEM_PROMPT)
@@ -53,6 +72,7 @@ class CallSession:
         self.assistant_turn_id: int = 0
         self.cancelled_assistant_turn_ids: set[int] = set()
         self._current_ai_task: asyncio.Task[Any] | None = None
+        self._active_ttd_session: ElevenLabsTTDSession | None = None
         self._endpoint_timer_task: asyncio.Task[Any] | None = None
         self.aggregator = TurnAggregator(call_id=session_id, initial_turn_id=1)
         self.thesis_metrics_log: list[dict[str, Any]] = []
@@ -66,6 +86,9 @@ class CallSession:
                 logger.info(f"⚡ [BARGE-IN CANCEL] Session {self.session_id}: Cancelling active AI task {self.current_task_id}")
                 self._current_ai_task.cancel()
             self._current_ai_task = None
+        if self._active_ttd_session:
+            asyncio.create_task(self._active_ttd_session.close())
+            self._active_ttd_session = None
         self.cancel_endpoint_timer()
         if self.assistant_turn_id > 0:
             self.cancelled_assistant_turn_ids.add(self.assistant_turn_id)
@@ -85,10 +108,21 @@ class CallSessionManager:
         self._active_sessions: dict[str, CallSession] = {}
         self.orchestrator = AIOrchestrator()
 
-    def register_session(self, session_id: str, websocket: WebSocket, auth_token: str | None = None) -> CallSession:
-        session = CallSession(session_id=session_id, websocket=websocket, auth_token=auth_token)
+    def register_session(
+        self,
+        session_id: str,
+        websocket: WebSocket,
+        auth_token: str | None = None,
+        voice_mode: str | None = None,
+    ) -> CallSession:
+        session = CallSession(
+            session_id=session_id,
+            websocket=websocket,
+            auth_token=auth_token,
+            voice_mode=voice_mode,
+        )
         self._active_sessions[session_id] = session
-        logger.info(f"Registered call session {session_id}")
+        logger.info(f"Registered call session {session_id} (Voice Mode: {session.voice_mode})")
         return session
 
     def unregister_session(self, session_id: str) -> None:
@@ -129,6 +163,8 @@ class CallSessionManager:
 
                 if user:
                     session.user_id = user.id
+                    session.user_name = user.display_name or user.username or None
+                    logger.info(f"👤 [USER CONTEXT LOADED] Session {session.session_id}: User ID {user.id}, Name: '{session.user_name}'")
 
                     # Retrieve previous conversation history memory context
                     conv_query = (
@@ -354,9 +390,15 @@ class CallSessionManager:
             await self._handle_call_sync(session, payload)
         # Backward compatibility events
         elif event_type == "start_call":
-            logger.info(f"🚀 [CALL STARTED] Session {session.session_id}")
+            if "voice_mode" in payload and payload["voice_mode"]:
+                session.voice_mode = str(payload["voice_mode"]).strip()
+            logger.info(f"🚀 [CALL STARTED] Session {session.session_id} (Voice Mode: {session.voice_mode})")
             session.state = "listening"
-            await session.websocket.send_json({"type": "call_started", "session_id": session.session_id})
+            await session.websocket.send_json({
+                "type": "call_started",
+                "session_id": session.session_id,
+                "voice_mode": session.voice_mode,
+            })
         elif event_type == "user_transcript":
             user_text = payload.get("text", "")
             logger.info(f"💬 [LEGACY USER TRANSCRIPT] Session {session.session_id}: '{user_text}'")
@@ -684,6 +726,10 @@ class CallSessionManager:
             logger.error(f"⚠️ [SUMMARY EVENT EXCEPTION] Session {session.session_id}: {e}")
 
     async def _process_ai_response_pipeline(self, session: CallSession, task_id: int) -> None:
+        t_start = time.perf_counter()
+        t_llm_first_token: float | None = None
+        t_tts_first_audio: float | None = None
+
         try:
             tts_provider = TTSFactory.get_provider()
 
@@ -701,11 +747,12 @@ class CallSessionManager:
                     user_content = msg.content
                     break
 
-            # Eksekusi Orkestrasi: Emotion + Symptoms + Risk + SafetyGate + Qdrant RAG + DASS Profiling
+            # Eksekusi Orkestrasi: Emotion + Symptoms + Risk + SafetyGate + Qdrant RAG + DASS Profiling + Personalization
             turn = await self.orchestrator.prepare_turn(
                 user_text=user_content or "Halo Luna",
                 conversation_history=session.conversation_history,
                 dass_scores=session.dass_scores,
+                user_name=session.user_name,
             )
             session.latest_orchestration_turn = turn
 
@@ -725,105 +772,205 @@ class CallSessionManager:
                 except Exception as ws_err:
                     logger.warning(f"Failed to send crisis event over websocket: {ws_err}")
 
-            full_text_list = []
-            try:
-                async with asyncio.timeout(12.0):
-                    async for token in turn.token_stream:
-                        if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
-                            logger.info(f"⚡ [LLM STREAM SUPERSEDED] Session {session.session_id} (Assistant Turn {task_id})")
-                            break
-                        full_text_list.append(token)
+            # Dynamic Voice Resolution: Voice Character Mode + Empathetic Adaptive Emotion Modulation
+            detected_emo = turn.emotion.primary_emotion if turn.emotion else "neutral"
+            confidence = turn.emotion.confidence if turn.emotion else 0.5
+            risk = turn.safety_decision.risk_level if turn.safety_decision else "low"
 
-            except asyncio.CancelledError:
-                logger.info(f"⚡ [LLM STREAM CANCELLED] Session {session.session_id} (Assistant Turn {task_id})")
-                raise
-            except TimeoutError:
-                logger.warning(f"⚠️ [LLM STREAM TIMEOUT] Session {session.session_id} (Assistant Turn {task_id}): Exceeded 12s timeout")
-                if not full_text_list:
-                    full_text_list = ["Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"]
-            except Exception as e:
-                logger.error(f"❌ [LLM STREAM ERROR] Session {session.session_id} (Assistant Turn {task_id}): {e}")
-                if not full_text_list:
-                    full_text_list = ["Aku di sini mendengarkanmu. Bisakah kamu bercerita sedikit lagi tentang apa yang kamu rasakan?"]
+            dyn_res = resolve_dynamic_voice_style(
+                mode_id=session.voice_mode,
+                detected_emotion=detected_emo,
+                confidence=confidence,
+                risk_level=risk,
+            )
+            delivery_style = dyn_res.delivery_style
+            audio_tag = dyn_res.audio_tag
+            effective_voice_id = dyn_res.voice_id
 
-            if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
-                return
+            logger.info(
+                f"🎭 [DYNAMIC VOICE MAPPING] Session {session.session_id} | "
+                f"Mode: '{dyn_res.mode.id}' ({dyn_res.mode.name}) | "
+                f"User: '{detected_emo}' ({int(confidence*100)}%) -> "
+                f"Voice: '{effective_voice_id}' | Style: '{delivery_style}' | Tag: '{audio_tag or 'none'}' "
+                f"(Override: {dyn_res.is_emotion_override})"
+            )
 
-            raw_response = "".join(full_text_list).strip()
-            if not raw_response:
-                raw_response = "Aku di sini mendengarkanmu. Ceritakan apa yang sedang kamu rasakan."
-
-            # Bersihkan dan normalkan teks untuk pelafalan suara TTS alami Bahasa Indonesia
-            spoken_text = sanitize_text_for_tts(raw_response)
-            logger.info(f"🧠 [AI GENERATED TEXT COMPLETE] Session {session.session_id} (Assistant Turn {task_id}): '{spoken_text}'")
-
-            if spoken_text and session.current_task_id == task_id:
-                session.conversation_history.append(
-                    LLMMessage(role="assistant", content=spoken_text)
-                )
-                await self._save_message_to_db(session, "assistant", spoken_text)
-
-            # Pecah kalimat agar dibacakan per kalimat secara berurutan dengan jeda alami
-            raw_sentences = re.split(r"(?<=[.!?])\s+", spoken_text)
-            sentences = [s.strip() for s in raw_sentences if s.strip()]
-            if not sentences:
-                sentences = [spoken_text]
-
-            # Kirim teks transkrip lengkap terlebih dahulu agar UI langsung siap
-            await session.websocket.send_json({
-                "type": "ai.transcript_chunk",
-                "call_id": session.session_id,
-                "assistant_turn_id": task_id,
-                "sequence": 1,
-                "text": spoken_text,
-            })
-
+            chunker = LatencyAwareSentenceChunker(delivery_style=delivery_style, audio_tag=audio_tag)
+            full_display_parts: list[str] = []
             total_audio_bytes = 0
-            for seq, sentence in enumerate(sentences, start=1):
-                if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
-                    logger.info(f"⚡ [TTS INTERRUPTED BEFORE SENTENCE {seq}] Session {session.session_id}")
-                    return
+            is_ttd = isinstance(tts_provider, ElevenLabsTTDProvider)
 
-                chunk_audio = None
-                envelope = []
+            # Instrument LLM token stream to record TTFT
+            async def _instrumented_token_stream():
+                nonlocal t_llm_first_token
+                async for tok in turn.token_stream:
+                    if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
+                        break
+                    if t_llm_first_token is None:
+                        t_llm_first_token = time.perf_counter()
+                        ttft_ms = (t_llm_first_token - t_start) * 1000.0
+                        logger.info(f"⚡ [LLM TTFT] Session {session.session_id} (Turn {task_id}): First token in {ttft_ms:.1f}ms")
+                    yield tok
+
+            if is_ttd:
+                # Concurrent true streaming via ElevenLabs TTD WebSocket with dynamically resolved voice
+                ttd_session = tts_provider.create_session(voice_id=effective_voice_id)
+                session._active_ttd_session = ttd_session
                 try:
-                    logger.info(f"🎙️ [TTS SYNTHESIZE SENTENCE {seq}/{len(sentences)}] Session {session.session_id}: '{sentence}'")
-                    async with asyncio.timeout(8.0):
-                        if hasattr(tts_provider, "synthesize_with_envelope"):
-                            chunk_audio, envelope = await tts_provider.synthesize_with_envelope(sentence)
-                        else:
-                            chunk_audio = await tts_provider.synthesize(sentence)
+                    await ttd_session.connect()
 
-                    if chunk_audio:
-                        total_audio_bytes += len(chunk_audio)
-                        b64_audio = base64.b64encode(chunk_audio).decode("ascii")
+                    async for ref_chunk, sentence_audio in ttd_session.stream_sentence_audio(
+                        chunker.chunk_stream(_instrumented_token_stream())
+                    ):
+                        if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
+                            logger.info(f"⚡ [TTD STREAM INTERRUPTED] Session {session.session_id}")
+                            break
+
+                        if t_tts_first_audio is None:
+                            t_tts_first_audio = time.perf_counter()
+                            ttfa_ms = (t_tts_first_audio - t_start) * 1000.0
+                            logger.info(f"⚡ [TTD TTFA] Session {session.session_id} (Turn {task_id}): First audio chunk in {ttfa_ms:.1f}ms")
+
+                        text_to_show = ref_chunk.display_text if ref_chunk else ""
+                        seq = ref_chunk.sequence if ref_chunk else (len(full_display_parts) + 1)
+                        if text_to_show:
+                            full_display_parts.append(text_to_show)
+
+                        # Emit clean transcript chunk to Flutter
+                        await session.websocket.send_json({
+                            "type": "ai.transcript_chunk",
+                            "call_id": session.session_id,
+                            "assistant_turn_id": task_id,
+                            "sequence": seq,
+                            "text": text_to_show,
+                        })
+
+                        # Emit audio chunk
+                        total_audio_bytes += len(sentence_audio)
+                        b64_audio = base64.b64encode(sentence_audio).decode("ascii")
                         await session.websocket.send_json({
                             "type": "ai.audio_chunk",
                             "call_id": session.session_id,
                             "assistant_turn_id": task_id,
                             "sequence": seq,
-                            "text": sentence,
+                            "text": text_to_show,
                             "audio_base64": b64_audio,
-                            "envelope": envelope,
+                            "envelope": [],
                         })
-                        logger.info(f"🔊 [OUTGOING TTS AUDIO CHUNK {seq}/{len(sentences)}] Session {session.session_id}: Sent {len(chunk_audio)} bytes with {len(envelope)} envelope points")
-                except TimeoutError:
-                    logger.warning(f"⚠️ [TTS TIMEOUT SENTENCE {seq}] Session {session.session_id}: Exceeded 8s timeout, skipping sentence chunk")
-                except Exception as ex:
-                    logger.error(f"⚠️ [TTS SYNTHESIS ERROR SENTENCE {seq}] Session {session.session_id}: {ex}")
+                        logger.info(
+                            f"🔊 [OUTGOING TTD AUDIO CHUNK {seq}] Session {session.session_id}: "
+                            f"Sent {len(sentence_audio)} bytes for '{text_to_show[:35]}...'"
+                        )
 
-            # Signal speech completion if this task is still active
-            if session.current_task_id == task_id and task_id not in session.cancelled_assistant_turn_ids:
-                logger.info(
-                    f"✅ [AI SPEECH COMPLETE] Session {session.session_id} (Assistant Turn {task_id}): "
-                    f"Sent {len(sentences)} sentence chunks, total {total_audio_bytes} audio bytes."
-                )
-                await session.websocket.send_json({
-                    "type": "ai.speech_finished",
-                    "call_id": session.session_id,
-                    "assistant_turn_id": task_id,
-                })
-                await self._send_session_summary_event(session)
+                except Exception as ttd_err:
+                    logger.error(f"⚠️ [TTD STREAMING ERROR] Session {session.session_id}: {ttd_err}")
+                    # If failure happened before any audio reached Flutter, gracefully fallback to REST
+                    if total_audio_bytes == 0:
+                        logger.warning(f"🔄 [FALLBACK TO REST TTS] Session {session.session_id}: Attempting fallback synthesis...")
+                        fallback_provider = TTSFactory.get_provider("edge_tts", force_new=True)
+                        remaining_text = "".join(full_display_parts).strip() or "Aku di sini mendengarkanmu. Ceritakan apa yang sedang kamu rasakan."
+                        audio_fb = await fallback_provider.synthesize(remaining_text)
+                        if audio_fb:
+                            total_audio_bytes += len(audio_fb)
+                            b64_fb = base64.b64encode(audio_fb).decode("ascii")
+                            await session.websocket.send_json({
+                                "type": "ai.transcript_chunk",
+                                "call_id": session.session_id,
+                                "assistant_turn_id": task_id,
+                                "sequence": 1,
+                                "text": remaining_text,
+                            })
+                            await session.websocket.send_json({
+                                "type": "ai.audio_chunk",
+                                "call_id": session.session_id,
+                                "assistant_turn_id": task_id,
+                                "sequence": 1,
+                                "text": remaining_text,
+                                "audio_base64": b64_fb,
+                                "envelope": [],
+                            })
+                finally:
+                    await ttd_session.close()
+                    session._active_ttd_session = None
+
+            else:
+                # Fallback path for EdgeTTS, MockTTS, or OpenAI
+                seq = 0
+                async for chunk in chunker.chunk_stream(_instrumented_token_stream()):
+                    if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
+                        break
+
+                    seq += 1
+                    full_display_parts.append(chunk.display_text)
+
+                    # Send transcript chunk
+                    await session.websocket.send_json({
+                        "type": "ai.transcript_chunk",
+                        "call_id": session.session_id,
+                        "assistant_turn_id": task_id,
+                        "sequence": seq,
+                        "text": chunk.display_text,
+                    })
+
+                    # Synthesize
+                    chunk_audio = None
+                    envelope = []
+                    try:
+                        tts_target_text = chunk.tts_text if chunk.is_first else chunk.display_text
+                        if hasattr(tts_provider, "synthesize_with_envelope"):
+                            chunk_audio, envelope = await tts_provider.synthesize_with_envelope(
+                                tts_target_text, voice_id=effective_voice_id
+                            )
+                        else:
+                            chunk_audio = await tts_provider.synthesize(
+                                tts_target_text, voice_id=effective_voice_id
+                            )
+
+                        if chunk_audio:
+                            total_audio_bytes += len(chunk_audio)
+                            b64_audio = base64.b64encode(chunk_audio).decode("ascii")
+                            await session.websocket.send_json({
+                                "type": "ai.audio_chunk",
+                                "call_id": session.session_id,
+                                "assistant_turn_id": task_id,
+                                "sequence": seq,
+                                "text": chunk.display_text,
+                                "audio_base64": b64_audio,
+                                "envelope": envelope,
+                            })
+                    except Exception as synth_ex:
+                        logger.error(f"⚠️ [SYNTHESIS EXCEPTION SENTENCE {seq}] {synth_ex}")
+
+            # Check if interrupted during generation
+            if session.current_task_id != task_id or task_id in session.cancelled_assistant_turn_ids:
+                logger.info(f"⚡ [ASSISTANT TURN CANCELLED DISCARD] Session {session.session_id} (Turn {task_id})")
+                return
+
+            full_spoken_text = " ".join(full_display_parts).strip()
+            if not full_spoken_text:
+                full_spoken_text = "Aku di sini mendengarkanmu. Ceritakan apa yang sedang kamu rasakan."
+
+            # Save clean assistant response to conversation history and DB (NEVER SAVE AUDIO TAGS!)
+            clean_history_text = strip_audio_tags(full_spoken_text)
+            session.conversation_history.append(
+                LLMMessage(role="assistant", content=clean_history_text)
+            )
+            await self._save_message_to_db(session, "assistant", clean_history_text)
+
+            t_end = time.perf_counter()
+            total_duration_ms = (t_end - t_start) * 1000.0
+            logger.info(
+                f"✅ [AI SPEECH COMPLETE] Session {session.session_id} (Assistant Turn {task_id}): "
+                f"Total {len(full_display_parts)} sentences, {total_audio_bytes} audio bytes in {total_duration_ms:.1f}ms."
+            )
+
+            # Signal speech completion
+            await session.websocket.send_json({
+                "type": "ai.speech_finished",
+                "call_id": session.session_id,
+                "assistant_turn_id": task_id,
+            })
+            await self._send_session_summary_event(session)
 
         except asyncio.CancelledError:
             logger.info(f"⚡ [AI PIPELINE CANCELLED] Session {session.session_id} (Assistant Turn {task_id})")
