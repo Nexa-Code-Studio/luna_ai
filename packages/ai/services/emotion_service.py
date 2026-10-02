@@ -143,12 +143,17 @@ class EmotionService:
                     best_score = score_val
                     best_idx = idx
 
-            primary_emotion = EMOTION_LABELS.get(best_idx, "unknown")
-            confidence = round(float(best_score), 4)
+            sorted_scores = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
+            primary_emotion = sorted_scores[0][0] if sorted_scores else "unknown"
+            confidence = round(float(sorted_scores[0][1]), 4) if sorted_scores else 0.5
+            secondary_emotion = sorted_scores[1][0] if len(sorted_scores) > 1 else None
+            intensity = round(confidence * 0.9, 2)
 
             return EmotionDetectionResult(
                 primary_emotion=primary_emotion,
                 confidence=confidence,
+                intensity=intensity,
+                secondary_emotion=secondary_emotion,
                 scores=scores_dict,
                 model_used=self.model_name,
                 latency_ms=round(latency_ms, 2),

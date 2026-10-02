@@ -138,13 +138,20 @@ class AIOrchestrator:
             "angry", "disgusted", "fearful", "happy", "neutral", "other", "sad", "surprised", "unknown"
         ]}
 
+        intensity = round(confidence * 0.85, 2)
+        sorted_scores = sorted([(k, v) for k, v in scores.items() if k != primary], key=lambda x: x[1], reverse=True)
+        secondary = sorted_scores[0][0] if sorted_scores and sorted_scores[0][1] >= 0.10 else None
+
         return EmotionDetectionResult(
             primary_emotion=primary,
             confidence=confidence,
+            intensity=intensity,
+            secondary_emotion=secondary,
             scores=scores,
             model_used="emotion2vec_plus_large (text-heuristic)",
             latency_ms=0.5,
         )
+
 
     def _detect_emotion(self, text: str, audio_path: Optional[str] = None) -> EmotionDetectionResult:
         """Mendeteksi emosi dari file audio jika ada, atau fallback ke analisis teks."""
@@ -191,9 +198,28 @@ class AIOrchestrator:
         persisted_memory: Optional[str] = None,
     ) -> str:
         """Menyusun system prompt empati konseling dinamis berdasarkan hasil observasi multi-agent."""
+        emotion_guidance_map = {
+            "sad": "Pengguna sedang bersedih atau berduka. Gunakan nada bicara yang lembut, menenangkan, penuh penerimaan tanpa menghakimi. Validasi kesedihannya dan beri ruang aman bagi mereka untuk merasakan apa yang dirasakan.",
+            "fearful": "Pengguna merasa cemas, takut, atau tegang. Hadirkan ketenangan yang menstabilkan (grounding), bantu menenangkan nafas, dan tunjukkan bahwa saat ini mereka aman dan didengarkan sepenuhnya.",
+            "angry": "Pengguna merasa kesal, marah, atau frustrasi. Dengarkan dengan empati penuh tanpa membela diri atau mendebat. Validasi emosinya yang sah ('Wajar jika kamu merasa kesal...') dan bantu mengurai rasa sesak tersebut.",
+            "disgusted": "Pengguna merasa muak, kecewa berat, atau risih. Tunjukkan penerimaan tanpa menghakimi, bantu mereka mengungkapkan rasa ketidaknyamanan tersebut secara sehat.",
+            "happy": "Pengguna merasa bahagia, lega, atau bersemangat. Sambut dengan kehangatan tulus, apresiasi momen positif mereka, dan rayakan kemajuan kecil yang mereka rasakan.",
+            "surprised": "Pengguna merasa kaget atau terkejut. Bersikaplah suportif dan bantu mereka menata kembali pikiran dan perasaan mereka secara perlahan.",
+            "neutral": "Pengguna berada dalam kondisi tenang atau netral. Jaga alur percakapan tetap mengalir santai, terbuka, ramah, dan tunjukkan minat tulus pada ceritanya.",
+        }
+        guidance = emotion_guidance_map.get(
+            emotion.primary_emotion.lower(),
+            "Jaga nada bicara tetap ramah, hangat, penuh perhatian, dan empatik terhadap cerita pengguna.",
+        )
+
+        intensity_pct = int(getattr(emotion, "intensity", 0.5) * 100)
+        conf_pct = int(emotion.confidence * 100)
+        secondary_str = f", Nuansa sekunder: '{emotion.secondary_emotion}'" if getattr(emotion, "secondary_emotion", None) else ""
+
         prompt = (
             "Kamu adalah Luna, seorang konselor pendamping kesehatan mental AI yang ramah, hangat, dan penuh empati.\n"
-            f"Kondisi emosi pengguna yang terobservasi: '{emotion.primary_emotion}' (confidence: {int(emotion.confidence * 100)}%).\n"
+            f"Kondisi emosi pengguna yang terobservasi: '{emotion.primary_emotion}' (Intensitas: {intensity_pct}%, Keyakinan: {conf_pct}%{secondary_str}).\n"
+            f"Panduan Nada Emosional Konseling: {guidance}\n"
             f"Tingkat risiko keselamatan: '{safety_decision.risk_level}'. Kebijakan respon: '{safety_decision.response_policy}'.\n"
         )
 
@@ -251,6 +277,7 @@ class AIOrchestrator:
         audio_path: Optional[str] = None,
         dass_scores: Optional[dict[str, Any]] = None,
         user_name: Optional[str] = None,
+        precomputed_emotion: Optional[EmotionDetectionResult] = None,
     ) -> OrchestratedTurnResult:
         """Memproses seluruh evaluasi orkestrasi (Emosi -> Gejala -> Risiko -> RAG)
 
@@ -259,8 +286,16 @@ class AIOrchestrator:
         start_t = time.perf_counter()
         logger.info(f"🚀 [ORCHESTRATOR TURN START] User text: \"{user_text}\" | User Name: {user_name or 'None'}")
 
-        # 1. Deteksi Emosi (Voice atau Teks)
-        emotion_res = self._detect_emotion(user_text, audio_path=audio_path)
+        # 1. Deteksi Emosi (Precomputed, Voice Audio, atau Teks Fallback)
+        if precomputed_emotion is not None:
+            emotion_res = precomputed_emotion
+            logger.info(
+                f"🎙️ [ORCHESTRATOR] Using precomputed emotion: '{emotion_res.primary_emotion}' "
+                f"(conf: {emotion_res.confidence:.2f}, intensity: {getattr(emotion_res, 'intensity', 0.5):.2f})"
+            )
+        else:
+            emotion_res = self._detect_emotion(user_text, audio_path=audio_path)
+
 
         # 2. Ekstraksi Gejala
         symptom_res = self.symptom_service.extract_symptoms(user_text)

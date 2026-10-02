@@ -70,15 +70,15 @@ VOICE_CHARACTER_MODES: dict[str, VoiceCharacterMode] = {
 }
 
 
-def get_voice_character_mode(mode_id: str | None = None) -> VoiceCharacterMode:
+def get_voice_character_mode(mode_id: str | int | None = None) -> VoiceCharacterMode:
     """Resolve voice character mode, defaulting to mode_2.
 
-    Accepts raw identifiers such as 'mode_2', '2', 'mode2', etc.
+    Accepts raw identifiers such as 'mode_2', '2', 2, 'mode2', etc.
     """
-    if not mode_id:
+    if mode_id is None or mode_id == "":
         return VOICE_CHARACTER_MODES[DEFAULT_VOICE_MODE]
 
-    clean = mode_id.strip().lower()
+    clean = str(mode_id).strip().lower()
     # Normalize '2' -> 'mode_2', 'mode2' -> 'mode_2', etc.
     if clean in VOICE_CHARACTER_MODES:
         return VOICE_CHARACTER_MODES[clean]

@@ -84,9 +84,52 @@ STYLE_TO_VOICE_SETTINGS: dict[str, dict[str, float]] = {
 }
 
 
-def get_voice_settings_for_style(style: str) -> dict[str, float]:
-    """Retrieve official ElevenLabs voice_settings dictionary for a given delivery style."""
-    return STYLE_TO_VOICE_SETTINGS.get(style, STYLE_TO_VOICE_SETTINGS["neutral"]).copy()
+def get_voice_settings_for_style(
+    style: str,
+    intensity: float = 0.5,
+    confidence: float = 1.0,
+    detected_emotion: str | None = None,
+) -> dict[str, float]:
+    """Retrieve official ElevenLabs voice_settings dictionary modulated dynamically by intensity and confidence."""
+    base = STYLE_TO_VOICE_SETTINGS.get(style, STYLE_TO_VOICE_SETTINGS["neutral"]).copy()
+
+    safe_intensity = max(0.0, min(1.0, float(intensity)))
+    safe_confidence = max(0.0, min(1.0, float(confidence)))
+
+    base_style = base.get("style", 0.15)
+    base_stability = base.get("stability", 0.55)
+    base_speed = base.get("speed", 1.00)
+
+    # 1. Style exaggeration: scales up with emotional intensity
+    dyn_style = round(max(0.05, min(0.45, base_style + (safe_intensity * 0.20))), 2)
+
+    # 2. Stability modulation:
+    # High distress (sad, fearful, angry) -> higher stability for grounding/soothing tone
+    # High positive (happy, excited) -> lower stability for more emotional animation
+    emo_lower = (detected_emotion or style).strip().lower()
+    if emo_lower in ("sad", "grief", "melancholy", "fearful", "anxious", "panic", "worry", "angry", "frustrated", "grounding", "soft", "reassuring", "calm"):
+        dyn_stability = round(max(0.65, min(0.85, base_stability + (safe_intensity * 0.15))), 2)
+    elif emo_lower in ("happy", "joyful", "excited", "enthusiastic", "playful"):
+        dyn_stability = round(max(0.35, min(0.50, base_stability - (safe_intensity * 0.15))), 2)
+    else:
+        dyn_stability = round(base_stability, 2)
+
+    # 3. Speed modulation:
+    # Soothing / sad / anxious -> slightly slower for warmth and breathing space
+    # Happy / excited -> slightly faster for lively energy
+    if emo_lower in ("sad", "grief", "fearful", "anxious", "worry", "soft", "reassuring"):
+        dyn_speed = round(max(0.90, min(0.98, base_speed - (safe_intensity * 0.06))), 2)
+    elif emo_lower in ("happy", "excited", "enthusiastic", "playful"):
+        dyn_speed = round(max(1.00, min(1.06, base_speed + (safe_intensity * 0.04))), 2)
+    else:
+        dyn_speed = round(base_speed, 2)
+
+    return {
+        "stability": dyn_stability,
+        "similarity_boost": base.get("similarity_boost", 0.80),
+        "style": dyn_style,
+        "speed": dyn_speed,
+    }
 
 
 # Regex to safely match recognized audio tags or inline delivery tags at the beginning of speech
@@ -151,6 +194,7 @@ def resolve_dynamic_voice_style(
     mode_id: str | None = None,
     detected_emotion: str | None = None,
     confidence: float = 1.0,
+    intensity: float = 0.5,
     risk_level: str = "low",
     intent: str | None = None,
 ) -> DynamicVoiceResolution:
@@ -182,7 +226,12 @@ def resolve_dynamic_voice_style(
 
     # When emotion is neutral or confidence is low, adopt the active mode's baseline personality & settings
     if style == "neutral":
-        mode_settings = getattr(mode, "baseline_voice_settings", None) or get_voice_settings_for_style(mode.baseline_style)
+        mode_settings = getattr(mode, "baseline_voice_settings", None) or get_voice_settings_for_style(
+            mode.baseline_style,
+            intensity=intensity,
+            confidence=confidence,
+            detected_emotion=detected_emotion,
+        )
         return DynamicVoiceResolution(
             mode=mode,
             voice_id=mode.voice_id,
@@ -194,7 +243,12 @@ def resolve_dynamic_voice_style(
 
     # If the user is happy and mode has a positive baseline, honor the mode's baseline personality & settings
     if style == "happy" and mode.baseline_style in ("happy", "playful"):
-        mode_settings = getattr(mode, "baseline_voice_settings", None) or get_voice_settings_for_style(mode.baseline_style)
+        mode_settings = getattr(mode, "baseline_voice_settings", None) or get_voice_settings_for_style(
+            mode.baseline_style,
+            intensity=intensity,
+            confidence=confidence,
+            detected_emotion=detected_emotion,
+        )
         return DynamicVoiceResolution(
             mode=mode,
             voice_id=mode.voice_id,
@@ -211,7 +265,12 @@ def resolve_dynamic_voice_style(
         delivery_style=style,
         audio_tag=tag,
         is_emotion_override=True,
-        voice_settings=get_voice_settings_for_style(style),
+        voice_settings=get_voice_settings_for_style(
+            style,
+            intensity=intensity,
+            confidence=confidence,
+            detected_emotion=detected_emotion,
+        ),
     )
 
 

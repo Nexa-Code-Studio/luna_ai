@@ -36,6 +36,8 @@ class EmotionDetectionResult(BaseModel):
     """
     primary_emotion: str
     confidence: float
+    intensity: float = 0.5
+    secondary_emotion: str | None = None
     scores: dict[str, float]
     model_used: str = "iic/emotion2vec_plus_large"
     latency_ms: float
