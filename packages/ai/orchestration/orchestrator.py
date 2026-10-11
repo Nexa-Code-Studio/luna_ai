@@ -115,7 +115,7 @@ class AIOrchestrator:
     def _infer_emotion_from_text(self, text: str) -> EmotionDetectionResult:
         """Heuristic sentiment fallback jika audio fisik belum tersedia/gagal."""
         text_lower = text.lower()
-        if any(w in text_lower for w in ["senang", "bahagia", "suka", "lega", "puas", "bangga", "bersyukur"]):
+        if any(w in text_lower for w in ["senang", "bahagia", "suka", "lega", "puas", "bangga", "bersyukur", "lulus", "berhasil"]):
             primary = "happy"
             confidence = 0.88
         elif any(w in text_lower for w in ["cemas", "takut", "khawatir", "stres", "panik", "deg-degan", "gemetar"]):
@@ -124,7 +124,7 @@ class AIOrchestrator:
         elif any(w in text_lower for w in ["sedih", "kecewa", "menangis", "lelah", "hancur", "putus asa", "capek"]):
             primary = "sad"
             confidence = 0.80
-        elif any(w in text_lower for w in ["marah", "kesal", "benci", "jengkel", "geram"]):
+        elif any(w in text_lower for w in ["marah", "kesal", "kesel", "benci", "jengkel", "geram"]):
             primary = "angry"
             confidence = 0.82
         elif any(w in text_lower for w in ["kaget", "terkejut", "syok"]):
@@ -181,7 +181,7 @@ class AIOrchestrator:
             logger.warning(f"⚠️ [ORCHESTRATOR] RAG search error: {e}")
             return []
 
-    def _compose_system_prompt(
+    def _compose_system_prompt_v1(
         self,
         emotion: EmotionDetectionResult,
         safety_decision: SafetyPolicyDecision,
@@ -190,7 +190,7 @@ class AIOrchestrator:
         user_name: Optional[str] = None,
         persisted_memory: Optional[str] = None,
     ) -> str:
-        """Menyusun system prompt empati konseling dinamis berdasarkan hasil observasi multi-agent."""
+        """Legacy system prompt v1 (for rollback)."""
         prompt = (
             "Kamu adalah Luna, seorang konselor pendamping kesehatan mental AI yang ramah, hangat, dan penuh empati.\n"
             f"Kondisi emosi pengguna yang terobservasi: '{emotion.primary_emotion}' (confidence: {int(emotion.confidence * 100)}%).\n"
@@ -240,9 +240,133 @@ class AIOrchestrator:
             "3. Validasi Emosi & Refleksi: Fokus utama adalah memvalidasi cerita pengguna dan mendengarkan dengan penuh perhatian. Boleh mengajukan SATU pertanyaan terbuka ringan untuk memperdalam pemahaman.\n"
             "4. DILARANG KERAS: Membuat daftar berpoin (1, 2, 3), tanda pagar (#), simbol cetak tebal (* atau **), emoji dekoratif, atau penjelasan ensiklopedis panjang kecuali pengguna secara eksplisit meminta penjelasan teori atau langkah teknis.\n"
             "5. Eksplorasi DASS-21 Non-Frontal: Saat pengguna mengungkapkan stres, cemas, atau sedih, ajukan pertanyaan terbuka reflektif yang menyentuh sensasi fisik atau suasana hati secara alami tanpa pernah menyebut istilah kuesioner psikologi.\n"
-            "6. Tulis kata secara lengkap tanpa singkatan (misal: tulis 'dan lain-lain', bukan 'dll.'). Gunakan tanda koma (,) dan titik (.) secara teratur untuk jeda nafas alami TTS."
+            "6. Tulis kata secara lengkap tanpa singkatan (misal: tulis 'dan lain-lain', bukan 'dll.'). Gunakan tanda koma (,), titik (.), atau elipsis (...) untuk jeda nafas alami TTS."
         )
+
+        enable_audio_tags = getattr(settings, "TTS_ENABLE_AUDIO_TAGS", True)
+        if enable_audio_tags:
+            prompt += (
+                "\n7. Pengendali Vokal & Emosi ElevenLabs v4 Turbo (Audio Tags):\n"
+                "Anda berbicara melalui ElevenLabs v4 Turbo. Gunakan konteks emosi dan percakapan untuk menentukan ekspresi vokal yang tepat.\n"
+                "Anda dapat menyisipkan Audio Tag vokal alami dalam kurung siku di awal kalimat atau sebelum klausa, contoh:\n"
+                "- [warm, calm] untuk pembukaan atau respons yang hangat dan menenangkan.\n"
+                "- [soft, reflective] untuk validasi emosi dan empati reflektif.\n"
+                "- [gentle curiosity] untuk pertanyaan terbuka yang lembut dan penuh perhatian.\n"
+                "- [calm, reassuring] untuk menenangkan kecemasan, kebingungan, atau kegelisahan.\n"
+                "- [chuckles] atau [slightly amused] hanya untuk momen santai/humor yang menyenangkan.\n"
+                "ATURAN KETAT AUDIO TAG KONSELING:\n"
+                "- Gunakan tag secara hemat dan bermakna; jangan berikan tag pada setiap kalimat (maksimal 1 arahan vokal per klausa/kalimat).\n"
+                "- Jaga respon tetap tenang, halus, dan non-teatrikal. DILARANG KERAS tag dramatis seperti [crying], [screaming], [terrified], [shouting], [panicking].\n"
+                "- Untuk situasi rentan atau risiko tinggi: selalu gunakan nada [calm, steady] yang mantap, hangat, dan jernih.\n"
+                "- DILARANG tertawa ([chuckles]) pada situasi sedih, duka, krisis, atau pengungkapan masalah berat.\n"
+                "- Gunakan HANYA tag pendengaran vokal. DILARANG tag visual fisik seperti [smiling], [nodding], [standing].\n"
+                "- Tag vokal tidak boleh mengubah makna percakapan, menghakimi, atau memberikan diagnosis.\n"
+                "- Gunakan tanda elipsis (...) untuk jeda hening alami.\n"
+            )
+
         return prompt
+
+    def _compose_system_prompt(
+        self,
+        emotion: EmotionDetectionResult,
+        safety_decision: SafetyPolicyDecision,
+        rag_items: list[dict[str, Any]],
+        dass_scores: Optional[dict[str, Any]] = None,
+        user_name: Optional[str] = None,
+        persisted_memory: Optional[str] = None,
+    ) -> str:
+        """Menyusun system prompt empati konseling dinamis berlapis untuk ElevenLabs v4 Turbo."""
+        prompt_version = getattr(settings, "LUNA_PROMPT_VERSION", "v2")
+        if prompt_version == "v1":
+            return self._compose_system_prompt_v1(
+                emotion, safety_decision, rag_items, dass_scores, user_name, persisted_memory
+            )
+
+        # Layer 1 — Identitas & Peran Luna
+        prompt_parts: list[str] = [
+            "Kamu adalah Luna, seorang pendamping kesehatan mental AI yang hangat, penuh empati, dan mendengarkan dengan tulus.\n",
+            "[LAYER 1 — IDENTITAS & PERAN LUNA]",
+            "- Hadir sebagai teman bicara suportif yang aman, peduli, dan bebas dari penghakiman.",
+            "- Sadar keterbatasan AI: Kamu adalah asisten AI, bukan tenaga medis, psikolog klinis berlisensi, atau psikiater. Jangan memberikan diagnosis klinis atau janji kepastian palsu.",
+        ]
+
+        if user_name and user_name.strip():
+            clean_name = user_name.strip()
+            prompt_parts.append(
+                f"- Nama pengguna adalah {clean_name}. Gunakan namanya secara wajar dan natural saat membangun kehangatan. Jangan mengulang namanya di setiap kalimat."
+            )
+
+        # Layer 2 — Prioritas Percakapan & Konteks
+        prompt_parts.extend([
+            "\n[LAYER 2 — PRIORITAS PERCAKAPAN & KONTEKS]",
+            "1. Prioritas Utama: Tanggapi langsung ucapan terbaru dan maksud inti pengguna saat ini.",
+            "2. Kesinambungan Dialog: Rujuk secara wajar 2-3 giliran dialog terakhir bila relevan, tanpa merangkum ulang cerita panjang lebar.",
+            "3. Pengetahuan Referensial: Gunakan informasi referensi hanya sebagai acuan pendukung ringkas bila relevan. DILARANG KERAS mengutip, membacakan esai, atau mendikte isi artikel panjang tanpa diminta pengguna.",
+        ])
+
+        if persisted_memory and persisted_memory.strip():
+            prompt_parts.append(f"\n[Memori Percakapan Terdahulu Pengguna]:\n{persisted_memory.strip()}")
+
+        if rag_items:
+            knowledge_blocks = []
+            for item in rag_items:
+                title = item.get("title", "Pengetahuan Konseling")
+                content = item.get("content", "")[:180]
+                knowledge_blocks.append(f"- {title}: {content}")
+            prompt_parts.append(
+                "\n[Referensi Pengetahuan Konseling (Hanya gunakan secara alami jika relevan, jangan dibacakan kaku)]:\n"
+                + "\n".join(knowledge_blocks)
+            )
+
+        # Layer 3 — Safety & Grounding
+        prompt_parts.extend([
+            "\n[LAYER 3 — SAFETY & GROUNDING]",
+            f"- Status Risiko: '{safety_decision.risk_level}'. Kebijakan respon: '{safety_decision.response_policy}'.",
+            f"- Observasi emosi pengguna: '{emotion.primary_emotion}' (indikasi awal keyakinan {int(emotion.confidence * 100)}%). "
+            "Jangan pernah memperlakukan hasil deteksi sebagai fakta mutlak; gunakan bahasa yang tentatif dan menghargai perasaan pengguna.",
+        ])
+
+        if dass_scores:
+            dep = dass_scores.get("depression", 0)
+            anx = dass_scores.get("anxiety", 0)
+            st = dass_scores.get("stress", 0)
+            if dep > 0 or anx > 0 or st > 0:
+                prompt_parts.append(
+                    f"- Profil Skrining DASS-21 Pengguna: Depresi ({dep}), Kecemasan ({anx}), Stres ({st}). "
+                    "Gunakan profil ini untuk menyelaraskan kehangatan dan kepekaan empati. "
+                    "DILARANG KERAS menyebutkan skor, angka, skala, atau istilah kuesioner kepada pengguna."
+                )
+
+        # Layer 4 — Bahasa Indonesia Percakapan (Spoken Indonesian)
+        prompt_parts.extend([
+            "\n[LAYER 4 — BAHASA INDONESIA PERCAKAPAN (SPOKEN INDONESIAN)]",
+            "- Panjang respons: Default 1 hingga 3 kalimat pendek dan mengalir alami untuk panggilan telepon suara interaktif.",
+            "- Responsif pada maksud pengguna. Hindari pembuka template berulang seperti 'Aku mengerti perasaanmu' atau formula mekanis 'validasi + saran + pertanyaan' di setiap respons.",
+            "- Selipkan MAKSIMAL SATU pertanyaan lanjutan terbuka yang relevan bila benar-benar diperlukan. Boleh tanpa pertanyaan sama sekali jika situasi membutuhkan ketenangan atau kehadiran mendengarkan.",
+            "- Gunakan bahasa percakapan yang hidup dan luwes. Boleh menggunakan kata santai yang wajar (seperti 'nggak', 'udah', 'kok', 'banget') sesuai kenyamanan pengguna tanpa dipaksa kaku.",
+        ])
+
+        # Layer 5 — Delivery Suara & Audio Tags (ElevenLabs v4 Turbo)
+        enable_audio_tags = getattr(settings, "TTS_ENABLE_AUDIO_TAGS", True)
+        if enable_audio_tags:
+            from packages.ai.utils.emotion_style_mapper import map_emotion_to_delivery_style
+            style, tag = map_emotion_to_delivery_style(
+                detected_emotion=emotion.primary_emotion,
+                confidence=emotion.confidence,
+                risk_level=safety_decision.risk_level,
+            )
+            hint_desc = f"rekomendasi nada: {style}" + (f" (tag opsi: {tag})" if tag else " (tanpa tag)")
+            prompt_parts.extend([
+                "\n[LAYER 5 — DELIVERY SUARA & AUDIO TAGS (ELEVENLABS v4 TURBO)]",
+                f"- Petunjuk Delivery Giliran Ini: {hint_desc}. Gunakan jika membantu intonasi, atau keluarkan teks biasa tanpa tag jika sudah terasa alami.",
+                "- Audio tags bersifat OPSIONAL. Utamakan teks yang bernada baik dan tanda baca alami (koma, titik, elipsis ... untuk jeda napas alami).",
+                "- Jika menyisipkan tag, gunakan MAKSIMAL SATU tag di awal kalimat/klausa dari pilihan aman: [softly], [warmly], [calm], [thoughtful], [curious].",
+                "- DILARANG KERAS tag negatif atau meniru emosi buruk ([angry], [crying], [screaming]) dan dilarang tertawa ([chuckles], [laughing]) pada topik sedih/berat/krisis.",
+                "- DILARANG tag visual fisik seperti [smiling] atau [nodding].",
+                "- DILARANG simbol Markdown (*, **, #, -), emoji dekoratif, atau metadata teknis dalam teks percakapan.",
+            ])
+
+        return "\n".join(prompt_parts)
 
     async def prepare_turn(
         self,

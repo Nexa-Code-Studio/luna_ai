@@ -22,7 +22,7 @@ class BaseConfig(BaseSettings):
 
 
 
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5433/luna_ai"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5435/luna_ai"
     REDIS_URL: str = "redis://localhost:6380/0"
     QDRANT_URL: str = "http://localhost:6333"
 
@@ -58,12 +58,20 @@ class BaseConfig(BaseSettings):
     TTS_API_KEY: str = ""
     ELEVENLABS_API_KEYS: str = ""
     TTS_VOICE_ID: str = "cgSgspJ2msm6clMCkdW9"  # ElevenLabs Jessica voice ID
-    TTS_MODEL: str = "eleven_v3_conversational"
+    TTS_MODEL: str = "eleven_v4_turbo"
     TTS_FALLBACK_MODEL: str = "eleven_multilingual_v2"
+    TTS_ENABLE_AUDIO_TAGS: bool = True
     TTS_MODE: str = "ttd"  # ttd | rest
     ELEVENLABS_TTD_URL: str = "wss://api.elevenlabs.io/v1/text-to-dialogue/stream-input"
     ELEVENLABS_OUTPUT_FORMAT: str = "mp3_44100_128"
     EDGE_TTS_VOICE: str = "id-ID-GadisNeural"
+    SUPPORTED_TTD_MODEL_PREFIXES: tuple[str, ...] = ("eleven_v3", "eleven_v4")
+    DEFAULT_TTD_MODEL: str = "eleven_v4_turbo"
+
+    # Feature Flags & Rollout Versioning
+    LUNA_PROMPT_VERSION: str = "v2"  # 'v1' (legacy) | 'v2' (layered spoken Indonesian)
+    LUNA_AUDIO_TAG_POLICY_VERSION: str = "v2"  # 'v1' (strict map) | 'v2' (counseling safe hints)
+    LUNA_NORMALIZER_MODE: str = "conversational"  # 'conversational' (preserves informal) | 'strict'
 
     def get_elevenlabs_keys(self) -> list[str]:
         """Return list of valid ElevenLabs API keys from ELEVENLABS_API_KEYS or fallback to TTS_API_KEY."""
