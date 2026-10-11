@@ -1,7 +1,7 @@
 import re
 
-# Pemetaan singkatan umum Bahasa Indonesia ke bentuk kata utuh untuk pelafalan TTS alami
-INDONESIAN_ABBREVIATIONS: dict[str, str] = {
+# Singkatan ketikan teks (chat abbreviations) yang perlu diekspansi untuk pelafalan TTS alami
+INDONESIAN_CHAT_ABBREVIATIONS: dict[str, str] = {
     r"\bdll\b\.?": "dan lain-lain",
     r"\bdsb\b\.?": "dan sebagainya",
     r"\bdst\b\.?": "dan seterusnya",
@@ -18,12 +18,18 @@ INDONESIAN_ABBREVIATIONS: dict[str, str] = {
     r"\bsy\b": "saya",
     r"\bkm\b": "kamu",
     r"\bjg\b": "juga",
+}
+
+# Formalisasi ketat baku (hanya aktif jika mode 'strict' diaktifkan secara eksplisit)
+INDONESIAN_STRICT_FORMALIZATIONS: dict[str, str] = {
     r"\baja\b": "saja",
     r"\budah\b": "sudah",
     r"\bgak\b": "tidak",
     r"\bngga\b": "tidak",
     r"\bnggak\b": "tidak",
 }
+
+INDONESIAN_ABBREVIATIONS = INDONESIAN_CHAT_ABBREVIATIONS
 
 # Regex untuk mendeteksi karakter emoji dan simbol grafis Unicode
 EMOJI_PATTERN = re.compile(
@@ -42,20 +48,43 @@ EMOJI_PATTERN = re.compile(
 )
 
 
-def sanitize_text_for_tts(text: str) -> str:
+AUDIO_TAG_PATTERN = re.compile(r"\[([a-zA-Z][a-zA-Z0-9_,\s\-\'\"]*)\]")
+
+
+def sanitize_text_for_tts(
+    text: str,
+    preserve_audio_tags: bool = False,
+    normalizer_mode: str | None = None,
+) -> str:
     """Membersihkan dan menormalkan teks Bahasa Indonesia untuk Text-to-Speech (ElevenLabs & Edge-TTS).
     
-    Menjamin intonasi vokal alami, jeda pernapasan yang tepat pada titik dan koma,
-    serta menghilangkan karakter markdown atau simbol yang dapat menimbulkan pelafalan aneh.
+    Jika preserve_audio_tags=True:
+    Audio tags resmi ElevenLabs (seperti [warm, calm], [thoughtful], [softly]) dipertahankan
+    untuk mengontrol gaya bicara dan emosi pada ElevenLabs v4 Turbo.
+    Tanda jeda elipsis (...) juga dipertahankan untuk jeda bicara alami.
     """
     if not text:
         return ""
 
     cleaned = text
+    saved_tags: list[str] = []
 
-    # 0. Hapus explicit audio/emotion tag (misal [happily], [softly], [playful], dll.)
-    # agar tidak tertinggal sebagai kata bahasa Inggris yang dibaca keras-keras oleh model vokal
-    cleaned = re.sub(r"\[[a-zA-Z_\s]+\]\s*", "", cleaned)
+    if preserve_audio_tags:
+        # Mask valid audio tags before normalization
+        def _mask_tag(m: re.Match[str]) -> str:
+            tag_content = m.group(1).strip()
+            if len(tag_content) >= 2 and not tag_content.isdigit():
+                placeholder = f"LUNATTSTAG{len(saved_tags)}ENDTAG"
+                saved_tags.append(f"[{tag_content}]")
+                return f" {placeholder} "
+            return m.group(0)
+
+        cleaned = AUDIO_TAG_PATTERN.sub(_mask_tag, cleaned)
+        # Protect ellipses (...) from being collapsed to a single period
+        cleaned = re.sub(r"\.{3,}", " LUNATTSELLIPSIS ", cleaned)
+    else:
+        # Strip all explicit audio/emotion tags if not preserving
+        cleaned = AUDIO_TAG_PATTERN.sub(" ", cleaned)
 
     # 1. Hapus emoji
     cleaned = EMOJI_PATTERN.sub(" ", cleaned)
@@ -70,6 +99,7 @@ def sanitize_text_for_tts(text: str) -> str:
     cleaned = re.sub(r"(?:^|\n)\s*\d+[\.\)]\s*", " ", cleaned)
 
     # 5. Hilangkan kurung dan tanda kutip yang sering mengganggu prosodi
+    # (Placeholder LUNATTSTAGXENDTAG aman karena hanya alfanumerik)
     cleaned = re.sub(r'[\(\)\[\]\{\}"\'“”‘’]', " ", cleaned)
 
     # 6. Ganti titik dua (:) dan titik koma (;) menjadi koma agar jeda intonasi lebih santun
@@ -79,10 +109,17 @@ def sanitize_text_for_tts(text: str) -> str:
     cleaned = re.sub(r"\s+[-–—]+\s+", ", ", cleaned)
 
     # 8. Ekspansi singkatan percakapan Bahasa Indonesia
-    for pattern, replacement in INDONESIAN_ABBREVIATIONS.items():
+    from packages.shared.config import settings
+    active_mode = normalizer_mode or getattr(settings, "LUNA_NORMALIZER_MODE", "conversational")
+
+    for pattern, replacement in INDONESIAN_CHAT_ABBREVIATIONS.items():
         cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
 
-    # 9. Normalkan tanda baca berulang (misal '...', '???', '!!!', '?!')
+    if active_mode == "strict":
+        for pattern, replacement in INDONESIAN_STRICT_FORMALIZATIONS.items():
+            cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
+
+    # 9. Normalkan tanda baca berulang (misal '???', '!!!', '?!')
     cleaned = re.sub(r"\.{2,}", ".", cleaned)
     cleaned = re.sub(r"\?{2,}", "?", cleaned)
     cleaned = re.sub(r"!{2,}", "!", cleaned)
@@ -98,11 +135,21 @@ def sanitize_text_for_tts(text: str) -> str:
     # 12. Pastikan setiap titik/tanya/seru diikuti tepat satu spasi jika masih ada kata setelahnya
     cleaned = re.sub(r"([.!?])([A-Za-z0-9])", r"\1 \2", cleaned)
 
+    # Kembalikan elipsis dan audio tags
+    if preserve_audio_tags:
+        cleaned = cleaned.replace("LUNATTSELLIPSIS", "...")
+        for idx, tag in enumerate(saved_tags):
+            placeholder = f"LUNATTSTAG{idx}ENDTAG"
+            cleaned = cleaned.replace(placeholder, tag)
+
     # 13. Normalkan multiple whitespace dan newline menjadi spasi tunggal
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
-    # 14. Pastikan teks berakhiran tanda baca akhir (. atau ? atau !) untuk nada penutup alami
-    if cleaned and cleaned[-1] not in (".", "?", "!"):
+    # 14. Pastikan tag diikuti oleh spasi jika menempel pada kata berikutnya (e.g. "[warm, calm]Halo" -> "[warm, calm] Halo")
+    cleaned = re.sub(r"(\])([A-Za-z0-9])", r"\1 \2", cleaned)
+
+    # 15. Pastikan teks berakhiran tanda baca akhir (. atau ? atau ! atau ...) untuk nada penutup alami
+    if cleaned and not cleaned.endswith((".", "?", "!", "...")):
         cleaned += "."
 
     return cleaned
