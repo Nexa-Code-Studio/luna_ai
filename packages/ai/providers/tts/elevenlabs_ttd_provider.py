@@ -4,6 +4,7 @@ import asyncio
 import base64
 import json
 import logging
+import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, AsyncGenerator, ClassVar
 
@@ -15,6 +16,7 @@ except ImportError:
     ConnectionClosed = Exception  # type: ignore[assignment,misc]
 
 from packages.ai.interfaces.tts import BaseTTSProvider
+from packages.ai.utils.emotion_style_mapper import filter_voice_settings_for_model
 from packages.ai.utils.tts_text_normalizer import sanitize_text_for_tts
 from packages.shared.config import settings
 
@@ -23,27 +25,40 @@ logger = logging.getLogger(__name__)
 # Waktu Indonesia Barat (WIB = UTC+7)
 WIB = timezone(timedelta(hours=7))
 
+SUPPORTED_TTD_MODEL_PREFIXES: tuple[str, ...] = ("eleven_v3", "eleven_v4")
+DEFAULT_TTD_MODEL: str = "eleven_v4_turbo"
+
+
+def validate_ttd_model(model_id: str | None) -> str:
+    """Validate model_id for Text-to-Dialogue WebSocket, returning validated model or default with warning."""
+    if model_id and any(model_id.startswith(p) for p in SUPPORTED_TTD_MODEL_PREFIXES):
+        return model_id
+    logger.warning(
+        f"⚠️ [ELEVENLABS TTD] Model '{model_id}' is not supported by Text-to-Dialogue WebSocket (requires eleven_v3 or eleven_v4). "
+        f"Defaulting to '{DEFAULT_TTD_MODEL}'."
+    )
+    return DEFAULT_TTD_MODEL
+
 
 class ElevenLabsTTDSession:
-    """Asynchronous bidirectional Text-to-Dialogue (TTD) streaming session for ElevenLabs v3."""
+    """Asynchronous bidirectional Text-to-Dialogue (TTD) streaming session for ElevenLabs v4 Turbo & v3."""
 
     def __init__(
         self,
         api_key: str,
         voice_id: str,
-        model_id: str = "eleven_v3_conversational",
+        model_id: str = DEFAULT_TTD_MODEL,
         output_format: str = "mp3_44100_128",
         keys: list[str] | None = None,
         voice_settings: dict[str, float] | None = None,
     ) -> None:
+        if not voice_id or not voice_id.strip():
+            raise ValueError("voice_id cannot be empty for ElevenLabs TTD session")
         self.api_key = api_key
         self.keys = keys or ([api_key] if api_key else [])
-        self.voice_id = voice_id
-        # Text-to-Dialogue WebSocket API strictly requires an eleven_v3 model
-        if not model_id.startswith("eleven_v3"):
-            self.model_id = "eleven_v3_conversational"
-        else:
-            self.model_id = model_id
+        self.voice_id = voice_id.strip()
+        # Text-to-Dialogue WebSocket API accepts eleven_v3 and eleven_v4 models
+        self.model_id = validate_ttd_model(model_id)
         self.output_format = output_format
         self.voice_settings = voice_settings
         self.ws: websockets.client.WebSocketClientProtocol | None = None
@@ -52,6 +67,19 @@ class ElevenLabsTTDSession:
         self._is_closed = False
         self._total_audio_bytes_received = 0
         self._error: Exception | None = None
+        self._start_time: float = 0.0
+
+        # Structured non-PII operational telemetry
+        self.telemetry: dict[str, Any] = {
+            "connection_id": id(self),
+            "model_id": self.model_id,
+            "voice_id": self.voice_id,
+            "input_frames_count": 0,
+            "total_chars_sent": 0,
+            "total_audio_bytes": 0,
+            "first_audio_ms": None,
+            "total_duration_ms": None,
+        }
 
     @property
     def url(self) -> str:
@@ -83,15 +111,17 @@ class ElevenLabsTTDSession:
 
                 # Step 1: Handshake frame registering the voice and voice_settings
                 init_frame: dict[str, Any] = {"voices": [self.voice_id]}
-                if self.voice_settings:
-                    init_frame["voice_settings"] = self.voice_settings
+                filtered_settings = filter_voice_settings_for_model(self.model_id, self.voice_settings)
+                if filtered_settings:
+                    init_frame["voice_settings"] = filtered_settings
                 await self.ws.send(json.dumps(init_frame))
                 logger.info(
                     f"✅ [ELEVENLABS TTD INITIALIZED] Registered voice '{self.voice_id}' "
-                    f"with settings {self.voice_settings or 'default'} using key ...{current_key[-6:]}"
+                    f"with settings {filtered_settings or 'default'} using key ...{current_key[-6:]}"
                 )
 
                 # Start receiver worker concurrently
+                self._start_time = time.perf_counter()
                 self._recv_task = asyncio.create_task(self._receive_loop())
                 return
             except Exception as ex:
@@ -111,7 +141,7 @@ class ElevenLabsTTDSession:
         if not self.ws or self._is_closed:
             raise RuntimeError("Cannot send text: TTD WebSocket is not connected or already closed")
 
-        clean = sanitize_text_for_tts(text)
+        clean = sanitize_text_for_tts(text, preserve_audio_tags=True)
         if not clean:
             return
 
@@ -124,6 +154,8 @@ class ElevenLabsTTDSession:
                 }
             ]
         }
+        self.telemetry["input_frames_count"] += 1
+        self.telemetry["total_chars_sent"] += len(clean)
         await self.ws.send(json.dumps(frame))
         logger.debug(f"📤 [ELEVENLABS TTD SENT] '{clean}' (new_turn={new_turn})")
 
@@ -154,6 +186,10 @@ class ElevenLabsTTDSession:
                 if "audio" in data and data["audio"]:
                     raw_bytes = base64.b64decode(data["audio"])
                     if raw_bytes:
+                        if self.telemetry["first_audio_ms"] is None and self._start_time > 0:
+                            self.telemetry["first_audio_ms"] = round((time.perf_counter() - self._start_time) * 1000, 1)
+                            logger.debug(f"⚡ [ELEVENLABS TTD TTFA TELEMETRY] {self.telemetry['first_audio_ms']}ms")
+                        self.telemetry["total_audio_bytes"] += len(raw_bytes)
                         self._total_audio_bytes_received += len(raw_bytes)
                         await self._event_queue.put(("audio", raw_bytes))
 
@@ -198,10 +234,13 @@ class ElevenLabsTTDSession:
 
         async def _sender():
             try:
+                is_first_chunk = True
                 async for chunk in speech_chunks:
                     chunks_in_flight.append(chunk)
-                    await self.send_text(chunk.tts_text, new_turn=False)
-                    await self.flush()
+                    logger.info(f"📤 [TTD SENDER CHUNK]: display='{getattr(chunk, 'display_text', None)}' | tts='{getattr(chunk, 'tts_text', None)}'")
+                    is_turn_start = getattr(chunk, "is_first", False) or is_first_chunk
+                    is_first_chunk = False
+                    await self.send_text(chunk.tts_text, new_turn=is_turn_start)
                 await self.finish()
             except Exception as ex:
                 logger.error(f"⚠️ [TTD SENDER ERROR] {ex}")
@@ -239,7 +278,27 @@ class ElevenLabsTTDSession:
                     if current_audio_parts:
                         sentence_bytes = b"".join(current_audio_parts)
                         current_audio_parts = []
-                        ref_chunk = chunks_in_flight[chunk_idx] if chunk_idx < len(chunks_in_flight) else None
+                        remaining_chunks = chunks_in_flight[chunk_idx:]
+                        chunk_idx = len(chunks_in_flight)
+
+                        if len(remaining_chunks) == 1:
+                            ref_chunk = remaining_chunks[0]
+                        elif len(remaining_chunks) > 1:
+                            from packages.ai.utils.sentence_chunker import SpeechChunk
+                            combined_display = " ".join(c.display_text for c in remaining_chunks if getattr(c, "display_text", None))
+                            combined_tts = " ".join(c.tts_text for c in remaining_chunks if getattr(c, "tts_text", None))
+                            first_c = remaining_chunks[0]
+                            last_c = remaining_chunks[-1]
+                            ref_chunk = SpeechChunk(
+                                display_text=combined_display,
+                                tts_text=combined_tts,
+                                delivery_style=getattr(first_c, "delivery_style", "neutral"),
+                                sequence=getattr(first_c, "sequence", 0),
+                                is_first=getattr(first_c, "is_first", False),
+                                is_final=getattr(last_c, "is_final", True),
+                            )
+                        else:
+                            ref_chunk = None
                         yield ref_chunk, sentence_bytes
                     break
 
@@ -282,9 +341,18 @@ class ElevenLabsTTDSession:
                 pass
             self.ws = None
 
+        if self._start_time > 0:
+            self.telemetry["total_duration_ms"] = round((time.perf_counter() - self._start_time) * 1000, 1)
+            logger.debug(
+                f"📊 [ELEVENLABS TTD METRICS] Duration: {self.telemetry['total_duration_ms']}ms | "
+                f"TTFA: {self.telemetry['first_audio_ms']}ms | "
+                f"Sent: {self.telemetry['total_chars_sent']} chars ({self.telemetry['input_frames_count']} frames) | "
+                f"Audio: {self.telemetry['total_audio_bytes']} bytes"
+            )
+
 
 class ElevenLabsTTDProvider(BaseTTSProvider):
-    """Text-to-Speech provider using ElevenLabs Text-to-Dialogue (TTD) WebSocket API for Eleven v3."""
+    """Text-to-Speech provider using ElevenLabs Text-to-Dialogue (TTD) WebSocket API for Eleven v4 Turbo & v3."""
 
     _shared_exhausted_keys: ClassVar[set[str]] = set()
     _shared_current_key_index: ClassVar[int] = 0
@@ -306,12 +374,9 @@ class ElevenLabsTTDProvider(BaseTTSProvider):
         ]
         self.voice_id = voice_id or settings.TTS_VOICE_ID or "cgSgspJ2msm6clMCkdW9"
 
-        # Enforce eleven_v3 model for TTD WebSocket
-        configured_model = model_id or getattr(settings, "TTS_MODEL", "eleven_v3_conversational")
-        if configured_model and configured_model.startswith("eleven_v3"):
-            self.model_id = configured_model
-        else:
-            self.model_id = "eleven_v3_conversational"
+        # Validate model for TTD WebSocket (defaults to eleven_v4_turbo)
+        configured_model = model_id or getattr(settings, "TTS_MODEL", DEFAULT_TTD_MODEL)
+        self.model_id = validate_ttd_model(configured_model)
 
         self.output_format = getattr(settings, "ELEVENLABS_OUTPUT_FORMAT", "mp3_44100_128")
         self._check_daily_reset()
@@ -382,7 +447,7 @@ class ElevenLabsTTDProvider(BaseTTSProvider):
             session = self.create_session(voice_id=voice_id, voice_settings=voice_settings)
             try:
                 await session.connect()
-                await session.send_text(text)
+                await session.send_text(text, new_turn=True)
                 await session.finish()
 
                 chunks: list[bytes] = []
@@ -422,8 +487,10 @@ class ElevenLabsTTDProvider(BaseTTSProvider):
             # Concurrent producer task
             async def _sender():
                 try:
+                    is_first = True
                     async for token in text_stream:
-                        await session.send_text(token)
+                        await session.send_text(token, new_turn=is_first)
+                        is_first = False
                     await session.finish()
                 except Exception as ex:
                     logger.error(f"Error in TTD stream sender: {ex}")

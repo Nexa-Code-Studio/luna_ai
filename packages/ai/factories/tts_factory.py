@@ -33,7 +33,7 @@ class TTSFactory:
 
         logger.info(f"Instantiating TTS Provider: '{target}'")
 
-        if target in ("elevenlabs", "elevenlabs_ttd", "eleven_v3"):
+        if target in ("elevenlabs", "elevenlabs_ttd", "eleven_v3", "eleven_v4", "eleven_v4_turbo"):
             eleven_keys = settings.get_elevenlabs_keys()
             if not eleven_keys or all(_is_placeholder(k) for k in eleven_keys):
                 logger.warning("No valid ElevenLabs API keys in .env. Falling back to EdgeTTSProvider (Free Indonesian Voice).")
