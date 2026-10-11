@@ -197,6 +197,14 @@ class TestAudioTagScrubber:
         raw = "[PLAYFUL] Halo semuanya!"
         assert strip_audio_tags(raw) == "Halo semuanya!"
 
+    def test_strip_natural_language_tags(self):
+        raw = "[warm, calm] Terima kasih sudah cerita. [soft, reflective] Kedengarannya ini berat."
+        assert strip_audio_tags(raw) == "Terima kasih sudah cerita. Kedengarannya ini berat."
+
+    def test_strip_curiosity_and_reactions(self):
+        raw = "[gentle curiosity] Kalau boleh aku tanya... [chuckles] itu lucu sekali."
+        assert strip_audio_tags(raw) == "Kalau boleh aku tanya... itu lucu sekali."
+
 
 @pytest.mark.asyncio
 class TestCallSessionManagerDynamicVoiceIntegration:

@@ -133,6 +133,63 @@ class TestLatencyAwareSentenceChunker:
 
         assert len(chunks) >= 2
 
+    @pytest.mark.asyncio
+    async def test_streaming_split_brackets(self):
+        """Tokens splitting bracket and audio tags across tokens should be buffered atomically."""
+        chunker = LatencyAwareSentenceChunker()
+
+        async def token_gen():
+            # '[' and ']' in different tokens, with commas inside the tag that must NOT trigger clause split
+            tokens = ["[", "warm,", " calm]", " Terima ", "kasih ", "sudah ", "bercerita ", "sejauh ", "ini."]
+            for t in tokens:
+                yield t
+
+        chunks: list[SpeechChunk] = []
+        async for c in chunker.chunk_stream(token_gen()):
+            chunks.append(c)
+
+        assert len(chunks) == 1
+        assert chunks[0].tts_text == "[warm, calm] Terima kasih sudah bercerita sejauh ini."
+        assert chunks[0].display_text == "Terima kasih sudah bercerita sejauh ini."
+        assert chunks[0].delivery_style == "warm, calm"
+
+    @pytest.mark.asyncio
+    async def test_multi_sentence_inline_audio_tags(self):
+        """Multiple sentences with different inline audio tags preserve their respective tags."""
+        chunker = LatencyAwareSentenceChunker()
+
+        async def token_gen():
+            tokens = [
+                "[warm, calm] Terima kasih sudah cerita. ",
+                "[soft, reflective] Kedengarannya hal itu sangat berat ya."
+            ]
+            for t in tokens:
+                yield t
+
+        chunks: list[SpeechChunk] = []
+        async for c in chunker.chunk_stream(token_gen()):
+            chunks.append(c)
+
+        assert len(chunks) == 2
+        assert chunks[0].tts_text == "[warm, calm] Terima kasih sudah cerita."
+        assert chunks[0].display_text == "Terima kasih sudah cerita."
+        assert chunks[1].tts_text == "[soft, reflective] Kedengarannya hal itu sangat berat ya."
+        assert chunks[1].display_text == "Kedengarannya hal itu sangat berat ya."
+
+    @pytest.mark.asyncio
+    async def test_malformed_bracket_safeguard(self):
+        """An unclosed bracket exceeding length threshold does not hang stream."""
+        chunker = LatencyAwareSentenceChunker()
+
+        async def token_gen():
+            yield "[ini adalah teks tanpa penutup kurung siku sama sekali yang sangat panjang melebihi batas delapan puluh karakter dan harus tetap di-emit."
+
+        chunks: list[SpeechChunk] = []
+        async for c in chunker.chunk_stream(token_gen()):
+            chunks.append(c)
+
+        assert len(chunks) >= 1
+
 
 # ============================================================================
 # B. Emotion Style Mapper Tests
@@ -269,17 +326,51 @@ class MockWebSocket:
 class TestElevenLabsTTDProtocol:
 
     def test_ttd_url_and_parameters(self):
-        """Verify URL uses TTD endpoint with model_id and output_format (no bogus query params)."""
+        """Verify URL uses TTD endpoint with model_id defaulting to eleven_v4_turbo."""
         session = ElevenLabsTTDSession(
             api_key="test_key",
             voice_id="EXAVITQu4vr4xnSDxMaL",
-            model_id="eleven_v3_conversational",
-            output_format="mp3_44100_128",
         )
         assert "wss://api.elevenlabs.io/v1/text-to-dialogue/stream-input" in session.url
-        assert "model_id=eleven_v3_conversational" in session.url
+        assert "model_id=eleven_v4_turbo" in session.url
         assert "output_format=mp3_44100_128" in session.url
         assert "language_code" not in session.url
+
+    def test_model_validation_and_unsupported_fallback(self):
+        """Verify eleven_v4_turbo, eleven_v4, and eleven_v3 are accepted, and unsupported model falls back safely."""
+        session_v4_turbo = ElevenLabsTTDSession(api_key="k", voice_id="v", model_id="eleven_v4_turbo")
+        assert session_v4_turbo.model_id == "eleven_v4_turbo"
+
+        session_v4 = ElevenLabsTTDSession(api_key="k", voice_id="v", model_id="eleven_v4")
+        assert session_v4.model_id == "eleven_v4"
+
+        session_v3 = ElevenLabsTTDSession(api_key="k", voice_id="v", model_id="eleven_v3_conversational")
+        assert session_v3.model_id == "eleven_v3_conversational"
+
+        # Unsupported model logs warning and uses default eleven_v4_turbo
+        session_bad = ElevenLabsTTDSession(api_key="k", voice_id="v", model_id="unsupported_model")
+        assert session_bad.model_id == "eleven_v4_turbo"
+
+    @pytest.mark.asyncio
+    async def test_handshake_filters_v4_voice_settings(self):
+        """Verify ElevenLabs v4 models strictly filter out style and speed from voice_settings."""
+        mock_ws = MockWebSocket(responses=[{"is_final": True}])
+        session = ElevenLabsTTDSession(
+            api_key="test_key",
+            voice_id="EXAVITQu4vr4xnSDxMaL",
+            model_id="eleven_v4_turbo",
+            voice_settings={"stability": 0.45, "similarity_boost": 0.80, "style": 0.30, "speed": 1.05},
+        )
+        with patch("websockets.connect", new=AsyncMock(return_value=mock_ws)):
+            await session.connect()
+            assert len(mock_ws.sent_frames) == 1
+            init_frame = mock_ws.sent_frames[0]
+            assert init_frame["voices"] == ["EXAVITQu4vr4xnSDxMaL"]
+            assert "stability" in init_frame["voice_settings"]
+            assert "similarity_boost" in init_frame["voice_settings"]
+            assert "style" not in init_frame["voice_settings"]
+            assert "speed" not in init_frame["voice_settings"]
+            await session.close()
 
     @pytest.mark.asyncio
     async def test_handshake_and_send_lifecycle(self):
@@ -305,14 +396,14 @@ class TestElevenLabsTTDProtocol:
             assert mock_ws.sent_frames[0] == {"voices": ["EXAVITQu4vr4xnSDxMaL"]}
 
             # Step 2: Send text input
-            await session.send_text("Halo, aku mendengarkan.", new_turn=False)
+            await session.send_text("Halo, aku mendengarkan.", new_turn=True)
             assert len(mock_ws.sent_frames) == 2
             assert mock_ws.sent_frames[1] == {
                 "inputs": [
                     {
                         "text": "Halo, aku mendengarkan.",
                         "voice_id": "EXAVITQu4vr4xnSDxMaL",
-                        "new_turn": False,
+                        "new_turn": True,
                     }
                 ]
             }
@@ -340,8 +431,8 @@ class TestElevenLabsTTDProtocol:
 class TestStreamingConcurrency:
 
     @pytest.mark.asyncio
-    async def test_concurrent_sentence_streaming(self):
-        """Verify stream_sentence_audio yields sentence audio concurrently as frames arrive."""
+    async def test_concurrent_sentence_streaming_and_no_intermediate_flush(self):
+        """Verify stream_sentence_audio sets new_turn per turn and avoids premature per-chunk flush."""
         dummy_mp3 = b"\xff\xfb\x90\x44" * 20
         b64_audio = base64.b64encode(dummy_mp3).decode("utf-8")
 
@@ -376,6 +467,22 @@ class TestStreamingConcurrency:
             assert len(results[0][1]) == len(dummy_mp3)
             assert results[1][0].display_text == "Kalimat kedua."
             assert len(results[1][1]) == len(dummy_mp3)
+
+            # Inspect sent frames:
+            # Frame 0: Handshake
+            # Frame 1: Chunk 1 text (new_turn=True because chunk.is_first=True)
+            # Frame 2: Chunk 2 text (new_turn=False because chunk.is_first=False)
+            # Frame 3: {"flush": True} (sent only by finish at end of stream)
+            # Frame 4: {"close_socket": True}
+            sent = mock_ws.sent_frames
+            assert sent[0] == {"voices": ["EXAVITQu4vr4xnSDxMaL"]}
+            assert sent[1]["inputs"][0]["new_turn"] is True
+            assert sent[2]["inputs"][0]["new_turn"] is False
+            # Verify NO flush between sent[1] and sent[2]!
+            assert "flush" not in sent[1]
+            assert "flush" not in sent[2]
+            assert sent[3] == {"flush": True}
+            assert sent[4] == {"close_socket": True}
 
             await session.close()
 
@@ -445,6 +552,37 @@ class TestOrchestratorContextBuilder:
         )
         # Verify turn was prepared without error
         assert result.is_crisis is False
+
+    @pytest.mark.asyncio
+    async def test_audio_tags_guidelines_in_system_prompt(self):
+        """Verify ElevenLabs v4 Turbo Audio Tags directive is present in system prompt."""
+        from packages.shared.config import settings
+        original_flag = settings.TTS_ENABLE_AUDIO_TAGS
+        try:
+            settings.TTS_ENABLE_AUDIO_TAGS = True
+            orchestrator = AIOrchestrator()
+            result = await orchestrator.prepare_turn(user_text="Halo Luna")
+            prompt = result.final_system_prompt
+            assert "Pengendali Vokal & Emosi ElevenLabs v4 Turbo (Audio Tags)" in prompt
+            assert "[warm, calm]" in prompt
+            assert "DILARANG KERAS tag dramatis" in prompt
+            assert "non-teatrikal" in prompt
+        finally:
+            settings.TTS_ENABLE_AUDIO_TAGS = original_flag
+
+    @pytest.mark.asyncio
+    async def test_audio_tags_gating_disabled(self):
+        """When TTS_ENABLE_AUDIO_TAGS is False, Audio Tags section is omitted from prompt."""
+        from packages.shared.config import settings
+        original_flag = settings.TTS_ENABLE_AUDIO_TAGS
+        try:
+            settings.TTS_ENABLE_AUDIO_TAGS = False
+            orchestrator = AIOrchestrator()
+            result = await orchestrator.prepare_turn(user_text="Halo Luna")
+            prompt = result.final_system_prompt
+            assert "Pengendali Vokal & Emosi ElevenLabs v4 Turbo (Audio Tags)" not in prompt
+        finally:
+            settings.TTS_ENABLE_AUDIO_TAGS = original_flag
 
 
 # ============================================================================
